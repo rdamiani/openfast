@@ -16,14 +16,9 @@
 ! See the License for the specific language governing permissions and
 ! limitations under the License.
 !**********************************************************************************************************************************
-! File last committed: $Date$
-! (File) Revision #: $Rev$
-! URL: $HeadURL$
-!**********************************************************************************************************************************
 MODULE SD_FEM
   USE NWTC_Library
   USE SubDyn_Types
-  
   IMPLICIT NONE
   
    INTEGER,         PARAMETER  :: LAKi            = R8Ki                  ! Define the kind to be used for LAPACK routines for getting eigenvalues/vectors. Apparently there is a problem with SGGEV's eigenvectors
@@ -44,50 +39,37 @@ MODULE SD_FEM
   INTEGER(IntKi),   PARAMETER  :: CMassCol        = 5                     ! Number of columns in Concentrated Mass (CMJointID,JMass,JMXX,JMYY,JMZZ)
   
   INTEGER(IntKi),   PARAMETER  :: SDMaxInpCols    = MAX(JointsCol,ReactCol,InterfCol,MembersCol,PropSetsCol,XPropSetsCol,COSMsCol,CMassCol)
+
     CONTAINS
     
+!> Maps nodes to elements 
+!! allocate NodesConnE and NodesConnN                                                                               
 SUBROUTINE NodeCon(Init,p, ErrStat, ErrMsg)
-  
-!This Subroutine maps nodes to elements
-! allocate for NodesConnE and NodesConnN                                                                               
-  USE qsort_c_module
-  IMPLICIT NONE
-
+  USE qsort_c_module ,only: QsortC
   TYPE(SD_InitType),              INTENT( INOUT )  ::Init   
   TYPE(SD_ParameterType),         INTENT( IN    )  ::p  
   INTEGER(IntKi),                 INTENT(   OUT )  :: ErrStat     ! Error status of the operation
   CHARACTER(*),                   INTENT(   OUT )  :: ErrMsg      ! Error message if ErrStat /= ErrID_None
-   
-  !local variable
+  ! Local variables
   INTEGER(IntKi) :: SortA(MaxMemJnt,1)  !To sort nodes and elements
   INTEGER(IntKi) :: I,J,K  !counter
   
-  ! bjj: shouldn't there be a check that there AREN'T actually more members at one joint than MaxMemJnt?
-  ALLOCATE(Init%NodesConnE(Init%NNode, MaxMemJnt+1), STAT=ErrStat)                !the row index is the number of the real node, i.e. ID, 1st col has number of elements attached to node, and 2nd col has element numbers (up to 10)                                    
-  IF ( ErrStat /= 0 )  THEN                                                                                                
-      ErrMsg = ' Error allocating NodesConnE matrix'                                                    
-      ErrStat = ErrID_Fatal                                                                                                         
-      RETURN                                                                                                              
-  ENDIF                                                                                                                  
+  ! The row index is the number of the real node, i.e. ID, 1st col has number of elements attached to node, and 2nd col has element numbers (up to 10)                                    
+  CALL AllocAry(Init%NodesConnE, Init%NNode, MaxMemJnt+1,'NodesConnE', ErrStat, ErrMsg); if (ErrStat/=0) return;
+  CALL AllocAry(Init%NodesConnN, Init%NNode, MaxMemJnt+2,'NodesConnN', ErrStat, ErrMsg); if (ErrStat/=0) return;
   Init%NodesConnE = 0                                                                                                    
-                                                                                                                          
-  ALLOCATE(Init%NodesConnN(Init%NNode, MaxMemJnt+2), STAT=ErrStat)                                                    
-  IF ( ErrStat /= 0 )  THEN                                                                                                
-      ErrMsg = ' Error allocating NodesConnN matrix'                                                    
-      ErrStat = ErrID_Fatal                                                                                                         
-      RETURN                                                                                                              
-  ENDIF                                                                                                                  
   Init%NodesConnN = 0                                                                                                    
                                                                                                                           
-!   ! find the node connectivity, nodes/elements that connect to a common node                                             
-   
+   ! find the node connectivity, nodes/elements that connect to a common node                                             
    DO I = 1, Init%NNode                                                                                                   
       Init%NodesConnN(I, 1) = NINT( Init%Nodes(I, 1) )      !This should not be needed, could remove the extra 1st column like for the other array                                                                      
-                                                                                                                          
       k = 0                                                                                                               
       DO J = 1, Init%NElem                          !This should be vectorized                                                                      
          IF ( ( NINT(Init%Nodes(I, 1))==p%Elems(J, 2)) .OR. (NINT(Init%Nodes(I, 1))==p%Elems(J, 3) ) ) THEN   !If i-th nodeID matches 1st node or 2nd of j-th element                                                                   
             k = k + 1                                                                                                     
+            if (k > MaxMemJnt+1) then 
+               CALL SetErrStat(ErrID_Fatal, 'Maximum number of members reached on node'//trim(Num2LStr(NINT(Init%Nodes(I,1)))), ErrStat, ErrMsg, 'NodeCon');
+            endif
             Init%NodesConnE(I, k + 1) = p%Elems(J, 1)                                                                  
             Init%NodesConnN(I, k + 1) = p%Elems(J, 3)                                                                  
             IF ( NINT(Init%Nodes(I, 1))==p%Elems(J, 3) ) Init%NodesConnN(I, k + 1) = p%Elems(J, 2)     !If nodeID matches 2nd node of element                                                                
@@ -107,9 +89,7 @@ SUBROUTINE NodeCon(Init,p, ErrStat, ErrMsg)
 END SUBROUTINE NodeCon
 
 !----------------------------------------------------------------------------
-!----------------------------------------------------------------------------
 SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
-
    TYPE(SD_InitType),            INTENT(INOUT)  ::Init
    TYPE(SD_ParameterType),       INTENT(INOUT)  ::p
    INTEGER(IntKi),               INTENT(  OUT)  :: ErrStat     ! Error status of the operation
@@ -126,21 +106,16 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
    LOGICAL                       :: found, CreateNewProp
    INTEGER(IntKi)                :: ErrStat2
    CHARACTER(1024)               :: ErrMsg2
-   
-   
    ErrStat = ErrID_None
    ErrMsg  = ""
    
-   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-   
    ! number of nodes per element
-   IF( ( Init%FEMMod .GE. 0 ) .and. (Init%FEMMod .LE. 3) ) THEN
+   IF( ( Init%FEMMod >= 0 ) .and. (Init%FEMMod <= 3) ) THEN
       NNE = 2 
    ELSE
-      CALL SetErrStat(ErrID_Fatal, 'FEMMod '//TRIM(Num2LStr(Init%FEMMod))//' not implemented.',ErrStat,ErrMsg,'SD_Discrt')
+      CALL Fatal('FEMMod '//TRIM(Num2LStr(Init%FEMMod))//' not implemented.')
       RETURN
    ENDIF
-   
    
    Init%NNode = Init%NJoints + ( Init%NDiv - 1 )*p%NMembers    ! Calculate total number of nodes according to divisions 
    Init%NElem = p%NMembers*Init%NDiv                           ! Total number of element   
@@ -152,8 +127,8 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
    !bjj: replaced with max value instead of NNE: Init%MembersCol = Init%MembersCol + (NNE - 2) 
    
    ! check the number of interior modes
-   IF ( p%Nmodes .GT. 6*(Init%NNode - Init%NInterf - p%NReact) ) THEN
-      CALL SetErrStat(ErrID_Fatal, ' NModes must be less than or equal to '//TRIM(Num2LStr( 6*(Init%NNode - Init%NInterf - p%NReact) )),ErrStat,ErrMsg,'SD_Discrt')
+   IF ( p%Nmodes > 6*(Init%NNode - Init%NInterf - p%NReact) ) THEN
+      CALL Fatal(' NModes must be less than or equal to '//TRIM(Num2LStr( 6*(Init%NNode - Init%NInterf - p%NReact) )))
       RETURN
    ENDIF
    
@@ -168,7 +143,6 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
    CALL AllocAry(TempProps,       MaxNProp,      PropSetsCol,'TempProps',       ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt') 
    CALL AllocAry(TempReacts,      p%NReact,      ReactCol,   'TempReacts',      ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt')
    
-
    IF ( ErrStat >= AbortErrLev ) THEN
       CALL CleanUp_Discrt()
       RETURN
@@ -190,11 +164,9 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
       p%Elems(I,     1) = I                     ! element/member number (not MemberID)
 !bjj: TODO: JMJ wants check that YoungE, ShearG, and MatDens are equal in the two properties because we aren't going to interpolate them. This should be less confusing for users.                                                
       
-      
          ! loop through the JointIDs for this member and find the corresponding indices into the Joints array
       DO n = 2,3  ! Members column for JointIDs for nodes 1 and 2
          Node = Init%Members(I, n)  ! n=2 or 3
-      
             ! ...... search for index of joint whose JointID matches Node ......
          J = 1
          found = .false.      
@@ -205,28 +177,18 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
             END IF
             J = J + 1
          END DO 
-         
          IF ( .NOT. found) THEN
-            CALL SetErrStat(ErrID_Fatal,' Member '//TRIM(Num2LStr(I))//' has JointID'//TRIM(Num2LStr(n-1))//' = '//& 
-                                   TRIM(Num2LStr(Node))//' which is not in the node list !', ErrStat,ErrMsg,'SD_Discrt');
-            CALL CleanUp_Discrt()
+            CALL Fatal(' Member '//TRIM(Num2LStr(I))//' has JointID'//TRIM(Num2LStr(n-1))//' = '// TRIM(Num2LStr(Node))//' which is not in the node list !')
             RETURN
          END IF
-         
       END DO ! loop through nodes/joints
       
-      
          ! loop through the PropSetIDs for this member and find the corresponding indices into the Joints array
-      
       ! we're setting these two values:   
       !p%Elems(I, 4) = property set for node 1 (note this sets the YoungE, ShearG, and MatDens columns for the ENTIRE element)   
       !p%Elems(I, 5) = property set for node 2 (note this should be used only for the XsecD and XsecT properties in the element [for a linear distribution from node 1 to node 2 of D and T])
-         
       DO n=4,5 ! Member column for MPropSetID1 and MPropSetID2
-      
-                                                            
          Prop = Init%Members(I, n)  ! n=4 or 5
-      
             ! ...... search for index of property set whose PropSetID matches Prop ......
          J = 1
          found = .false.      
@@ -237,16 +199,11 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
             END IF
             J = J + 1
          END DO
-      
          IF ( .NOT. found) THEN
-            CALL SetErrStat(ErrID_Fatal,' Member '//TRIM(Num2LStr(I))//' has PropSetID'//TRIM(Num2LStr(n-3))//' = '//& 
-                                   TRIM(Num2LStr(Prop))//' which is not in the Member X-Section Property data!', ErrStat,ErrMsg,'SD_Discrt');
-            CALL CleanUp_Discrt()
+            CALL Fatal(' Member '//TRIM(Num2LStr(I))//' has PropSetID'//TRIM(Num2LStr(n-3))//' = '//TRIM(Num2LStr(Prop))//' which is not in the Member X-Section Property data!')
             RETURN
          END IF
-
       END DO ! loop through property ids         
-   
    END DO ! loop through members
    
    ! Initialize TempMembers
@@ -256,18 +213,14 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
    TempProps = 0
    TempProps(1:Init%NPropSets, :) = Init%PropSets   
    
-   
    ! Initialize boundary constraint vector
    ! Change the node number
-   
-   
     !Allocate array that will be p%Reacts renumbered and ordered so that ID does not play a role, just ordinal position number will count -RRD
    Init%BCs = 0
-   TempReacts=0 !INitialize -RRD
+   TempReacts=0
    DO I = 1, p%NReact
       Node1 = p%Reacts(I, 1);  !NODE ID
       TempReacts(I,2:ReactCol)=p%Reacts(I, 2:ReactCol)  !Assign all the appropriate fixity to the new Reacts array -RRD
-      
       found = .false.
       DO J = 1, Init%NJoints
          IF ( Node1 == NINT(Init%Joints(J, 1)) ) THEN
@@ -277,25 +230,19 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
             EXIT  !Exit J loop if node found -RRD
          ENDIF
       ENDDO
-      
       IF (.not. found) THEN
-         CALL SetErrStat(ErrID_Fatal,' React has node not in the node list !', ErrStat,ErrMsg,'SD_Discrt');
-         CALL CleanUp_Discrt()
+         CALL Fatal(' React has node not in the node list !')
          RETURN
       ENDIF
-      
-      
       DO J = 1, 6
          Init%BCs( (I-1)*6+J, 1) = (Node2-1)*6+J;
          Init%BCs( (I-1)*6+J, 2) = p%Reacts(I, J+1);
       ENDDO
-      
    ENDDO
    p%Reacts=TempReacts   !UPDATED REACTS
       
    ! Initialize interface constraint vector
    ! Change the node number
-
    Init%IntFc = 0
    DO I = 1, Init%NInterf
       Node1 = Init%Interf(I, 1);
@@ -306,13 +253,10 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
             found = .true.
          ENDIF
       ENDDO
-      
       IF (.not. found) THEN
-         CALL SetErrStat(ErrID_Fatal,' Interf has node not in the node list !', ErrStat,ErrMsg,'SD_Discrt');
-         CALL CleanUp_Discrt()
+         CALL Fatal(' Interf has node not in the node list !')
          RETURN
       ENDIF
-      
       DO J = 1, 6
          Init%IntFc( (I-1)*6+J, 1) = (Node2-1)*6+J;
          Init%IntFc( (I-1)*6+J, 2) = Init%Interf(I, J+1);
@@ -330,27 +274,22 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
    ENDDO
 
 ! discretize structure according to NDiv 
-
 knode = Init%NJoints
 kelem = 0
 kprop = Init%NPropSets
 Init%MemberNodes = 0
 
-
-IF (Init%NDiv .GT. 1) THEN
+    IF (Init%NDiv > 1) THEN
    DO I = 1, p%NMembers !the first p%NMembers rows of p%Elems contain the element information
       ! create new node
       Node1 = TempMembers(I, 2)
       Node2 = TempMembers(I, 3)
       
       IF ( Node1==Node2 ) THEN
-         CALL SetErrStat(ErrID_Fatal,' Same starting and ending node in the member.', ErrStat,ErrMsg,'SD_Discrt');
-         CALL CleanUp_Discrt()
+             CALL Fatal(' Same starting and ending node in the member.')
          RETURN
       ENDIF
     
-      
-      
       Prop1 = TempMembers(I, 4)
       Prop2 = TempMembers(I, 5)
       
@@ -361,8 +300,7 @@ IF (Init%NDiv .GT. 1) THEN
        .OR. ( .not. EqualRealNos(TempProps(Prop1, 3),TempProps(Prop2, 3) ) ) &
        .OR. ( .not. EqualRealNos(TempProps(Prop1, 4),TempProps(Prop2, 4) ) ) )  THEN
       
-         CALL SetErrStat(ErrID_Fatal,' Material E,G and rho in a member must be the same', ErrStat,ErrMsg,'SD_Discrt');
-         CALL CleanUp_Discrt()
+             CALL Fatal(' Material E,G and rho in a member must be the same')
          RETURN
       ENDIF
 
@@ -388,60 +326,56 @@ IF (Init%NDiv .GT. 1) THEN
       dt = ( t2 - t1 )/Init%NDiv
       
          ! If both dd and dt are 0, no interpolation is needed, and we can use the same property set for new nodes/elements. otherwise we'll have to create new properties for each new node
-      CreateNewProp = .NOT. ( EqualRealNos( dd , 0.0_ReKi ) .AND. &
-                              EqualRealNos( dt , 0.0_ReKi ) )  
+          CreateNewProp = .NOT. ( EqualRealNos( dd , 0.0_ReKi ) .AND.  EqualRealNos( dt , 0.0_ReKi ) )  
       
       ! node connect to Node1
       knode = knode + 1
       Init%MemberNodes(I, 2) = knode
-      CALL GetNewNode(knode, x1+dx, y1+dy, z1+dz, Init)
+          CALL SetNewNode(knode, x1+dx, y1+dy, z1+dz, Init)
       
       
       IF ( CreateNewProp ) THEN   
            ! create a new property set 
            ! k, E, G, rho, d, t, Init
-           
            kprop = kprop + 1
-           CALL GetNewProp(kprop, TempProps(Prop1, 2), TempProps(Prop1, 3),&
-                           TempProps(Prop1, 4), d1+dd, t1+dt, TempProps)           
+               CALL SetNewProp(kprop, TempProps(Prop1, 2), TempProps(Prop1, 3), TempProps(Prop1, 4), d1+dd, t1+dt, TempProps)           
            kelem = kelem + 1
-           CALL GetNewElem(kelem, Node1, knode, Prop1, kprop, p)  
+               CALL SetNewElem(kelem, Node1, knode, Prop1, kprop, p)  
            nprop = kprop              
       ELSE
            kelem = kelem + 1
-           CALL GetNewElem(kelem, Node1, knode, Prop1, Prop1, p)                
+               CALL SetNewElem(kelem, Node1, knode, Prop1, Prop1, p)                
            nprop = Prop1 
       ENDIF
       
       ! interior nodes
-      
       DO J = 2, (Init%NDiv-1)
          knode = knode + 1
          Init%MemberNodes(I, J+1) = knode
 
-         CALL GetNewNode(knode, x1 + J*dx, y1 + J*dy, z1 + J*dz, Init)
+             CALL SetNewNode(knode, x1 + J*dx, y1 + J*dy, z1 + J*dz, Init)
          
          IF ( CreateNewProp ) THEN   
               ! create a new property set 
               ! k, E, G, rho, d, t, Init
               
               kprop = kprop + 1
-              CALL GetNewProp(kprop, TempProps(Prop1, 2), TempProps(Prop1, 3),&
+                  CALL SetNewProp(kprop, TempProps(Prop1, 2), TempProps(Prop1, 3),&
                               Init%PropSets(Prop1, 4), d1 + J*dd, t1 + J*dt, &
                               TempProps)           
               kelem = kelem + 1
-              CALL GetNewElem(kelem, knode-1, knode, nprop, kprop, p)
+                  CALL SetNewElem(kelem, knode-1, knode, nprop, kprop, p)
               nprop = kprop                
          ELSE
               kelem = kelem + 1
-              CALL GetNewElem(kelem, knode-1, knode, nprop, nprop, p)         
+                  CALL SetNewElem(kelem, knode-1, knode, nprop, nprop, p)         
                
          ENDIF
       ENDDO
       
       ! the element connect to Node2
       kelem = kelem + 1
-      CALL GetNewElem(kelem, knode, Node2, nprop, Prop2, p)                
+          CALL SetNewElem(kelem, knode, Node2, nprop, Prop2, p)                
 
    ENDDO ! loop over all members
 
@@ -464,25 +398,26 @@ Init%Props = TempProps(1:Init%NProp, :)  !!RRD fixed it on 1/23/14 to account fo
 
 CALL CleanUp_Discrt()
 
-RETURN
 CONTAINS
-!................
-   SUBROUTINE CleanUp_Discrt()
+   SUBROUTINE Fatal(ErrMsg_in)
+      CHARACTER(len=*), intent(in) :: ErrMsg_in
+      CALL SetErrStat(ErrID_Fatal, ErrMsg_in, ErrStat, ErrMsg, 'SD_Discrt');
+      CALL CleanUp_Discrt()
+   END SUBROUTINE Fatal
    
+   SUBROUTINE CleanUp_Discrt()
 ! deallocate temp matrices
 IF (ALLOCATED(TempProps)) DEALLOCATE(TempProps)
 IF (ALLOCATED(TempMembers)) DEALLOCATE(TempMembers)
 IF (ALLOCATED(TempReacts)) DEALLOCATE(TempReacts)
-
    END SUBROUTINE CleanUp_Discrt
 
 END SUBROUTINE SD_Discrt
-!------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
-SUBROUTINE GetNewNode(k, x, y, z, Init)
 
+!------------------------------------------------------------------------------------------------------
+!> Set properties of node k
+SUBROUTINE SetNewNode(k, x, y, z, Init)
    TYPE(SD_InitType),      INTENT(INOUT) :: Init
-   
    INTEGER,                INTENT(IN)    :: k
    REAL(ReKi),             INTENT(IN)    :: x, y, z
    
@@ -491,12 +426,11 @@ SUBROUTINE GetNewNode(k, x, y, z, Init)
    Init%Nodes(k, 3) = y
    Init%Nodes(k, 4) = z
 
+END SUBROUTINE SetNewNode
 
-END SUBROUTINE GetNewNode
 !------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
-SUBROUTINE GetNewElem(k, n1, n2, p1, p2, p)
-
+!> Set properties of element k
+SUBROUTINE SetNewElem(k, n1, n2, p1, p2, p)
    INTEGER,                INTENT(IN   )   :: k
    INTEGER,                INTENT(IN   )   :: n1
    INTEGER,                INTENT(IN   )   :: n2
@@ -504,19 +438,17 @@ SUBROUTINE GetNewElem(k, n1, n2, p1, p2, p)
    INTEGER,                INTENT(IN   )   :: p2
    TYPE(SD_ParameterType), INTENT(INOUT)   :: p
   
-   
    p%Elems(k, 1) = k
    p%Elems(k, 2) = n1
    p%Elems(k, 3) = n2
    p%Elems(k, 4) = p1
    p%Elems(k, 5) = p2
 
-END SUBROUTINE GetNewElem
-!------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
-SUBROUTINE GetNewProp(k, E, G, rho, d, t, TempProps)
-!RRD-modifying this routine: This routine intends to calculate new member properties in case NDIV>1 ; 1/23/14
+END SUBROUTINE SetNewElem
    
+!------------------------------------------------------------------------------------------------------
+!> Set material properties of element k
+SUBROUTINE SetNewProp(k, E, G, rho, d, t, TempProps)
    INTEGER   , INTENT(IN)   :: k
    REAL(ReKi), INTENT(IN)   :: E, G, rho, d, t
    REAL(ReKi), INTENT(INOUT):: TempProps(:, :)
@@ -528,22 +460,20 @@ SUBROUTINE GetNewProp(k, E, G, rho, d, t, TempProps)
    TempProps(k, 5) = d
    TempProps(k, 6) = t
 
-END SUBROUTINE GetNewProp
-!------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
-SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
+END SUBROUTINE SetNewProp
 
+!------------------------------------------------------------------------------------------------------
+!> Assemble stiffness and mass matrix, and gravity force vector
+SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
    TYPE(SD_InitType),            INTENT(INOUT)  ::Init
    TYPE(SD_ParameterType),       INTENT(INOUT)  ::p
    INTEGER(IntKi),               INTENT(  OUT)  :: ErrStat     ! Error status of the operation
    CHARACTER(*),                 INTENT(  OUT)  :: ErrMsg      ! Error message if ErrStat /= ErrID_None
-   
+   ! Local variables
    INTEGER                  :: I, J, K, Jn, Kn
-   
-   INTEGER                  :: NNE        ! number of nodes in one element
+   INTEGER, PARAMETER       :: NNE=2      ! number of nodes in one element, fixed to 2
    INTEGER                  :: N1, N2     ! starting node and ending node in the element
    INTEGER                  :: P1, P2     ! property set numbers for starting and ending nodes
-
    REAL(ReKi)               :: D1, D2, t1, t2, E, G, rho ! properties of a section
    REAL(ReKi)               :: x1, y1, z1, x2, y2, z2    ! coordinates of the nodes
    REAL(ReKi)               :: DirCos(3, 3)              ! direction cosine matrices
@@ -551,49 +481,40 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
    REAL(ReKi)               :: r1, r2, t, Iyy, Jzz, Ixx, A, kappa, nu, ratioSq, D_inner, D_outer
    LOGICAL                  :: shear
    REAL(ReKi), ALLOCATABLE  :: Ke(:,:), Me(:, :), FGe(:) ! element stiffness and mass matrices gravity force vector
-   INTEGER, ALLOCATABLE     :: nn(:)                     ! node number in element 
+   INTEGER, DIMENSION(NNE)  :: nn                        ! node number in element 
    INTEGER                  :: r
-   
-   
    INTEGER(IntKi)           :: ErrStat2
    CHARACTER(1024)          :: ErrMsg2
 
-   
       ! for current application
-   IF ( (Init%FEMMod .LE. 3) .and. (Init%FEMMod .GE. 0)) THEN
-      NNE = 2
-   ELSE
-      ErrStat = ErrID_Fatal
-      ErrMsg = 'Invalid FEMMod in AssembleKM'
-      RETURN
-   ENDIF                              
+   if    (Init%FEMMod == 2) THEN ! tapered Euler-Bernoulli
+       CALL Fatal ('FEMMod = 2 is not implemented.')
+       return
+   elseif (Init%FEMMod == 4) THEN ! tapered Timoshenko
+       CALL Fatal ('FEMMod = 4 is not implemented.')
+       return
+   elseif ((Init%FEMMod == 1) .or. (Init%FEMMod == 3)) THEN !
+      ! 1: uniform Euler-Bernouli,  3: uniform Timoshenko
+   else
+       CALL Fatal('FEMMod is not valid. Please choose from 1, 2, 3, and 4. ')
+       return
+   endif
    
    ! total degrees of freedom of the system 
    Init%TDOF = 6*Init%NNode
    
-         ! Assemble system stiffness and mass matrices with gravity force vector
-   
    ALLOCATE( p%ElemProps(Init%NElem), STAT=ErrStat2)
       IF (ErrStat2 /= 0) THEN
-         CALL SetErrStat ( ErrID_Fatal, 'Error allocating p%ElemProps', ErrStat, ErrMsg, 'AssembleKM' )
-         CALL CleanUp_AssembleKM()
-      RETURN
-   ENDIF
-
-   CALL AllocAry( Ke,     NNE*6,         NNE*6 , 'Ke',      ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! element stiffness matrix
-   CALL AllocAry( Me,     NNE*6,         NNE*6 , 'Me',      ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! element mass matrix 
-   CALL AllocAry( FGe,    NNE*6,                 'FGe',     ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! element gravity force vector 
-   CALL AllocAry( nn,     NNE,                   'nn',      ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! node number in element array 
-   
-   CALL AllocAry( Init%K, Init%TDOF, Init%TDOF , 'Init%K',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! system stiffness matrix 
-   CALL AllocAry( Init%m, Init%TDOF, Init%TDOF , 'Init%M',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! system mass matrix 
-   CALL AllocAry( Init%FG,Init%TDOF,             'Init%FG', ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! system gravity force vector 
-    
-   IF (ErrStat >= AbortErrLev) THEN
-      CALL CleanUp_AssembleKM()
-      RETURN
+       CALL Fatal('Error allocating p%ElemProps')
+       return
    ENDIF
    
+   CALL AllocAry( Ke,     NNE*6,         NNE*6 , 'Ke',      ErrStat2, ErrMsg2); if(Failed()) return; ! element stiffness matrix
+   CALL AllocAry( Me,     NNE*6,         NNE*6 , 'Me',      ErrStat2, ErrMsg2); if(Failed()) return; ! element mass matrix 
+   CALL AllocAry( FGe,    NNE*6,                 'FGe',     ErrStat2, ErrMsg2); if(Failed()) return; ! element gravity force vector 
+   CALL AllocAry( Init%K, Init%TDOF, Init%TDOF , 'Init%K',  ErrStat2, ErrMsg2); if(Failed()) return; ! system stiffness matrix 
+   CALL AllocAry( Init%m, Init%TDOF, Init%TDOF , 'Init%M',  ErrStat2, ErrMsg2); if(Failed()) return; ! system mass matrix 
+   CALL AllocAry( Init%FG,Init%TDOF,             'Init%FG', ErrStat2, ErrMsg2); if(Failed()) return; ! system gravity force vector 
    Init%K = 0.0_ReKi
    Init%M = 0.0_ReKi
    Init%FG = 0.0_ReKi
@@ -612,7 +533,6 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
       P1 = p%Elems(I, NNE + 2)
       P2 = p%Elems(I, NNE + 3)
       
-      
       E   = Init%Props(P1, 2)
       G   = Init%Props(P1, 3)
       rho = Init%Props(P1, 4)
@@ -629,18 +549,8 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
       y2  = Init%Nodes(N2, 3)
       z2  = Init%Nodes(N2, 4)
 
-      CALL GetDirCos(X1, Y1, Z1, X2, Y2, Z2, DirCos, L, ErrStat2, ErrMsg2)
-         CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )
-         IF (ErrStat >= AbortErrLev) THEN
-            CALL CleanUp_AssembleKM()
-            RETURN
-         END IF
-      
+      CALL GetDirCos(X1, Y1, Z1, X2, Y2, Z2, DirCos, L, ErrStat2, ErrMsg2); if(Failed()) return
          
-!BJJ: TODO: for efficiency, this if check should be OUTSIDE the DO loop. 
-      ! 1: uniform Euler-Bernouli
-      ! 3: uniform Timoshenko
-      IF ( (Init%FEMMod == 1).OR.(Init%FEMMod == 3)) THEN ! uniform element 
          r1 = 0.25*(D1 + D2)
          t  = 0.5*(t1+t2)
          
@@ -661,7 +571,6 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
          ELSEIF( Init%FEMMod == 3 ) THEN ! uniform Timoshenko
             Shear = .true.
           ! kappa = 0.53            
-            
                ! equation 13 (Steinboeck et al) in SubDyn Theory Manual 
             nu = E / (2.0_ReKi*G) - 1.0_ReKi
             D_outer = 2.0_ReKi * r1  ! average (outer) diameter
@@ -669,7 +578,6 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
             ratioSq = ( D_inner / D_outer)**2
             kappa =   ( 6.0 * (1.0 + nu) **2 * (1.0 + ratioSq)**2 ) &
                     / ( ( 1.0 + ratioSq )**2 * ( 7.0 + 14.0*nu + 8.0*nu**2 ) + 4.0 * ratioSq * ( 5.0 + 10.0*nu + 4.0 *nu**2 ) )
-                        
          ENDIF
          
          p%ElemProps(i)%Area = A
@@ -684,111 +592,76 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
          p%ElemProps(i)%Rho = rho
          p%ElemProps(i)%DirCos = DirCos
          
-         
          CALL ElemK(A, L, Ixx, Iyy, Jzz, Shear, kappa, E, G, DirCos, Ke)
          CALL ElemM(A, L, Ixx, Iyy, Jzz, rho, DirCos, Me)
          CALL ElemG(A, L, rho, DirCos, FGe, Init%g)
          
-      ELSEIF  (Init%FEMMod == 2) THEN ! tapered Euler-Bernoulli
-         CALL SetErrStat ( ErrID_Fatal, 'FEMMod = 2 is not implemented.', ErrStat, ErrMsg, 'AssembleKM' )
-         CALL CleanUp_AssembleKM()
-         RETURN
-         
-      ELSEIF  (Init%FEMMod == 4) THEN ! tapered Timoshenko
-         CALL SetErrStat ( ErrID_Fatal, 'FEMMod = 4 is not implemented.', ErrStat, ErrMsg, 'AssembleKM' )
-         CALL CleanUp_AssembleKM()
-         RETURN
-         
-      ELSE
-         CALL SetErrStat ( ErrID_Fatal, 'FEMMod is not valid. Please choose from 1, 2, 3, and 4. ', ErrStat, ErrMsg, 'AssembleKM' )
-         CALL CleanUp_AssembleKM()
-         RETURN
-         
-      ENDIF  
-                                                                                                                                                               
-
-      
       ! assemble element matrices to global matrices
-         
       DO J = 1, NNE
          jn = nn(j)
-         
-         Init%FG( (jn*6-5):(jn*6) ) = Init%FG( (jn*6-5):(jn*6) ) &
-                                    + FGe( (J*6-5):(J*6) )
-         
+         Init%FG( (jn*6-5):(jn*6) ) = Init%FG( (jn*6-5):(jn*6) )  + FGe( (J*6-5):(J*6) )
          DO K = 1, NNE
             kn = nn(k)
-            
-            Init%K( (jn*6-5):(jn*6), (kn*6-5):(kn*6) ) = Init%K( (jn*6-5):(jn*6), (kn*6-5):(kn*6) ) &
-                                                  + Ke( (J*6-5):(J*6), (K*6-5):(K*6) )
-                  
-            Init%M( (jn*6-5):(jn*6), (kn*6-5):(kn*6) ) = Init%M( (jn*6-5):(jn*6), (kn*6-5):(kn*6) ) &
-                                                  + Me( (J*6-5):(J*6), (K*6-5):(K*6) )
-                     
-                     
+            Init%K( (jn*6-5):(jn*6), (kn*6-5):(kn*6) ) = Init%K( (jn*6-5):(jn*6), (kn*6-5):(kn*6) ) + Ke( (J*6-5):(J*6), (K*6-5):(K*6) )
+            Init%M( (jn*6-5):(jn*6), (kn*6-5):(kn*6) ) = Init%M( (jn*6-5):(jn*6), (kn*6-5):(kn*6) ) + Me( (J*6-5):(J*6), (K*6-5):(K*6) )
          ENDDO !K
-                     
       ENDDO !J
-                     
-                     
    ENDDO ! I end loop over elements
                
-      
       ! add concentrated mass 
    DO I = 1, Init%NCMass
       DO J = 1, 3
           r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + J
           Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2)
-          
       ENDDO
       DO J = 4, 6
           r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + J
           Init%M(r, r) = Init%M(r, r) + Init%CMass(I, J-1)
       ENDDO
-
-   ENDDO ! I concentrated mass
+   ENDDO ! Loop on concentrated mass
  
       ! add concentrated mass induced gravity force
    DO I = 1, Init%NCMass
-      
       r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + 3
       Init%FG(r) = Init%FG(r) - Init%CMass(I, 2)*Init%g 
-
    ENDDO ! I concentrated mass induced gravity
    
    CALL CleanUp_AssembleKM()
-   RETURN
    
 CONTAINS
-!..............
+   LOGICAL FUNCTION Failed()
+        call SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM') 
+        Failed =  ErrStat >= AbortErrLev
+        if (Failed) call Cleanup_AssembleKM()
+   END FUNCTION Failed
+   
+   SUBROUTINE Fatal(ErrMsg_in)
+      character(len=*), intent(in) :: ErrMsg_in
+      CALL SetErrStat(ErrID_Fatal, ErrMsg_in, ErrStat, ErrMsg, 'AssembleKM');
+      CALL CleanUp_AssembleKM()
+   END SUBROUTINE Fatal
+
    SUBROUTINE CleanUp_AssembleKM()
-! deallocate temp matrices
       IF (ALLOCATED(Ke)) DEALLOCATE(Ke)
       IF (ALLOCATED(Me)) DEALLOCATE(Me)
       IF (ALLOCATED(FGe)) DEALLOCATE(FGe)
-      IF (ALLOCATED(nn)) DEALLOCATE(nn)
    END SUBROUTINE CleanUp_AssembleKM
    
 END SUBROUTINE AssembleKM
-!------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------------------------------
+!> Computes directional cosine matrix DirCos
+!! rrd: This should be from local to global 
+!! bjj: note that this is the transpose of what is normally considered the Direction Cosine Matrix  
+!!      in the FAST framework. It seems to be used consistantly in the code (i.e., the transpose 
+!!      of this matrix is used later).
 SUBROUTINE GetDirCos(X1, Y1, Z1, X2, Y2, Z2, DirCos, L, ErrStat, ErrMsg)
-   !This should be from local to global -RRD
-   ! bjj: note that this is the transpose of what is normally considered the Direction Cosine Matrix  
-   !      in the FAST framework. It seems to be used consistantly in the code (i.e., the transpose 
-   !      of this matrix is used later).
-   
-   
    REAL(ReKi) ,      INTENT(IN   )  :: x1, y1, z1, x2, y2, z2  ! (x,y,z) positions of two nodes making up an element
    REAL(ReKi) ,      INTENT(  OUT)  :: DirCos(3, 3)            ! calculated direction cosine matrix
    REAL(ReKi) ,      INTENT(  OUT)  :: L                       ! length of element
-   
    INTEGER(IntKi),   INTENT(  OUT)  :: ErrStat                 ! Error status of the operation
    CHARACTER(*),     INTENT(  OUT)  :: ErrMsg                  ! Error message if ErrStat /= ErrID_None
-   
    REAL(ReKi)                       ::  Dx,Dy,Dz, Dxy          ! distances between nodes
-!real(reki) :: dxyz         
    ErrMsg  = ""
    ErrStat = ErrID_None
    
@@ -830,20 +703,17 @@ SUBROUTINE GetDirCos(X1, Y1, Z1, X2, Y2, Z2, DirCos, L, ErrStat, ErrMsg)
    ENDIF
 
 END SUBROUTINE GetDirCos
-!------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------------------------------
+!> Element stiffness matrix for classical beam elements
+!! shear is true  -- non-tapered Timoshenko beam 
+!! shear is false -- non-tapered Euler-Bernoulli beam 
 SUBROUTINE ElemK(A, L, Ixx, Iyy, Jzz, Shear, kappa, E, G, DirCos, K)
-   ! element stiffness matrix for classical beam elements
-   ! shear is true  -- non-tapered Timoshenko beam 
-   ! shear is false -- non-tapered Euler-Bernoulli beam 
-
    REAL(ReKi), INTENT( IN)               :: A, L, Ixx, Iyy, Jzz, E, G, kappa
    REAL(ReKi), INTENT( IN)               :: DirCos(3,3)
    LOGICAL, INTENT( IN)                  :: Shear
-   
-   REAL(ReKi), INTENT(OUT)             :: K(12, 12)  !RRD:  Ke and Me  need to be modified if convention of dircos is not followed?
-         
+   REAL(ReKi), INTENT(OUT) :: K(12, 12) 
+   ! Local variables
    REAL(ReKi)                            :: Ax, Ay, Kx, Ky
    REAL(ReKi)                            :: DC(12, 12)
    
@@ -908,22 +778,16 @@ SUBROUTINE ElemK(A, L, Ixx, Iyy, Jzz, Shear, kappa, E, G, DirCos, K)
    DC( 7: 9,  7: 9) = DirCos
    DC(10:12, 10:12) = DirCos
    
-   K = MATMUL( MATMUL(DC, K), TRANSPOSE(DC) )
-   
-   !write(*, *) K - TRANSPOSE(K)
+   K = MATMUL( MATMUL(DC, K), TRANSPOSE(DC) ) ! TODO: change me if DirCos convention is  transposed
 
 END SUBROUTINE ElemK
-!------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
 
+!------------------------------------------------------------------------------------------------------
+!> Element mass matrix for classical beam elements
 SUBROUTINE ElemM(A, L, Ixx, Iyy, Jzz, rho, DirCos, M)
-   ! element mass matrix for classical beam elements
-
-
    REAL(ReKi), INTENT( IN)               :: A, L, Ixx, Iyy, Jzz, rho
    REAL(ReKi), INTENT( IN)               :: DirCos(3,3)
-   
-   REAL(ReKi)             :: M(12, 12)
+   REAL(ReKi), INTENT(OUT) :: M(12, 12)
          
    REAL(ReKi)                            :: t, rx, ry, po
    REAL(ReKi)                            :: DC(12, 12)
@@ -984,17 +848,13 @@ SUBROUTINE ElemM(A, L, Ixx, Iyy, Jzz, rho, DirCos, M)
    DC( 7: 9,  7: 9) = DirCos
    DC(10:12, 10:12) = DirCos
    
-   M = MATMUL( MATMUL(DC, M), TRANSPOSE(DC) )
+   M = MATMUL( MATMUL(DC, M), TRANSPOSE(DC) ) ! TODO change me if direction cosine is transposed
 
 END SUBROUTINE ElemM
 
-
 !------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
-
+!> Apply constraint (Boundary conditions) on Mass and Stiffness matrices
 SUBROUTINE ApplyConstr(Init,p)
-
-
    TYPE(SD_InitType), INTENT(INOUT)   :: Init
    TYPE(SD_ParameterType), INTENT(IN)   :: p
    
@@ -1003,7 +863,6 @@ SUBROUTINE ApplyConstr(Init,p)
    
    DO I = 1, p%NReact*6
       row_n = Init%BCs(I, 1)
-      
       IF (Init%BCs(I, 2) == 1) THEN
          Init%K(row_n, :) = 0
          Init%K(:, row_n) = 0
@@ -1011,33 +870,26 @@ SUBROUTINE ApplyConstr(Init,p)
       
          Init%M(row_n, :) = 0
          Init%M(:, row_n) = 0
-         Init%M(row_n, row_n) = 0 !0.00001          !what is this???? I changed this to 0.  RRD 7/31
+         Init%M(row_n,row_n)= 0
       ENDIF
-      
-   ENDDO ! I
-
-      
-
+   ENDDO ! I, loop on reaction nodes
 END SUBROUTINE ApplyConstr
-!------------------------------------------------------------------------------------------------------
-!------------------------------------------------------------------------------------------------------
-SUBROUTINE ElemG(A, L, rho, DirCos, F, g)
-! this routine calculates the lumped forces and moments due to gravity on a given element:
-! the element has two nodes, with the loads for both elements stored in array F. Indexing of F is:
-!  Fx_n1=1,Fy_n1=2,Fz_n1=3,Mx_n1= 4,My_n1= 5,Mz_n1= 6,
-!  Fx_n2=7,Fy_n2=8,Fz_n2=9,Mx_n2=10,My_n2=11,Mz_n2=12
-!------------------------------------------------------------------------------------------------------
-   REAL(ReKi), INTENT( OUT)           :: F(12)        ! returned loads. positions 1-6 are the loads for node 1; 7-12 are loads for node 2.
-   REAL(ReKi), INTENT( IN )           :: A            ! area
-   REAL(ReKi), INTENT( IN )           :: g            ! gravity
-   REAL(ReKi), INTENT( IN )           :: L            ! element length
-   REAL(ReKi), INTENT( IN )           :: rho           
-   REAL(ReKi), INTENT( IN )           :: DirCos(3, 3) ! direction cosine matrix (for determining distance between nodes 1 and 2)
 
+!------------------------------------------------------------------------------------------------------
+!> calculates the lumped forces and moments due to gravity on a given element:
+!! the element has two nodes, with the loads for both elements stored in array F. Indexing of F is:
+!!    Fx_n1=1,Fy_n1=2,Fz_n1=3,Mx_n1= 4,My_n1= 5,Mz_n1= 6,
+!!    Fx_n2=7,Fy_n2=8,Fz_n2=9,Mx_n2=10,My_n2=11,Mz_n2=12
+SUBROUTINE ElemG(A, L, rho, DirCos, F, g)
+   REAL(ReKi), INTENT( IN )           :: A            !< area
+   REAL(ReKi), INTENT( IN )           :: L            !< element length
+   REAL(ReKi), INTENT( IN )           :: rho          !< density
+   REAL(ReKi), INTENT( IN )           :: DirCos(3, 3) !< direction cosine matrix (for determining distance between nodes 1 and 2)
+   REAL(ReKi), INTENT( IN )           :: g            !< gravity
+   REAL(ReKi), INTENT( OUT)           :: F(12)        !< returned loads. positions 1-6 are the loads for node 1; 7-12 are loads for node 2.
    REAL(ReKi)                         :: TempCoeff
    REAL(ReKi)                         :: w            ! weight per unit length
 
-   
    F = 0             ! initialize whole array to zero, then set the non-zero portions
    w = rho*A*g       ! weight per unit length
    
@@ -1057,21 +909,18 @@ SUBROUTINE ElemG(A, L, rho, DirCos, F, g)
    F(11) = -F(5)
    !F(12) is 0 for g along z alone
    
-   
 END SUBROUTINE ElemG
 !------------------------------------------------------------------------------------------------------
+!> Calculates the lumped gravity forces at the nodes given the element geometry
+!! It assumes a linear variation of the dimensions from node 1 to node 2, thus the area may be quadratically varying if crat<>1
+!! bjj: note this routine is a work in progress, intended for future version of SubDyn. Compare with ElemG.
 SUBROUTINE LumpForces(Area1,Area2,crat,L,rho, g, DirCos, F)
-!bjj: note this routine is a work in progress, intended for future version of SubDyn. Compare with ElemG.
-
-         !This rountine calculates the lumped gravity forces at the nodes given the element geometry
-         !It assumes a linear variation of the dimensions from node 1 to node 2, thus the area may be quadratically varying if crat<>1
-   REAL(ReKi), INTENT( OUT)           :: F(12)
-   REAL(ReKi), INTENT( IN )           :: Area1,Area2,crat !X-sectional areas at node 1 and node 2, t2/t1 thickness ratio
-   REAL(ReKi), INTENT( IN )           :: g !gravity
-   REAL(ReKi), INTENT( IN )           :: L !Length of element
-   REAL(ReKi), INTENT( IN )           :: rho !density
-   REAL(ReKi), INTENT( IN )           :: DirCos(3, 3)
-
+   REAL(ReKi), INTENT( IN ) :: Area1,Area2,crat !< X-sectional areas at node 1 and node 2, t2/t1 thickness ratio
+   REAL(ReKi), INTENT( IN ) :: g                !< gravity
+   REAL(ReKi), INTENT( IN ) :: L                !< Length of element
+   REAL(ReKi), INTENT( IN ) :: rho              !< density
+   REAL(ReKi), INTENT( IN ) :: DirCos(3, 3)     !< Direction cosine matrix
+   REAL(ReKi), INTENT( OUT) :: F(12)            !< Lumped forces
     !LOCALS
    REAL(ReKi)                         :: TempCoeff,a0,a1,a2  !coefficients of the gravity quadratically distributed force
 
@@ -1102,8 +951,6 @@ SUBROUTINE LumpForces(Area1,Area2,crat,L,rho, g, DirCos, F)
    F(10) = -F(4)
    F(11) = -F(5)
    !F(12) is 0 for g along z alone
-
-   
 END SUBROUTINE LumpForces
 
 END MODULE SD_FEM

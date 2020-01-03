@@ -17,10 +17,6 @@
 ! limitations under the License.
 !
 !**********************************************************************************************************************************
-! File last committed: $Date$
-! (File) Revision #: $Rev$
-! URL: $HeadURL$
-!**********************************************************************************************************************************
 !> SubDyn is a time-domain structural-dynamics module for multi-member fixed-bottom substructures.
 !! SubDyn relies on two main engineering schematizations: (1) a linear frame finite-element beam model (LFEB), and 
 !! (2) a dynamics system reduction via Craig-Bampton�s (C-B) method, together with a Static-Improvement method, greatly reducing 
@@ -41,36 +37,25 @@ Module SubDyn
    ! NOTE: for debugging, add preprocessor definition SD_SUMMARY_DEBUG
    !       this will add additional matrices to the SubDyn summary file.
    !............................
-
    TYPE(ProgDesc), PARAMETER  :: SD_ProgDesc = ProgDesc( 'SubDyn', '', '' )
       
    ! ..... Public Subroutines ...................................................................................................
-
    PUBLIC :: SD_Init                           ! Initialization routine
-
    PUBLIC :: SD_End                            ! Ending routine (includes clean up)
-
    PUBLIC :: SD_UpdateStates                   ! Loose coupling routine for solving for constraint states, integrating
-                                                 
    PUBLIC :: SD_CalcOutput                     ! Routine for computing outputs
-
    PUBLIC :: SD_CalcContStateDeriv             ! Tight coupling routine for computing derivatives of continuous states
-   
    
 CONTAINS
    
-
 SUBROUTINE CreateTPMeshes( TP_RefPoint, inputMesh, outputMesh, ErrStat, ErrMsg )
-
    REAL(ReKi),                INTENT( IN    ) :: TP_RefPoint(3)
    TYPE(MeshType),            INTENT( INOUT ) :: inputMesh
    TYPE(MeshType),            INTENT( INOUT ) :: outputMesh
    INTEGER(IntKi),            INTENT(   OUT)  :: ErrStat     ! Error status of the operation
    CHARACTER(*),              INTENT(   OUT)  :: ErrMsg      ! Error message if ErrStat /= ErrID_None
    
-   
    ! NOTE: The initialization of the fields for these meshes is to be handled by FAST/Driver
-   
       CALL MeshCreate( BlankMesh        = inputMesh         &
                      ,IOS               = COMPONENT_INPUT   &
                      ,Nnodes            = 1                 &
@@ -86,33 +71,23 @@ SUBROUTINE CreateTPMeshes( TP_RefPoint, inputMesh, outputMesh, ErrStat, ErrMsg )
       
       
          ! Create the node on the mesh
-            
       CALL MeshPositionNode (   inputMesh           &
                               , 1                   &
                               , TP_RefPoint         &  
                               , ErrStat             &
                               , ErrMsg                ) !note: assumes identiy matrix as reference orientation
-      
       IF ( ErrStat >= AbortErrLev ) RETURN
        
-         
          ! Create the mesh element
-         
       CALL MeshConstructElement (   inputMesh          &
                                   , ELEMENT_POINT      &                         
                                   , ErrStat            &
                                   , ErrMsg             &
-                                  , 1                  &
-                                              )
-      CALL MeshCommit ( inputMesh   &
-                      , ErrStat            &
-                      , ErrMsg             )
-   
+                               , 1                  )
+   CALL MeshCommit ( inputMesh, ErrStat, ErrMsg )
       IF ( ErrStat >= AbortErrLev ) RETURN
       
-         
          ! Create the Transition Piece reference point output mesh as a sibling copy of the input mesh
-         
       CALL MeshCopy ( SrcMesh      = inputMesh              &
                      ,DestMesh     = outputMesh             &
                      ,CtrlCode     = MESH_SIBLING           &
@@ -126,7 +101,6 @@ SUBROUTINE CreateTPMeshes( TP_RefPoint, inputMesh, outputMesh, ErrStat, ErrMsg )
 END SUBROUTINE CreateTPMeshes
 
 SUBROUTINE CreateY2Meshes( NNode, Nodes, NNodes_I, IDI, NNodes_L, IDL, NNodes_C, IDC, inputMesh, outputMesh, ErrStat, ErrMsg )
-
    INTEGER(IntKi),            INTENT( IN    ) :: NNode                     !total number of nodes in the structure, used to size the array Nodes, i.e. its rows
    REAL(ReKi),                INTENT( IN    ) :: Nodes(NNode, JointsCol)
    INTEGER(IntKi),            INTENT( IN    ) :: NNodes_I                  ! number interface nodes   i.e. Y2 stuff at the beginning
@@ -139,8 +113,7 @@ SUBROUTINE CreateY2Meshes( NNode, Nodes, NNodes_I, IDI, NNodes_L, IDL, NNodes_C,
    TYPE(MeshType),            INTENT( INOUT ) :: outputMesh
    INTEGER(IntKi),            INTENT(   OUT ) :: ErrStat                   ! Error status of the operation
    CHARACTER(*),              INTENT(   OUT ) :: ErrMsg                    ! Error message if ErrStat /= ErrID_None
-   
-  
+   ! Local variables
    INTEGER         :: I                 ! generic counter variable
    INTEGER         :: nodeIndx
    
@@ -157,23 +130,17 @@ SUBROUTINE CreateY2Meshes( NNode, Nodes, NNodes_I, IDI, NNodes_L, IDL, NNodes_C,
    !---------------------------------------------------------------------
    !    Interface nodes
    !---------------------------------------------------------------------
-   
    DO I = 1,NNodes_I 
-        
          ! Create the node on the mesh
       nodeIndx = IDI(I*6) / 6     !integer division gives me the actual node index, is it true? Yes it is not the nodeID
-      
       CALL MeshPositionNode (   inputMesh           &
                               , I                   &
                               , Nodes(nodeIndx,2:4) &  ! position
                               , ErrStat             &
                               , ErrMsg                )
-      
       IF ( ErrStat /= ErrID_None ) RETURN
        
-      
          ! Create the mesh element
-         
       CALL MeshConstructElement (   inputMesh          &
                                   , ELEMENT_POINT      &                         
                                   , ErrStat            &
@@ -183,27 +150,20 @@ SUBROUTINE CreateY2Meshes( NNode, Nodes, NNodes_I, IDI, NNodes_L, IDL, NNodes_C,
          
    END DO
      
-   
    !---------------------------------------------------------------------
    !    Interior nodes
    !---------------------------------------------------------------------
-   
    DO I = 1,NNodes_L 
-        
          ! Create the node on the mesh
       nodeIndx = IDL(I*6) / 6     !integer division gives me the actual node index, is it true? Yes it is not the nodeID of the input file that may not be sequential, but the renumbered list of nodes
-      
       CALL MeshPositionNode (   inputMesh           &
                               , I + NNodes_I        &
                               , Nodes(nodeIndx,2:4) &  
                               , ErrStat             &
                               , ErrMsg                )
-      
       IF ( ErrStat /= ErrID_None ) RETURN
        
-      
          ! Create the mesh element
-         
       CALL MeshConstructElement (   inputMesh          &
                                   , ELEMENT_POINT      &                         
                                   , ErrStat            &
@@ -213,27 +173,20 @@ SUBROUTINE CreateY2Meshes( NNode, Nodes, NNodes_I, IDI, NNodes_L, IDL, NNodes_C,
          
    END DO
    
-   
    !---------------------------------------------------------------------
    !    Base Reaction nodes
    !---------------------------------------------------------------------
-   
    DO I = 1,NNodes_C 
-        
          ! Create the node on the mesh
       nodeIndx = IDC(I*6) / 6     !integer division gives me the actual node index, is it true? Yes it is not the nodeID
-      
       CALL MeshPositionNode (   inputMesh                 &
                               , I + NNodes_I + NNodes_L   &
                               , Nodes(nodeIndx,2:4)       &  
                               , ErrStat                   &
                               , ErrMsg                )
-      
       IF ( ErrStat /= ErrID_None ) RETURN
        
-      
          ! Create the mesh element
-         
       CALL MeshConstructElement (   inputMesh                 &
                                   , ELEMENT_POINT             &                         
                                   , ErrStat                   &
@@ -242,16 +195,10 @@ SUBROUTINE CreateY2Meshes( NNode, Nodes, NNodes_I, IDI, NNodes_L, IDL, NNodes_C,
                                               )
          
    END DO
-     
-   CALL MeshCommit ( inputMesh   &
-                   , ErrStat     &
-                   , ErrMsg       )
-   
+   CALL MeshCommit ( inputMesh, ErrStat, ErrMsg )
    IF ( ErrStat /= ErrID_None ) RETURN
       
-         
          ! Create the Interior Points output mesh as a sibling copy of the input mesh
-         
    CALL MeshCopy (    SrcMesh      = inputMesh              &
                      ,DestMesh     = outputMesh             &
                      ,CtrlCode     = MESH_SIBLING           &
@@ -263,33 +210,25 @@ SUBROUTINE CreateY2Meshes( NNode, Nodes, NNodes_I, IDI, NNodes_L, IDL, NNodes_C,
                      ,TranslationVel    = .TRUE.            &
                      ,RotationVel       = .TRUE.            &
                      ,TranslationAcc    = .TRUE.            &
-                     ,RotationAcc       = .TRUE.            &
-                  ) 
-   
+                     ,RotationAcc       = .TRUE.            ) 
    
      ! Set the Orientation (rotational) field for the nodes based on assumed 0 (rotational) deflections
-          
          !Identity should mean no rotation, which is our first guess at the output -RRD
        CALL Eye( outputMesh%Orientation, ErrStat, ErrMsg )         
        
-        
 END SUBROUTINE CreateY2Meshes
 !------------------------------------------------------------------------------------------------------
-!> this routine sets the index array that maps SD internal nodes to the Y2Mesh nodes.
+!> Set the index array that maps SD internal nodes to the Y2Mesh nodes.
 !! NOTE: SDtoMesh is not checked for size, nor are the index array values checked for validity, 
 !!       so this routine could easily have segmentation faults if any errors exist.
 SUBROUTINE SD_Y2Mesh_Mapping(p, SDtoMesh )
-!.......................................................
-   
    TYPE(SD_ParameterType),       INTENT(IN   )  :: p           !< Parameters
    INTEGER(IntKi),               INTENT(  OUT)  :: SDtoMesh(:) !< index/mapping of mesh nodes with SD mesh
-   
    ! locals
    INTEGER(IntKi)                               :: i
    INTEGER(IntKi)                               :: SDnode
    INTEGER(IntKi)                               :: y2Node
    
-
    y2Node = 0
 
    !---------------------------------------------------------------------
@@ -298,9 +237,7 @@ SUBROUTINE SD_Y2Mesh_Mapping(p, SDtoMesh )
    DO I = 1,SIZE(p%IDI,1)/6
       y2Node = y2Node + 1      
       SDnode = p%IDI(I*6) / 6     !integer division gives me the actual node index; it is not the nodeID
-      
-      SDtoMesh( SDnode ) = y2Node
-      !MeshtoSD( y2Node ) = SDnode     
+      SDtoMesh( SDnode ) = y2Node ! TODO add safety check
    END DO
      
    
@@ -311,9 +248,7 @@ SUBROUTINE SD_Y2Mesh_Mapping(p, SDtoMesh )
    DO I = 1,SIZE(p%IDL,1)/6 
       y2Node = y2Node + 1      
       SDnode = p%IDL(I*6) / 6     !integer division gives me the actual node index; it is not the nodeID
-      
-      SDtoMesh( SDnode ) = y2Node
-      !MeshtoSD( y2Node ) = SDnode                    
+      SDtoMesh( SDnode ) = y2Node ! TODO add safety check
    END DO
    
    
@@ -324,13 +259,9 @@ SUBROUTINE SD_Y2Mesh_Mapping(p, SDtoMesh )
    DO I = 1,SIZE(p%IDC,1)/6 
       y2Node = y2Node + 1      
       SDnode = p%IDC(I*6) / 6     !integer division gives me the actual node index; it is not the nodeID
-      
-      SDtoMesh( SDnode ) = y2Node
-      !MeshtoSD( y2Node ) = SDnode                    
-                     
+      SDtoMesh( SDnode ) = y2Node ! TODO add safety check
    END DO
      
-
 END SUBROUTINE SD_Y2Mesh_Mapping
 
 
@@ -339,8 +270,6 @@ END SUBROUTINE SD_Y2Mesh_Mapping
 !! The parameters are set here and not changed during the simulation.
 !! The initial states and initial guess for the input are defined.
 SUBROUTINE SD_Init( InitInput, u, p, x, xd, z, OtherState, y, m, Interval, InitOut, ErrStat, ErrMsg )
-!..................................................................................................................................
-
    TYPE(SD_InitInputType),       INTENT(IN   )  :: InitInput   !< Input data for initialization routine         
    TYPE(SD_InputType),           INTENT(  OUT)  :: u           !< An initial guess for the input; input mesh must be defined
    TYPE(SD_ParameterType),       INTENT(  OUT)  :: p           !< Parameters
@@ -360,28 +289,21 @@ SUBROUTINE SD_Init( InitInput, u, p, x, xd, z, OtherState, y, m, Interval, InitO
    TYPE(SD_InitOutputType),      INTENT(  OUT)  :: InitOut     !< Output for initialization routine
    INTEGER(IntKi),               INTENT(  OUT)  :: ErrStat     !< Error status of the operation
    CHARACTER(*),                 INTENT(  OUT)  :: ErrMsg      !< Error message if ErrStat /= ErrID_None
-      
-      
          ! local variables
-         
    TYPE(SD_InitType)                            :: Init
-   
    TYPE(CB_MatArrays)                           :: CBparams      ! CB parameters to be stored and written to summary file
    TYPE(FEM_MatArrays)                          :: FEMparams     ! FEM parameters to be stored and written to summary file
    INTEGER(IntKi)                               :: ErrStat2      ! Error status of the operation
    CHARACTER(ErrMsgLen)                         :: ErrMsg2       ! Error message if ErrStat /= ErrID_None
-   
    
          ! Initialize variables
    ErrStat = ErrID_None
    ErrMsg  = ""
    
          ! Initialize the NWTC Subroutine Library
-
    CALL NWTC_Init( )
 
          ! Display the module information
-
    CALL DispNVD( SD_ProgDesc )   
    InitOut%Ver = SD_ProgDesc
    
@@ -394,8 +316,6 @@ SUBROUTINE SD_Init( InitInput, u, p, x, xd, z, OtherState, y, m, Interval, InitO
    !bjj added this ugly check (mostly for checking SubDyn driver). not sure if anyone would want to play with different values of gravity so I don't return an error.
    IF (Init%g < 0.0_ReKi ) CALL ProgWarn( ' SubDyn calculations use gravity assuming it is input as a positive number; the input value is negative.' ) 
    
-   
-   
       ! Establish the GLUECODE requested/suggested time step.  This may be overridden by SubDyn based on the SDdeltaT parameter of the SubDyn input file.
    Init%DT  = Interval
    IF ( LEN_TRIM(Init%RootName) == 0 ) THEN
@@ -404,19 +324,12 @@ SUBROUTINE SD_Init( InitInput, u, p, x, xd, z, OtherState, y, m, Interval, InitO
       Init%RootName = TRIM(InitInput%RootName)//'.SD'
    END IF
    
-   
-   !.................................
    ! Parse the SubDyn inputs 
-   !.................................
-            
-   CALL SD_Input(InitInput%SDInputFile, Init, p, ErrStat2, ErrMsg2)
-      CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'SD_Init' )
-      IF ( ErrStat >= AbortErrLev ) THEN
-         CALL CleanUp()
-         RETURN
-      END IF
-
+   CALL SD_Input(InitInput%SDInputFile, Init, p, ErrStat2, ErrMsg2); if(Failed()) return
       
+   ! Discretize the structure according to the division size 
+   ! sets Init%NNode, Init%NElm
+   CALL SD_Discrt(Init,p, ErrStat2, ErrMsg2); if(Failed()) return
    
    !.................................
    !-------------  Discretize the structure according to the division size -----------------
@@ -627,45 +540,28 @@ SUBROUTINE SD_UpdateStates( t, n, Inputs, InputTimes, p, x, xd, z, OtherState, m
       TYPE(SD_MiscVarType),               INTENT(INOUT) :: m               !< Misc/optimization variables
       INTEGER(IntKi),                     INTENT(  OUT) :: ErrStat         !< Error status of the operation
       CHARACTER(*),                       INTENT(  OUT) :: ErrMsg          !< Error message if ErrStat /= ErrID_None
-
-    
-      
          ! Initialize variables
-
       ErrStat   = ErrID_None           ! no error has occurred
       ErrMsg    = ""
             
       IF ( p%qml == 0) RETURN ! no retained modes = no states
       
-        
       IF (p%IntMethod .eq. 1) THEN
- 
          CALL SD_RK4( t, n, Inputs, InputTimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg )
-
       ELSEIF (p%IntMethod .eq. 2) THEN
-
          CALL SD_AB4( t, n, Inputs, InputTimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg )
-
       ELSEIF (p%IntMethod .eq. 3) THEN
-          
          CALL SD_ABM4( t, n, Inputs, InputTimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg )
-      
       ELSE  
-          
          CALL SD_AM2( t, n, Inputs, InputTimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg )
-
       END IF
 
-                    
-      
 END SUBROUTINE SD_UpdateStates
 
 
 !----------------------------------------------------------------------------------------------------------------------------------
 !> Routine for computing outputs, used in both loose and tight coupling.
 SUBROUTINE SD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg )
-!..................................................................................................................................
-
       REAL(DbKi),                   INTENT(IN   )  :: t           !< Current simulation time in seconds
       TYPE(SD_InputType),           INTENT(IN   )  :: u           !< Inputs at t
       TYPE(SD_ParameterType),       INTENT(IN   )  :: p           !< Parameters
@@ -678,22 +574,16 @@ SUBROUTINE SD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg )
       TYPE(SD_MiscVarType),         INTENT(INOUT)  :: m           !< Misc/optimization variables
       INTEGER(IntKi),               INTENT(  OUT)  :: ErrStat     !< Error status of the operation
       CHARACTER(*),                 INTENT(  OUT)  :: ErrMsg      !< Error message if ErrStat /= ErrID_None
-
-      
       !locals
-      
       INTEGER(IntKi)                               :: L1,L2       ! partial Lengths of state and input arrays
       INTEGER(IntKi)                               :: I,J         ! Counters
       REAL(ReKi)                                   :: AllOuts(0:MaxOutPts+p%OutAllInt*p%OutAllDims)
-            
       REAL(ReKi)                                   :: rotations(3)
-            
       REAL(ReKi)                                   :: ULS(p%DOFL),  UL0m(p%DOFL),  FLt(p%DOFL)  ! Temporary values in static improvement method
       REAL(ReKi)                                   :: Y1(6)
       INTEGER(IntKi)                               :: startDOF
       REAL(ReKi)                                   :: DCM(3,3),junk(6,p%NNodes_L)  
       REAL(ReKi)                                   :: HydroForces(6*p%NNodes_I) !  !Forces from all interface nodes listed in one big array  ( those translated to TP ref point HydroTP(6) are implicitly calculated in the equations)
-
       TYPE(SD_ContinuousStateType)                 :: dxdt        ! Continuous state derivatives at t- for output file qmdotdot purposes only
       INTEGER(IntKi)                               :: ErrStat2    ! Error status of the operation (occurs after initial error)
       CHARACTER(ErrMsgLen)                         :: ErrMsg2     ! Error message if ErrStat2 /= ErrID_None
@@ -702,7 +592,6 @@ SUBROUTINE SD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg )
       ErrStat = ErrID_None
       ErrMsg  = ""
 
-                                    
          ! Compute the small rotation angles given the input direction cosine matrix
       rotations  = GetSmllRotAngs(u%TPMesh%Orientation(:,:,1), ErrStat2, Errmsg2)
          CALL SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'SD_CalcOutput')
