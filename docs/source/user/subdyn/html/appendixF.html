@@ -1,0 +1,343 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Appendix F. Major Changes in SubDyn &mdash; OpenFAST 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="UsrPtfm_theory.html" />
+    <link rel="prev" title="Appendix E. Compiling Stand-Alone SubDyn" href="appendixE.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenFAST
+          
+
+          
+            
+            <img src="_static/openfastlogo.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running_sd.html">Running SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input_files.html">Input Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="output_files.html">Output Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modeling.html">Modeling Considerations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">SubDyn Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="future_work.html">Known Limitations and Future Work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zrefs.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixA.html">Appendix A. OC4 Jacket Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixB.html">Appendix B. OC4 Jacket Driver File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixC.html">Appendix C. OC4 Jacket SSI Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixD.html">Appendix D. List of Output Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixE.html">Appendix E. Compiling Stand-Alone SubDyn</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Appendix F. Major Changes in SubDyn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#v1-03-00a-rrd-september-2017">V1.03.00a-rrd (September 2017)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-01-01a-rrd-september-2014">V1.01.01a-rrd (September 2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#v1-01-00a-rrd-june-2014">V1.01.00a-rrd (June 2014)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#integration-with-the-fast-modularization-framework">Integration with the FAST Modularization Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#dynamic-system-of-equations-and-c-b-reduction">Dynamic System of Equations and C-B Reduction</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenFAST</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Appendix F. Major Changes in SubDyn</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/appendixF.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="appendix-f-major-changes-in-subdyn">
+<span id="sd-appendix-f"></span><h1>Appendix F. Major Changes in SubDyn<a class="headerlink" href="#appendix-f-major-changes-in-subdyn" title="Permalink to this headline">¶</a></h1>
+<p>When first released, SubDyn (v0.4) was included as an undocumented
+feature of FAST v8 and packaged as a stand-alone archive. Since v0.4,
+SubDyn has been well integrated into FAST v8 and OpenFast, and the stand-alone form is
+also available. This appendix outlines significant modifications to
+SubDyn made since v0.4. Following are the main changes that the user may
+notice, but for more information, refer to the <em>changelog.txt</em> text file
+within the official archive and the GitHub log.</p>
+<div class="section" id="v1-03-00a-rrd-september-2017">
+<h2>V1.03.00a-rrd (September 2017)<a class="headerlink" href="#v1-03-00a-rrd-september-2017" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Version 1.03.00a-rrd integrates with the  <a class="reference external" href="https://github.com/OpenFAST/OpenFAST">OpenFast software</a>.</li>
+<li>Inclusion of soil-structure interaction (SSI) via flexible degrees of fixity at the restrained nodes and a new input file that allows for 6x6 stiffness and mass matrices that simulate boundary conditions at those nodes.</li>
+</ul>
+</div>
+<div class="section" id="v1-01-01a-rrd-september-2014">
+<h2>V1.01.01a-rrd (September 2014)<a class="headerlink" href="#v1-01-01a-rrd-september-2014" title="Permalink to this headline">¶</a></h2>
+<p>Version 1.01.01a-rrd integrates with the <a class="reference external" href="http://wind.nrel.gov/designcodes/simulators/fast8">FAST v8
+software</a>
+v8.09.00a-bjj.</p>
+<ul class="simple">
+<li>Finite-element eigenvalue bug fixes: the full system eigenvalues were
+incorrectly reported in the summary file, although with no further
+consequences on the results. This bug is now fixed.</li>
+<li>Shear area correction factor improvement: the shear area correction
+factor in the Timoshenko treatment is now aligned with Steinboeck et
+al. (2013).</li>
+<li>The formulation for the TP reaction has been rearranged to adhere to
+the theory manual, with no consequences on the output results.</li>
+</ul>
+</div>
+<div class="section" id="v1-01-00a-rrd-june-2014">
+<h2>V1.01.00a-rrd (June 2014)<a class="headerlink" href="#v1-01-00a-rrd-june-2014" title="Permalink to this headline">¶</a></h2>
+<p>Version 1.00.01a-rrd integrates with the <a class="reference external" href="http://wind.nrel.gov/designcodes/simulators/fast8">FAST v8 software</a>
+v8.08.00c-bjj.</p>
+<p>The new implementation has well-defined data exchange interfaces
+(<a class="reference external" href="http://wind.nrel.gov/designcodes/simulators/developers/">following the FAST modularization
+framework</a>)
+that should make integration of SubDyn into other multiphysics software
+packages much simpler.</p>
+<p>Several improvements and bug fixes have been implemented since version
+v0.4 and the module has undergone an extensive verification effort with
+good results.</p>
+<ul class="simple">
+<li>Eigensolver bug fixes: the LAPACK solver proved to be unstable in
+single precision, and now it is solely run in double precision,
+regardless of the precision used in other parts of the code.</li>
+<li>The input file format has changed. Please refer to the sample input
+file in Appendix A and the following notes:<ul>
+<li>First header line has been removed.</li>
+<li>Simulation Control Section:<ul>
+<li><strong>SDeltaT</strong>: The “DEFAULT” keyword (in place of 0.0) is now
+used to indicate that the glue-code time step will be used for
+time integration by SubDyn.</li>
+<li><strong>IntMethod</strong>: Allowed values are now 1-4 (in place of 0-3).</li>
+<li><strong>SttcSolve</strong>: New flag introduced. If set to TRUE, the
+static-improvement method (SIM) will be used.</li>
+</ul>
+</li>
+<li>FEA and Craig-Bampton Parameters Section:<ul>
+<li>In v0.4, the damping coefficients had to be specified for all
+retained Craig-Bampton modes, or just once for all the modes
+(if <strong>CBMod</strong> = FALSE). In this version, the user can input
+any number of damping coefficients. In case the number of
+retained C-B modes (<strong>NModes</strong>) is larger than the input
+number of damping coefficients (<strong>JDampings</strong>), the last
+damping value will be replicated for all the remaining modes.</li>
+</ul>
+</li>
+<li>Base Reaction Joints, Interface Joints, Member, and Member Cosine
+Matrices Sections:<ul>
+<li>One line with units, below the headers, is expected in all the
+tables of the input file.</li>
+</ul>
+</li>
+<li>Output: Summary and Outfile Section:<ul>
+<li>This section now also contains the parameters previously
+assigned under the Section titled “Output: Fast/Subdyn
+Output-File Variables”</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Some of the quantities in the summary file have been fixed. Some of
+the output matrices were, in fact, being output with wrong values
+because of an index mismatch. The new summary file is shorter and
+does not contain some of the CB method matrices, unless the compiler
+directive, DEBUG, is set.</li>
+<li>SIM. This new implementation helps minimize the number of needed
+modes to capture the contribution of certain loads (such as static
+gravity and buoyancy loads or high-frequency loads transferred from
+the turbine). In the previous version, a large number of internal
+modes were needed to engage substructural modes excited by static and
+high-frequency forces. These modes are no longer needed and fewer
+modes can be retained while still achieving accurate results (see
+also Section <span class="xref std std-ref">_subdyn-theory</span>). With SIM enabled, all modes that are not considered
+by the Craig-Bampton reduction are treated quasi-statically.</li>
+<li>There is now the possibility of retaining no internal C-B modes, thus
+relying solely only on SIM, in those cases where the substructure`s
+first eigenfrequencies are much higher than the expected
+energy-containing modes of the entire system.</li>
+<li>The coupling of SubDyn within FAST now includes full hydro-elastic
+coupling with the HydroDyn hydrodynamics module.</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="UsrPtfm_theory.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="appendixE.html" class="btn btn-neutral" title="Appendix E. Compiling Stand-Alone SubDyn" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, National Renewable Energy Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

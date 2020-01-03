@@ -1,0 +1,3274 @@
+**NOTICE**
+
+This report was prepared as an account of work sponsored by an agency of
+the United States government. Neither the United States government nor
+any agency thereof, nor any of their employees, makes any warranty,
+express or implied, or assumes any legal liability or responsibility for
+the accuracy, completeness, or usefulness of any information, apparatus,
+product, or process disclosed, or represents that its use would not
+infringe privately owned rights. Reference herein to any specific
+commercial product, process, or service by trade name, trademark,
+manufacturer, or otherwise does not necessarily constitute or imply its
+endorsement, recommendation, or favoring by the United States government
+or any agency thereof. The views and opinions of authors expressed
+herein do not necessarily state or reflect those of the United States
+government or any agency thereof.
+
+    | This report is available at no cost from the National Renewable
+      Energy
+    | Laboratory (NREL) at www.nrel.gov/publications.
+
+    Available electronically at http://www.osti.gov/scitech
+
+    | Available for a processing fee to U.S. Department of Energy
+    | and its contractors, in paper, from:
+
+    | U.S. Department of Energy
+    | Office of Scientific and Technical Information
+
+    | P.O. Box 62
+    | Oak Ridge, TN 37831-0062
+    | phone: 865.576.8401
+    | fax: 865.576.5728
+    | email:
+      `mailto:reports@adonis.osti.gov <mailto:reports@adonis.osti.gov>`__
+
+    Available for sale to the public, in paper, from:
+
+    | U.S. Department of Commerce
+    | National Technical Information Service
+    | 5285 Port Royal Road
+    | Springfield, VA 22161
+    | phone: 800.553.6847
+    | fax: 703.605.6900
+    | email: orders@ntis.fedworld.gov
+    | online ordering: http://www.ntis.gov/help/ordermethods.aspx
+
+    *Cover Photos: (left to right) photo by Pat Corkery, NREL 16416,
+    photo from SunEdison, NREL 17423, photo by Pat Corkery, NREL 16560,
+    photo by Dennis Schroeder, NREL 17613, photo by Dean Armstrong, NREL
+    17436, photo by Pat Corkery, NREL 17721.*
+
+|image0| Printed on paper containing at least 50% wastepaper, including
+10% post consumer waste.
+
+Preface
+
+This manual offers both a quick reference guide and a more in-depth
+theory guide for the SubDyn software program. It is intended to be used
+by the general user in combination with the FAST and HydroDyn manuals.
+The manual will be updated as new releases are issued and as needed to
+provide further information on advancements or modifications to the
+software.
+
+**
+**
+
+Acknowledgments
+
+The authors would like to acknowledge Huimin Song, a post-doctoral
+researcher at the National Renewable Energy Laboratory, for her
+contribution to the development of SubDyn. Amy Robertson and Fabian
+Wendt provided helpful feedback on the document, and Braulio Barahona
+produced some of the graphics. We also are grateful to the U.S.
+Department of Energy Wind and Water Power Program for supporting the
+development of this software.
+
+Nomenclature
+
+Damping ratio (percent of critical) or diagonal damping matrix
+
+Eigenfrequency
+
+Material density
+
+*L*\ ×\ *L* matrix representing the C-B eigenmodes
+
+*L*\ ×\ *m* matrix representing the retained C-B eigenmodes
+
+*L*\ ×\ *R* matrix representing the interior nodal displacements for a
+static, rigid-body motion of the boundary nodes
+
+Matrix representing the interior nodal displacements for a static,
+rigid-body motion of the boundary nodes, after the restrained degrees of
+freedoms are removed
+
+*L*\ ×\ *L* diagonal matrix representing the eigenfrequencies of all C-B
+eigenmodes
+
+*m*\ ×\ *m* diagonal matrix representing the eigenfrequencies of the
+retained C-B eigenmodes
+
+? Poisson’s ratio
+
+*A* State matrix in state-space state equation
+
+AF Apparent fixity
+
+Member shear area along local *x*-axis
+
+Member shear area along local *y*-axis
+
+Member cross-sectional area, normal to local *z*-axis
+
+*B* Input matrix in state-space state equation
+
+C-B Craig Bampton
+
+System damping matrix
+
+State matrix in state-space output equation for ElastoDyn
+
+State matrix in state-space output equation for HydroDyn
+
+Damping matrix partition referred to the *L* interior degrees of freedom
+(*L*\ ×\ *L*)
+
+Damping matrix partition referred to the *L* and *R* degrees of freedom
+(*L*\ ×\ *R*)
+
+Damping matrix partition referred to the *R* and *L* boundary degrees of
+freedom (*R*\ ×\ *L*)
+
+Damping matrix partition referred to the *R* boundary degrees of freedom
+(*R*\ ×\ *R*)
+
+HydroDyn’s linear damping matrix heave element
+
+Time step in the integration algorithm
+
+Maximum time-step recommended
+
+*D\ :sub:`i`* Member inner diameter
+
+*D\ :sub:`o`* Member outer diameter
+
+Input transmission matrix in state-space output equation for ElastoDyn
+
+Input transmission matrix in state-space output equation for HydroDyn
+
+DOF Degree of freedom
+
+Member direction cosine 3x3 matrix, transforming local coordinates to
+global coordinates
+
+*E* Young’s modulus
+
+*f* Frequency
+
+Maximum frequency
+
+*F* Vector of external forces and moments
+
+Array of self-weight forces and moments
+
+Array of external (hydrodynamic) forces and moments at the interior
+nodes
+
+Interior forces and moments (*L*\ ×1) array accounting for all interior
+modes =
+
+Array of self-weight gravity forces and moments at the interior nodes
+
+Interior forces and moments (*L*\ ×1) array accounting for only the
+retained modes =
+
+Array of external (hydrodynamic) forces and moments at the boundary
+nodes
+
+Array of external (hydrodynamic) forces and moments at the interface
+nodes
+
+Substructure base reaction forces and moments, applied to the
+substructure by the restraint
+
+Array of self-weight forces and moments at the boundary nodes
+
+Array of self-weight forces and moments at the interface nodes
+
+TP reaction forces and moments, applied to the substructure by the
+remainder of the turbine system
+
+TP forces and moments after C-B reduction, =
+
+*F\ :sub:`X`* Substructure base reaction force along global *X*-axis; or
+
+forcing vector in state-space state equation
+
+*F\ :sub:`Y`* Substructure base reaction force along global *Y*-axis
+
+*F\ :sub:`Y1`* Forcing vector in state-space output equation for
+ElastoDyn
+
+*F\ :sub:`Y2`* Forcing vector in state-space output equation for
+HydroDyn
+
+*F\ :sub:`Z`* Substructure base reaction force along global *Z*-axis
+
+Element inertia forces
+
+Element static forces
+
+FEA Finite-element analysis
+
+FEM Finite-element method
+
+Gravity, unsigned magnitude
+
+*G* Shear modulus
+
+Member or element index
+
+Unit vector along the element local *x*-axis
+
+Identity matrix
+
+Unit vector along the global *X*-axis
+
+Unit vector along the element local *y*-axis
+
+Generic second area moment of inertia
+
+Unit vector along the global *Y*-axis
+
+Second area moment of inertia about the local, principal *x*-axis
+
+Second area moment of inertia about the local *x*-axis
+
+Element stiffness matrix (12x12) in global coordinate system
+
+Element stiffness matrix (12x12)
+
+Unit vector along the element local *z*-axis
+
+Shear area factor along local *x*-axis
+
+Shear area factor along local *y*-axis
+
+System stiffness matrix
+
+Unit vector along the global *Z*-axis
+
+Matrix partition after C-B system reduction =
+
+after removal of constrained DOF rows and columns
+
+Substructure equivalent stiffness matrix referred to the TP reference
+point, =
+
+Stiffness matrix partition referred to the *L* interior DOFs
+(*L*\ ×\ *L*)
+
+Stiffness matrix partition referred to the *L* and *R* DOFs
+(*L*\ ×\ *R*)
+
+Stiffness matrix partition referred to the *R* and *L* boundary DOFs
+(*R*\ ×\ *L*)
+
+Stiffness matrix partition referred to the R boundary DOFs (*R*\ ×\ *R*)
+
+Shear correction factor along local *x*-axis
+
+Shear correction factor along local *y*-axis
+
+Substructure equivalent heave stiffness
+
+*L* Interior nodes’ DOFs
+
+LFEB Linear frame finite-element beam model
+
+Length of element
+
+Length of element projection in the global *XY* plane
+
+Element stiffness matrix (12x12)
+
+Element stiffness matrix (12x12) in global coordinate system; or
+
+number of retained C-B modes
+
+System mass matrix
+
+MSL Mean sea level
+
+Matrix partition after C-B system reduction =
+
+after removal of constrained DOF rows and columns
+
+Substructure equivalent mass matrix referred to the TP reference point =
+
+Matrix partition after C-B system reduction =
+
+after removal of constrained DOF rows and columns
+
+Matrix partition =
+
+Mass matrix partition referred to the *L* interior DOFs (*L*\ ×\ *L*)
+
+Mass matrix partition referred to the *L* and *R* DOFs (*L*\ ×\ *R*)
+
+Matrix partition after C-B system reduction =
+
+Matrix partition =
+
+Mass matrix partition referred to the *R* and *L* boundary DOFs
+(*R*\ ×\ *L*)
+
+Mass matrix partition referred to the *R* boundary DOFs (*R*\ ×\ *R*)
+
+*M\ :sub:`X`* Substructure base reaction moment along global *X*-axis
+
+*M\ :sub:`Y`* Substructure base reaction moment along global *Y*-axis
+
+*M\ :sub:`Z`* Substructure base reaction moment along global *Z*-axis
+
+6x6 mass matrix from ElastoDyn
+
+Substructure equivalent heave mass
+
+The n\ :sup:`th` time step
+
+Number of interface nodes
+
+Number of restrained nodes
+
+*p* State-space parameters
+
+Modal coefficients for all interior nodes’ DOF modes
+
+Modal coefficients for all interior nodes’ DOF modes assumed operating
+in static fashion
+
+Modal coefficients for the retained modes
+
+Modal coefficients for the retained modes assumed operating in static
+fashion
+
+*R* Boundary nodes’ DOFs
+
+Reaction forces at the base of the substructure
+
+*SSI* Soil-structure interaction
+
+time; or
+
+thickness
+
+TP Transition piece
+
+Matrix to transform interface nodes’ DOFs to TP DOFs; matrix
+
+Auxiliary matrix () to link restrained nodes’ forces and moments to the
+substructure base reaction vector
+
+*u, u\ :sub:`i`* State-space formulation inputs, generic i-th input
+
+Vector of nodal displacements
+
+Vector of element nodes’ displacements (DOFs)
+
+Vector of interior nodes’ displacements (DOFs)
+
+Time-varying components of the interior nodes’ displacements (DOFs)
+
+Static components of the interior nodes’ displacements (DOFs) (*L*\ ×1)
+
+Static components of the interior nodes’ displacements (DOFs) (*L*\ ×1),
+but obtained considering the first *m* C-B eigenmodes only
+
+Vector of boundary nodes’ displacements (DOFs)
+
+Vector of interface nodes’ displacements (DOFs)
+
+Element nodes’ displacements (DOFs)
+
+Time-varying components of the element nodes’ displacements (DOFs)
+
+Static components of the element nodes’ displacements (DOFs)
+
+Static components of the element nodes’ displacements (DOFs), but
+obtained considering the first *m* C-B eigenmodes only
+
+TP reference point displacements (DOFs)
+
+Time-varying components of the TP reference point displacements (DOFs)
+
+Static components of the TP reference point displacements (DOFs)
+
+*x, x*\ :sub:`i` State-space formulation states, generic i-th state; or
+
+generic local *x*-coordinate
+
+Element local *x*-coordinates
+
+*X* Global or substructure coordinate; or
+
+state-space state equation(s)
+
+Member end node *X*-coordinate in global coordinate system
+
+Member start node *X*-coordinate in global coordinate system
+
+*X*-coordinate in global coordinate system of the generic interface node
+
+*X\ :sub:`SS`* Global or substructure coordinate
+
+TP reference point *X*-coordinate in global coordinate system
+
+*y, y\ :sub:`i`* State-space formulation outputs, generic i-th output;
+or
+
+generic *y*-coordinate
+
+Element local *y*-coordinates
+
+*Y* Global or substructure coordinates; or
+
+state-space output equation(s)
+
+Member end node *Y*-coordinate in global coordinate system
+
+*Y*-coordinate in global coordinate system of the generic interface node
+
+Member start node *Y*-coordinate in global coordinate system
+
+*Y\ :sub:`SS`* Global or substructure coordinates
+
+TP reference point *Y*-coordinate in global coordinate system
+
+*Y\ :sub:`1`* State-space output equation for ElastoDyn
+
+*Y\ :sub:`2`* State-space output equation for HydroDyn
+
+Element local *z*-coordinate
+
+*Z* Global or substructure coordinate
+
+Member end node *Z*-coordinate in global coordinate system
+
+*Z*-coordinate in global coordinate system of the generic interface node
+
+Member start node *Z*-coordinate in global coordinate system
+
+*Z\ :sub:`SS`* Global or substructure coordinate
+
+TP reference point *Z*-coordinate in global coordinate system
+
+Table of Contents
+
+`Preface 4 <#_Toc413741142>`__
+
+`Acknowledgments 5 <#_Toc413741143>`__
+
+`Nomenclature 6 <#_Toc413741144>`__
+
+`1 Introduction 14 <#_Toc413741145>`__
+
+`2 Running SubDyn 17 <#_Toc413741146>`__
+
+`2.1 Downloading the SubDyn Software 17 <#_Toc413741147>`__
+
+`2.1.1 Stand-Alone SubDyn Archive 17 <#_Toc413741148>`__
+
+`2.1.2 FAST Archive 17 <#_Toc413741149>`__
+
+`2.2 Running SubDyn 18 <#_Toc413741150>`__
+
+`2.2.1 Running the Stand-Alone SubDyn Program 18 <#_Toc413741151>`__
+
+`2.2.2 Running SubDyn Coupled to FAST 18 <#_Toc413741152>`__
+
+`3 Input Files 19 <#_Toc413741153>`__
+
+`3.1 Units 19 <#_Toc413741154>`__
+
+`3.2 SubDyn Driver Input File 19 <#_Toc413741155>`__
+
+`3.3 SubDyn Primary Input File 20 <#_Toc413741156>`__
+
+`3.3.1 Simulation Controls 21 <#_Toc413741157>`__
+
+`3.3.2 FEA and Craig-Bampton Parameters 21 <#_Toc413741158>`__
+
+`3.3.3 Structure Joints 22 <#_Toc413741159>`__
+
+`3.3.4 Base Reaction Joints 22 <#_Toc413741160>`__
+
+`3.3.5 Interface Joints 23 <#_Toc413741161>`__
+
+`3.3.6 Members 23 <#_Toc413741162>`__
+
+`3.3.7 Member Cross-Section Properties 23 <#_Toc413741163>`__
+
+`3.3.8 Member Cosine Matrices COSM (i,j) 24 <#_Toc413741164>`__
+
+`3.3.9 Joint Additional Concentrated Masses 24 <#_Toc413741165>`__
+
+`3.3.10 Output: Summary and Outfile 24 <#_Toc413741166>`__
+
+`3.3.11 Member Output List 25 <#_Toc413741167>`__
+
+`3.3.12 Output Channels- SDOutList Section 25 <#_Toc413741168>`__
+
+`4 Output Files 26 <#_Toc413741169>`__
+
+`4.1 Echo Files 26 <#_Toc413741170>`__
+
+`4.2 Summary File 26 <#_Toc413741171>`__
+
+`4.3 Results File 27 <#_Toc413741172>`__
+
+`5 Modeling Considerations 28 <#_Toc413741173>`__
+
+`5.1 Model Discretization 28 <#_Toc413741174>`__
+
+`5.2 Foundations 29 <#_Toc413741175>`__
+
+`5.3 Member Overlap 29 <#_Toc413741176>`__
+
+`5.4 Substructure Tower/Turbine Coupling 29 <#_Toc413741177>`__
+
+`5.5 Self-Weight Calculations 31 <#_Toc413741178>`__
+
+`5.6 Note On Other Load Calculations 31 <#_Toc413741179>`__
+
+`5.7 Craig-Bampton Guidelines 31 <#_Toc413741180>`__
+
+`5.8 Integration Time Step Guidelines 32 <#_Toc413741181>`__
+
+`6 SubDyn Theory 33 <#_Toc413741182>`__
+
+`6.1 Overview 33 <#_Toc413741183>`__
+
+`6.2 Integration with the FAST Modularization Framework
+34 <#_Toc413741184>`__
+
+`6.3 Coordinate Systems 35 <#_Toc413741185>`__
+
+`6.3.1 Global and Substructure Coordinate System: or ( Figure 4)
+36 <#_Toc413741186>`__
+
+`6.3.2 Member or Element Local Coordinate System (Figure 5)
+36 <#_Toc413741187>`__
+
+`6.3.3 Local to Global Transformation 37 <#_Toc413741188>`__
+
+`6.4 Linear Finite-Element Beam Model 38 <#_Toc413741189>`__
+
+`6.4.1 Element Formulation 39 <#_Toc413741190>`__
+
+`6.4.2 Self-Weight Loads 40 <#_Toc413741191>`__
+
+`6.5 Dynamic System of Equations and C-B Reduction
+42 <#_Toc413741192>`__
+
+`6.5.1 State-Space Formulation 46 <#_Toc413741193>`__
+
+`6.5.2 Member Force Calculation 48 <#_Toc413741194>`__
+
+`6.5.3 Reaction Calculation 48 <#_Toc413741195>`__
+
+`6.5.4 Time Integration 49 <#_Toc413741196>`__
+
+`6.5.5 Static-Improvement Method 49 <#_Toc413741197>`__
+
+`7 Known Limitations and Future Work 53 <#_Toc413741198>`__
+
+`8 References 54 <#_Toc413741199>`__
+
+`Appendix A. OC4 Jacket Input File (CertTest Test04)
+55 <#_Toc413741200>`__
+
+`Appendix B. OC4 Jacket Driver File 60 <#_Toc413741201>`__
+
+`Appendix C. List of Output Channels 61 <#_Toc413741202>`__
+
+`Appendix D. Compiling Stand-Alone SubDyn 63 <#_Toc413741203>`__
+
+`Appendix E. Major Changes in SubDyn 64 <#_Toc413741204>`__
+
+List of Figures
+
+`Figure 1. SubDyn, HydroDyn, and FAST 8 coupled interaction
+15 <#_Toc413741205>`__
+
+`Figure 2. WinZip Self-Extractor main window 17 <#_Toc413741206>`__
+
+`Figure 3. SubDyn layout within the modularization framework
+34 <#_Toc413741207>`__
+
+`Figure 4. Global (coincident with the substructure) coordinate system.
+Also shown are the DOFs associated with the TP reference point.
+35 <#_Toc413741208>`__
+
+`Figure 5. The element coordinate system. The sketched member contains
+four elements, and the second element is called out with nodes S and E.
+37 <#_Toc413741209>`__
+
+List of Tables
+
+`Table 1. TP Reference Point Inputs Time-Series Data File Contents
+20 <#_Toc413741210>`__
+
+`Table C-1. List of Output Channels. 61 <#_Toc413741211>`__
+
+1. Introduction
+
+`SubDyn <https://nwtc.nrel.gov/SubDyn>`__ is a time-domain
+structural-dynamics module for multimember fixed-bottom substructures
+created by the National Renewable Energy Laboratory (NREL) through U.S.
+Department of Energy Wind and Water Power Program support. The module
+has been coupled into the FAST aero-hydro-servo-elastic computer-aided
+engineering (CAE) tool. Substructure types supported by SubDyn include
+monopiles, tripods, jackets, and other non-floating lattice-type
+substructures common for offshore wind installations in shallow and
+transitional water depths. SubDyn can also be used to model lattice
+support structures for land-based wind turbines.
+
+The new SubDyn module follows the requirements of the FAST
+modularization framework, couples to
+`OpenFAST <http://wind.nrel.gov/designcodes/simulators/fast8/>`__, and
+provides new capabilities (relative to prior released versions of the
+software) for modeling the dynamic loading on multimember substructures.
+(Refer to Appendix E and the *changelog.txt* file that is provided in
+the archives for more details about changes among different versions.)
+SubDyn can also be driven as a standalone code to compute the mode
+shapes, natural frequencies, and time-domain responses of substructures
+under prescribed motion at the interface to the tower, uncoupled from
+FAST and in the absence of external loading other than gravity.
+
+SubDyn relies on two main engineering schematizations: (1) a linear
+frame finite-element beam model (LFEB), and (2) a dynamics system
+reduction via the Craig-Bampton(C-B) method, together with a
+static-improvement method (SIM), greatly reducing the number of modes
+needed to obtain an accurate solution. More details can be found in
+Section 6, and in :cite:`song2013, damiani2013, damiani13'.
+
+In SubDyn, the substructure is considered to be either clamped or
+supported by springs at the seabed, and rigidly connected to the
+transition piece (TP) at the substructure top nodes (interface nodes).
+The spring constants are provided by the user to simulate
+soil-structure-interaction (SSI). Other restraint formulations may be
+implemented in the future. Only the substructure structural dynamics are
+intended to be modeled within SubDyn. When integrated with FAST, the
+structural dynamics of the TP, tower, and rotor-nacelle assembly (RNA)
+are modeled within FAST’s ElastoDyn module and hydrodynamics are modeled
+within FAST’s `HydroDyn <https://nwtc.nrel.gov/HydroDyn>`__ module. For
+full lattice support structures or other structures with no transition
+piece, however, the entire support structure up to the yaw bearing may
+be modeled within SubDyn. Modeling the tower in SubDyn as opposed to
+ElastoDyn, for example, allows for the possibility of including more
+than the first two fore-aft and side-to-side bending modes, thus
+accounting for more general flexibility of the tower and its segments.
+However, for tubular towers, the structural model in ElastoDyn tends to
+be more accurate because ElastoDyn considers geometric nonlinearities
+not treated in SubDyn.
+
+Loads and responses are transferred between SubDyn, HydroDyn, and
+ElastoDyn via the FAST driver program (glue code) to enable
+hydro-elastic interaction at each coupling time step. At the interface
+nodes, the TP six degree-of-freedom (DOF) displacements (three
+translations and three rotations), velocities, and accelerations are
+inputs to SubDyn from ElastoDyn; and the six reaction loads at the TP
+(three forces and three moments) are outputs from SubDyn to ElastoDyn.
+SubDyn also outputs the local substructure displacements, velocities,
+and accelerations to HydroDyn in order to calculate the local
+hydrodynamic loads that become inputs for SubDyn. In addition, SubDyn
+can calculate member internal reaction loads, as requested by the user
+(see Figure 1).
+
+
+. _flow-chart:
+
+.. figure:: figs/flow_chart.jpg
+   :width: 100%
+           
+   SubDyn, HydroDyn, and FAST 8 coupled interaction
+
+
+The input file defines the substructure geometry, material properties,
+restraints and SSI data files, finite-element resolution, number of
+retained modes in the dynamics system reduction, modal damping
+coefficients, and auxiliary parameters. The geometry is defined by joint
+coordinates in the global reference system (inertial-frame coordinate
+system shown in ), with the origin at the intersection of the
+undeflected tower centerline with mean sea level (MSL) or ground level
+for land-based structures. A member connects two joints; multiple
+members may use a common joint. Nodes are the result of the member
+refinement into multiple (***NDiv*** input parameter) elements (nodes
+are located at the ends of each element, as shown in ), and they are
+calculated by the module.
+
+In the current release, the geometry of a member is defined by its outer
+diameter and wall thickness (assuming a tubular geometry), and the
+material properties are defined by its Young’s modulus, shear modulus,
+and mass density. Member properties are specified at the joints; if
+properties change from one joint to the other, they will be linearly
+interpolated for the inner elements. Thus, a tapered member will be
+treated as a cylindrical member with step-wise variation of its
+properties. In a future release, a tapered finite-element formulation
+will be implemented, and a more accurate representation of a tapered
+member will become available.
+
+The hydrodynamic loads (including buoyancy) are computed by HydroDyn and
+transferred by the glue code at those nodes that are underwater
+(submerged nodes). Additionally, the self-weight distributed load
+components (from gravity) are calculated by SubDyn and applied at all
+the nodes. Note that other load and inertial properties may be input via
+the HydroDyn module input file, where marine growth and
+flooding/ballasting of the members can be specified.
+
+This document is organized as follows. Section 2 details how to obtain
+the SubDyn and FAST software archives and run either the stand-alone
+version of SubDyn or SubDyn coupled to FAST. Section 3 describes the
+SubDyn input files. Section 4 discusses the output files generated by
+SubDyn; these include echo files, a summary file, and the results file.
+Section 5 provides modeling guidance when using SubDyn. The SubDyn
+theory is covered in Section 6. Section outlines future work, and
+Section 8 contains a list of references. Example input files are shown
+in Appendices A and B. A summary of available output channels are found
+in Appendix C. Instructions for compiling the stand-alone SubDyn program
+are detailed in Appendix D. Appendix E tracks the major changes that
+have been made to SubDyn for each public release.
+
+1. Running SubDyn
+
+This section discusses how to obtain and execute SubDyn from a personal
+computer. Both the stand-alone version and the FAST-coupled version of
+the software are considered.
+
+1. Downloading the SubDyn Software TO REDO HIHGLIGHTED SECTIONS
+
+There are two forms of the SubDyn software to choose from: stand alone
+and coupled to the FAST simulator. Although the user may not necessarily
+need both forms, he/she would likely need to be familiar with and run
+the stand-alone model if building a model of the substructure from
+scratch. The stand-alone version is also helpful for model
+troubleshooting and may benefit users who are interested in conducting
+aero-hydro-servo-elastic simulations of an offshore wind turbine. For
+this reason, SubDyn can be obtained from two different repositories: one
+for the stand-alone SubDyn and one for the coupled solution through
+FAST.
+
+1. Stand-Alone SubDyn Archive
+
+Users can download the stand-alone SubDyn archive from our Web server at
+`*https://nwtc.nrel.gov/SubDyn* <https://nwtc.nrel.gov/SubDyn>`__. The
+file has a name similar to *SD\_v1.03.00a-rrd.exe*, but may have a
+different version number. The user can then download the self-extracting
+archive (.exe) to expand the archive into a folder he/she specifies.
+
+|image2|
+
+Figure 2. WinZip Self-Extractor main window TO REPLACE WITH CURRENT
+ARCHIVE METHODS ETC.
+
+The archive contains the ***bin***, ***CertTest***, ***Compiling***,
+***Documentation***, and ***Source*** folders. The ***bin*** folder
+includes the main executable file, *SubDyn\_win32.exe*, which is used to
+execute the stand-alone SubDyn program. The ***CertTest*** folder
+contains a collection of sample SubDyn input files and driver input
+files that can be used as templates for the user’s own models. If the
+user runs the *CertTest.bat* DOS script, he/she can compare the results
+to the ones stored in the ***NREL\_Results*** subfolder. This manual may
+be found in the ***Documentation*** folder. The ***Compiling*** folder
+contains files for compiling the stand-alone *SubDyn\_win32.exe* file
+with either Visual Studio or gFortran. The Fortran source code is
+located in the ***Source*** folder.
+
+1. FAST Archive
+
+Download the FAST archive, which includes a coupling to SubDyn, from our
+Web server at https://nwtc.nrel.gov/FAST8. The file has a name similar
+to *FAST\_v8.08.00.exe*, but may have a different version number. Run
+the downloaded self-extracting archive (*.exe*) to expand the archive
+into a user-specified folder. The FAST executable file is located in the
+archive’s ***bin*** folder. Example models using the NREL 5-MW reference
+turbine and various substructures are located in the ***CertTest***
+folder. These include Test19: OC3-Monopile, Test20: OC3-Tripod, Test21:
+OC4-jacket.
+
+1. Running SubDyn
+
+   1. Running the Stand-Alone SubDyn Program
+
+The stand-alone SubDyn program, *SubDyn\_win32.exe*, simulates
+substructure dynamic responses of the user’s input model, without
+coupling to FAST. Unlike the coupled version, the stand-alone software
+requires the use of a driver file in addition to the primary SubDyn
+input file. This driver file specifies inputs normally provided to
+SubDyn by FAST, including motions of the TP reference point. Both the
+SubDyn summary file and the results output file are available when using
+the stand-alone SubDyn (see Section 4 for more information regarding the
+SubDyn output files).
+
+Run the standalone SubDyn software from a DOS command prompt by typing,
+for example:
+
+>SubDyn\_win32.exe MyDriverFile.dvr
+
+where, *MyDriverFile.dvr* is the name of the SubDyn driver file, as
+described in Section 3.2. The SubDyn primary input file is described in
+Section 3.3.
+
+1. Running SubDyn Coupled to FAST
+
+Run the coupled FAST software from a DOS command prompt by typing, for
+example:
+
+>FAST\_win32.exe Test21.fst
+
+where, *Test21.fst* is the name of the primary FAST input file. This
+input file has a feature switch to enable or disable the SubDyn
+capabilities within FAST, and a corresponding reference to the SubDyn
+input file. See the documentation supplied with FAST for further
+information.
+
+1. Input Files
+
+The user specifies the substructure model parameters, including its
+geometry and properties, via a primary SubDyn input file. When used in
+stand-alone mode, an additional driver input file is required. This
+driver file specifies inputs normally provided to SubDyn by FAST,
+including motions of the TP reference point.
+
+No lines should be added or removed from the input files, except in
+tables where the number of rows is specified.
+
+Additional input files containing soil-structure information (*SSIfile*)
+can be provided by the user specifying their paths in the main SubDyn
+input file under the section titled *BASE REACTION JOINTS*.
+
+1. Units
+
+SubDyn uses the SI system (kg, m, s, N). Angles are assumed to be in
+radians unless otherwise specified.
+
+1. SubDyn Driver Input File
+
+The driver input file is only needed for the stand-alone version of
+SubDyn and contains inputs that are normally set by FAST, and that are
+necessary to control the simulation for uncoupled models. It is possible
+to provide per-time-step inputs to SubDyn, even in stand-alone mode, by
+tying the driver file to an additional input file containing
+time-histories of the TP motion (displacements, velocities, and
+accelerations). A sample SubDyn driver input file is given in Appendix
+B.
+
+Users can set the ***Echo*** flag in this file to TRUE so that
+*SubDyn\_win32.exe* echoes the contents of the driver input file (useful
+for debugging errors in the driver file). The echo file has the naming
+convention of ***OutRootName**.dvr.ech*. ***OutRootName*** is specified
+in the SUBDYN section of the driver input file (see below).
+
+Set the gravity constant using the ***Gravity*** parameter. SubDyn
+expects a magnitude, so in SI units this would be set to 9.80665
+:math:`\frac{m}{s^{2}}` for standard gravity. ***WtrDpth*** specifies
+the water depth (depth of the seabed), based on the reference MSL, and
+must be a value greater than zero.
+
+***SDInputFile*** is the file name of the primary SubDyn input file.
+This name should be in quotations and can contain an absolute path or a
+relative path. All SubDyn-generated output files will be prefixed with
+***OutRootName***. If this parameter includes a file path, the output
+will be generated in that folder. ***NSteps*** specifies the number of
+simulation time steps, and ***TimeStep*** specifies the time between
+steps. Next, the user must specify the location of the TP reference
+point ***TP\_RefPoint*** (in the global reference system). This is
+normally set by FAST through the ElastoDyn input file, and it is the
+so-called *platform* reference point location. When coupled to FAST, the
+*platform* reference point location is identified by only one (*Z*)
+coordinate. The interface joints, defined in SubDyn’s main input file,
+are rigidly connected to this reference point. To utilize the same
+geometry definition within SubDyn’s main input file, while still
+allowing for different substructure orientations about the vertical, the
+user can set ***SubRotateZ*** to a prescribed angle in degrees with
+respect to the global *Z*-axis. The entire substructure will be rotated
+by that angle. (This feature is only available in stand-alone mode.)
+
+Setting ***InputsMod*** = 0 sets all TP reference-point input motions to
+zero for all time steps. Setting ***InputsMod*** = 1 allows the user to
+provide steady (fixed) inputs for the TP motion in the STEADY INPUTS
+section of the file—\ ***uTPInSteady***, ***uDotTPInSteady***, and
+***uDotDotTPInSteady*** following the same convention as Table 1
+(without time). Setting ***InputsMod*** = 2 allows the user to input a
+time-series file whose name is specified via the ***InputsFile***
+parameter. The time-series input file is a text-formatted file. This
+file has no header lines, ***NSteps*** rows, and each *i*\ :sup:`th` row
+has the first column showing time as *t* = ( *i* – 1 )\*\ ***TimeStep***
+(the data will not be interpolated to other times). The remainder of
+each row is made of white-space-separated columns of floating point
+values representing the necessary motion inputs as shown in Table 1. All
+motions are specified in the global, inertial-frame coordinate system.
+SubDyn does not check for physical consistency between the displacement,
+velocity, and acceleration motions specified for the TP reference point
+in the driver file.
+
+Table 1. TP Reference Point Inputs Time-Series Data File Contents
+
++-----------------+-------------------------------------------------------------------------------------------------------+------------------------------------------+
+| Column Number   | Input                                                                                                 | Units                                    |
++=================+=======================================================================================================+==========================================+
+| 1               | Time step value                                                                                       | .. math:: s                              |
++-----------------+-------------------------------------------------------------------------------------------------------+------------------------------------------+
+| 2-4             | TP reference point translational displacements along *X*, *Y*, and *Z*                                | .. math:: m                              |
++-----------------+-------------------------------------------------------------------------------------------------------+------------------------------------------+
+| 5-7             | TP reference point rotational displacements about *X*, *Y*, and *Z* (small angle assumptions apply)   | .. math:: \text{radians}                 |
++-----------------+-------------------------------------------------------------------------------------------------------+------------------------------------------+
+| 8-10            | TP reference point translational velocities along *X*, *Y*, and *Z*                                   | .. math:: \frac{m}{s}                    |
++-----------------+-------------------------------------------------------------------------------------------------------+------------------------------------------+
+| 11-13           | TP reference point rotational velocities about *X*, *Y*, and *Z*                                      | .. math:: \frac{\text{radians}}{s}       |
++-----------------+-------------------------------------------------------------------------------------------------------+------------------------------------------+
+| 14-16           | TP reference point translational accelerations along *X*, *Y*, and *Z*                                | .. math:: \frac{m}{s^{2}}                |
++-----------------+-------------------------------------------------------------------------------------------------------+------------------------------------------+
+| 17-19           | TP reference point rotational accelerations about *X*, *Y*, and *Z*                                   | .. math:: \frac{\text{radians}}{s^{2}}   |
++-----------------+-------------------------------------------------------------------------------------------------------+------------------------------------------+
+
+1. SubDyn Primary Input File
+
+The SubDyn input file defines the substructure geometry, integration and
+simulation options, finite-element parameters, and output channels. The
+geometry of members is defined by joint coordinates of the undisplaced
+substructure in the global reference system (inertial-frame coordinate
+system), with the origin at the intersection of the undeflected tower
+centerline with MSL or ground level for land-based structures. A member
+connects two joints; multiple members can use a common joint. The
+hydrodynamic and gravity loads are applied at the nodes, which are the
+resultant of member refinement into multiple (***NDiv*** input) elements
+(nodes are located at the ends of each element), as calculated by the
+module. Member properties include outer diameter, thickness, material
+density, and Young’s and shear moduli. Member properties are specified
+at the joints; if properties change from one joint to the other, they
+will be linearly interpolated for the inner nodes. Unlike the geometric
+properties, the material properties are not allowed to change within a
+single member.
+
+Future releases will allow for members of different cross-sections,
+i.e., noncircular members. For this reason, the input file has
+(currently unused) sections dedicated to the identification of direction
+cosines that in the future will allow the module to identify the correct
+orientation of noncircular members. The current release only accepts
+tubular (circular) members.
+
+The file is organized into several functional sections. Each section
+corresponds to an aspect of the SubDyn model and substructure.
+
+If this manual refers to an ID in a table entry, it is an integer
+identifier for the table entry and must be unique for a given table
+entry.
+
+A sample SubDyn primary input file is given in Appendix A.
+
+The input file begins with two lines of header information, which is for
+the user but is not used by the software.
+
+1. Simulation Controls
+
+Users can set the ***Echo*** flag to TRUE to have SubDyn echo the
+contents of the SubDyn input file (useful for debugging errors in the
+input file). The echo file has the naming convention of
+***OutRootName**.SD.ech*. ***OutRootName*** is either specified in the
+SUBDYN section of the driver input file when running SubDyn standalone,
+or by FAST, when running a coupled simulation, from FAST’s main input
+file.
+
+***SDdeltaT*** specifies the fixed time step of the integration in
+seconds. The keyword ‘DEFAULT’ may be used to indicate that the module
+should employ the time step prescribed by the driver code
+(FAST/standalone driver program).
+
+***IntMethod*** specifies the integration algorithm to use. There are
+four options: 1) Runge-Kutta 4\ :sup:`th`-order explicit (RK4); 2)
+Adams-Bashforth 4\ :sup:`th`-order explicit predictor (AB4); 3)
+Adams-Bashforth-Moulton 4\ :sup:`th`-order explicit predictor-corrector
+(ABM4); 4) Adams-Moulton implicit 2\ :sup:`nd`-order (AM2). See Section
+on how to properly select this and the previous parameter values.
+
+***SttcSolve*** is a flag that specifies whether SIM (see Sections 5 and
+6) shall be employed. Through this method, all (higher frequency) modes
+that are not considered by the C-B reduction are treated
+quasi-statically (see Section for more details). This treatment helps
+minimize the number of retained modes needed to capture effects such as
+static gravity and buoyancy loads, and high-frequency loads transferred
+from the turbine.
+
+1. FEA and Craig-Bampton Parameters
+
+***FEMMod*** specifies one of the following options for finite-element
+formulation: 1) Euler-Bernoulli; 3) Timoshenko. Tapered formulations (2
+and 4) have yet to be implemented and will be available in a future
+release.
+
+***NDiv*** specifies the number of elements per member. Analysis nodes
+are located at the ends of elements and the number of analysis nodes per
+member equals ***NDiv*** + 1. ***NDiv*** is applied uniformly to all
+members regardless of the member’s length, hence it could result in
+small elements in some members and long elements in other members.
+Increasing the number of elements per member may increase accuracy, with
+the trade-off of increased memory usage and computation time. We
+recommend using ***NDiv*** > 1 when modeling tapered members.
+
+***CBMod*** is a flag that specifies whether or not the C-B reduction
+should be carried out by the module. If FALSE, then the full
+finite-element model is retained and ***Nmodes*** is ignored.
+
+***Nmodes*** sets the number of internal C-B modal DOFs to retain in the
+C-B reduction. ***Nmodes*** = 0 corresponds to a Guyan (static)
+reduction. ***Nmodes*** is ignored if ***CBMod*** is set to FALSE,
+meaning the full finite-element model is retained by keeping all modes.
+
+***JDampings*** specifies value(s) of damping coefficients as a
+percentage of critical damping for the retained C-B modes. Distinct
+damping coefficients for each retained mode should be listed on the same
+line, separated by white space. If the number of ***JDampings*** is less
+than the number of retained modes, the last value will be replicated for
+all the remaining modes.
+
+For more information on these parameters and guidelines on how to set
+them, see Sections 5 and 6.
+
+1. Structure Joints
+
+The finite-element model is based on a substructure composed of joints
+interconnected by members. ***NJoints*** is the user-specified number of
+joints, and determines the number of rows in the subsequent table.
+Because a member connects two joints, ***NJoints*** must be greater than
+or equal to two. Each joint listed in the table is identified by a
+unique integer, ***JointID***; each integer between one and
+***NJoints*** must be present in the table, but they need not be
+sequential. The (*X*,\ *Y*,\ *Z*) coordinate of each joint is specified
+in the substructure (SS) coordinate system, which coincides with the
+global inertial-frame coordinate system via ***JointXss***,
+***JointYss***, and ***JointZss***, respectively. This version of SubDyn
+does not consider overlap when multiple members meet at a common joint,
+therefore, it tends to overestimate the total substructure mass. Member
+overlap and node offset calculations will be considered in a future
+release of SubDyn.
+
+Note for HydroDyn coupling: modeling a fixed-bottom substructure
+embedded into the seabed (e.g., through piles or suction buckets)
+requires that the lowest member joint(s) in HydroDyn lie(s) below the
+water depth. Placing a joint at or above the water depth will result in
+static and dynamic pressure loads being applied at the joint. When
+SubDyn is coupled to FAST, the joints and members need not match between
+HydroDyn and SubDyn—FAST’s mesh-mapping utility handles transfer of
+motion and loads across meshes in a physically relevant manner (Sprague
+et al. 2014), but consistency between the joints and members in HydroDyn
+and SubDyn is advised.
+
+1. Base Reaction Joints
+
+SubDyn requires the user to specify the boundary joints. ***NReact***
+should be set equal to the number of joints (defined earlier) at the
+bottom of the structure (i.e., seabed) that are fully constrained;
+***NReact*** also determines the number of rows in the subsequent table.
+In SubDyn, ***NReact*** must be greater than or equal to one. Each joint
+listed in the table is identified by a unique integer, ***RJointID***,
+which must correspond to the ***JointID*** value found in the STRUCTURE
+JOINTS table. The flags ***RctTDXss***, ***RctTDYss***, ***RctTDZss***,
+***RctRDXss***, ***RctRDYss***, ***RctRDZss*** indicate the fixity value
+for the three translations (TD) and three rotations (RD) in the SS
+coordinate system (global inertial-frame coordinate system). One denotes
+fixed and zero denotes free (instead of TRUE/FALSE). ***SSIfile***
+points to the relative path and filename for an SSI information file.
+This version of SubDyn can, in fact, handle partially restrained joints
+by setting one or more DOF flags to 0 and providing the appropriate
+stiffness and mass matrix elements for that DOF via the ***SSIfile***.
+If a DOF flag is set to 1, then the node DOF is considered restrained
+and the associated matrix elements potentially provided in the
+***SSIfile*** will be ignored.
+
+1. Interface Joints
+
+SubDyn requires the user to specify the interface joints. ***NInterf***
+should be set equal to the number of joints at the top of the structure
+(i.e., TP); ***NInterf*** also determines the number of rows in the
+subsequent table. In SubDyn, ***NInterf*** must be greater than or equal
+to one. Note that these joints will be assumed to be rigidly connected
+to the platform reference point of ElastoDyn (see FAST documentation)
+when coupled to FAST, or to the TP reference point if SubDyn is run in
+stand-alone mode. Each joint listed in the table is identified by a
+unique integer, ***IJointID***, which must correspond to the *JointID*
+value found in the STRUCTURE JOINTS table. The flags ***ItfTDXss***,
+***ItfTDYss***, ***ItfTDZss***, ***ItfRDXss***, ***ItfRDYss***,
+***ItfRDZss*** indicate the fixity value for the three translations (TD)
+and three rotations (RD) in the SS coordinate system (global
+inertial-frame coordinate system). One denotes fixed and zero denotes
+free (instead of TRUE/FALSE). This version of SubDyn cannot handle
+partially restrained joints, so all flags must be set to one; different
+degrees of fixity will be considered in a future release.
+
+1. Members
+
+***NMembers*** is the user-specified number of members and determines
+the number of rows in the subsequent table. Each member listed in the
+table is identified by a unique integer, ***MemberID***. Each integer
+between one and ***NMembers*** must be present in the table, but they
+need not be sequential. For each member distinguished by ***MemberID***,
+***MJointID1*** specifies the starting joint and ***MJointID2***
+specifies the ending joint, corresponding to an identifier
+(***JointID***) from the STRUCTURE JOINTS table. Likewise,
+***MPropSetID1*** corresponds to the identifier ***PropSetID*** from the
+MEMBER X-SECTION PROPERTY table (discussed next) for starting
+cross-section properties and ***MPropSetID2*** specifies the identifier
+for ending cross-section properties, allowing for tapered members.
+***COSMID*** refers to the IDs of the members’ cosine matrices for
+noncircular members; the current release ignores this column.
+
+1. Member Cross-Section Properties
+
+Members in SubDyn are assumed to be straight, circular, possibly
+tapered, and hollow cylinders. Future releases will allow for generic
+cross-sections to be employed. These special cross-section members will
+be defined in the second of two tables in the input file (Member
+X-Section Property data 2/2), which is currently ignored.
+
+For the circular cross-section members, properties needed by SubDyn are
+material Young’s modulus, ***YoungE***, shear modulus, ***ShearG***, and
+density, ***MatDens***, member outer diameter, ***XsecD***, and member
+thickness, ***XsecT***. Users will need to create an entry in the first
+table within this section of the input file distinguished by
+***PropSetID***, for each unique combination of these five properties.
+The member property-set table contains ***NPropSets*** rows. The member
+property sets are referred to by their ***PropSetID*** in the MEMBERS
+table, as described in Section . Note, however, that although diameter
+and thickness will be linearly interpolated within an individual member,
+SubDyn will not allow *material* properties to change within an
+individual member.
+
+The second table in this section of the input file (not to be used in
+this release) will have ***NXPropSets*** rows (assumed to be zero for
+this release), and have additional entries when compared to the previous
+table, including: cross-sectional area (***XsecA***), cross-sectional
+shear area along the local principal axes *x* and *y* (***XsecAsx***,
+***XsecAsy***), cross-sectional area second moment of inertia about *x*
+and *y* (***XsecJxx***, ***XsecJyy***), and cross-sectional area polar
+moment of inertia (***XsecJ0***). The member cosine matrix section (see
+Section ) will help determine the correct orientation of the members
+within the assembly.
+
+1. Member Cosine Matrices COSM (i,j)
+
+This table is not currently used by SubDyn, but in future releases it
+will need to be populated if members with cross-sections other than
+circular will be employed.
+
+***NCOSMs*** rows, one for each unique member orientation set, will need
+to be provided. Each row of the table will list the nine entries of the
+direction cosine matrices (COSM11, COSM12,…COSM33) for matrix elements
+(1,1), (1,2),…(3,3) that establish the orientation of the local member
+axes (*x*,\ *y* principal axes in the cross-sectional plane, *z* along
+the member longitudinal axis) with respect to the SS coordinate system
+(local-to-global transformation matrices).
+
+1. Joint Additional Concentrated Masses
+
+SubDyn can accept ***NCmass*** lumped masses/inertias defined at the
+joints. The subsequent table will have ***NCmass*** rows, in which for
+each joint distinguished by ***CMJointID*** (corresponding to an
+identifier, ***JointID***, from the STRUCTURE JOINTS table), ***JMass***
+specifies the lumped mass value, and ***JMXX***, ***JMYY***, ***JMZZ***
+specify the mass second moments of inertia with respect to the SS
+coordinate system.
+
+1. Output: Summary and Outfile
+
+In this section of the input file, the user sets flags and switches for
+the desired output behavior.
+
+Specifying ***SDSum*** = TRUE causes SubDyn to generate a summary file
+with name ***OutRootName**.SD.sum*. ***OutRootName*** is either
+specified in the SUBDYN section of the driver input file when running
+SubDyn in stand-alone mode, or in the FAST input file when running a
+coupled simulation. See Section 4.2 for summary file details.
+
+In this release, ***OutCOSM*** is ignored. In future releases,
+specifying ***OutCOSM*** = TRUE will cause SubDyn to include direction
+cosine matrices (undeflected) in the summary file for only those members
+requested in the list of output channels.
+
+Specifying ***OutAll*** = TRUE causes SubDyn to output forces and
+moments at all of the joints (not internal nodes). That is, the static
+(elastic) and dynamic (inertia) components of the three forces and three
+moments at the end node of each member connected to a given joint are
+output for all joints. These outputs are included within the
+***OutRootName**.SD.out* output file in addition to those directly
+specified through the output channels section below.
+
+If ***OutSwtch*** is set to one, outputs are sent to a file with the
+name ***OutRootName**.SD.out*. If ***OutSwtch*** is set to two, outputs
+are sent to the calling program (FAST) for writing in its main output
+file (not available in stand-alone mode). If ***OutSwtch*** is set to
+three, both file outputs occur. In stand-alone mode, setting
+***OutSwtch*** to two results in no output file being produced.
+
+If ***TabDelim*** is set to TRUE and ***OutSwtch*** is set to one, the
+output file ***OutRootName**.SD.out* will be tab-delimited.
+
+With ***OutDec*** set to an integer value greater than one, the output
+file data rate will be decimated, and only every ***OutDec***-th value
+will be written to the file. This applies only to SubDyn’s output file
+(***OutRootName**.SD.out*)—not FAST’s.
+
+The ***OutFmt*** and ***OutSFmt*** parameters control the formatting of
+SubDyn’s output file for the output data and the channel headers,
+respectively. SubDyn currently does not check the validity of these
+format strings. They need to be valid Fortran format strings.
+***OutSFmt*** is used for the column header and ***OutFmt*** is used for
+the channel data. Therefore, in order for the headers and channel data
+to align properly, the width specification should match. For example:
+
+| "ES11.4" OutFmt
+| "A11" OutSFmt.
+
+1. Member Output List
+
+SubDyn can output load and kinematic quantities at up to nine locations
+for up to nine different members, for a total of 81 possible local
+member output locations. ***NMOutputs*** specifies the number of members
+that output is requested for. The user must create a table entry for
+each requested member. Within a row of this table, ***MemberID*** is the
+ID specified in the MEMBERS table, and ***NOutCnt*** specifies how many
+nodes along the member will generate output. ***NodeCnt*** specifies
+those node numbers (a separate entry on the same line for each node) for
+output as an integer index from the start-joint (node 1) to the
+end-joint (node ***NDiv*** + 1) of the member. The outputs specified in
+the SDOutList section determines which quantities are actually output at
+these locations.
+
+1. Output Channels- SDOutList Section
+
+This section specifies which quantities are output by SubDyn. Enter one
+or more lines containing quoted strings that in turn contain one or more
+output parameter names. Separate output parameter names by any
+combination of commas, semicolons, spaces, and/or tabs. If a parameter
+name is prefixed with a minus sign, “-”, underscore, “\_”, or the
+characters “m” or “M”, SubDyn will multiply the value for that channel
+by –1 before writing the data. The parameters are written in the order
+they are listed in the input file. SubDyn allows the use of multiple
+lines so that users can break their lists into meaningful groups and so
+the lines can be shorter. Comments may also be entered after the closing
+quote on any of the lines. Entering a line with the string “END” at the
+beginning of the line or at the beginning of a quoted string found at
+the beginning of the line will cause SubDyn to quit scanning for more
+lines of channel names. Modal kinematics and member-node-, base-, and
+interface-related kinematic and load quantities can be selected.
+Member-node-related data follow the organization described in Section .
+If SubDyn encounters an unknown/invalid channel name, it prints an error
+message and halts execution. Please refer to Appendix C for a complete
+list of possible output parameters and their names.
+
+1. SSI Input File
+
+Individual SSI files (*SSIfiles*) can be provided for each restrained
+node, therefore the maximum number of SSIfiles is ***NReact***. In an
+SSIfile, up to 21 elements for the SSI mass matrix and up to 21 SSI
+stiffness matrix elements can be provided. The mass and stiffness
+elements account for both pile and soil effects. No additional damping
+can be provided at this point.
+
+The order of the elements is not important, because each element value
+is accompanied by a string label that identifies the actual element. The
+stiffness matrix accepted labels are: 'Kxx', 'Kxy', 'Kyy', 'Kxz', 'Kyz’,
+'Kzz’, 'Kxtx', 'Kytx', 'Kztx', 'Ktxtx', 'Kxty', 'Kyty','Kzty’, 'Ktxty',
+'Ktyty', ‘Kxtz', 'Kytz', 'Kztz', 'Ktxtz', 'Ktytz', 'Ktztz'.
+
+If any matrix element is not provided it will be set to infinity (i.e.,
+machine ‘huge’) by default.
+
+For the mass matrix the accepted labels are:
+'Mxx','Mxy','Myy','Mxz','Myz', 'Mzz','Mxtx','Mytx','Mztx', 'Mtxtx',
+'Mxty', 'Myty', 'Mzty', 'Mtxty', 'Mtyty', 'Mxtz', 'Mytz', 'Mztz',
+'Mtxtz', 'Mtytz', 'Mtztz'. If any matrix element is not provided it will
+be set to 0 by default. The labels contain ‘K’ or ‘M’ to specify
+stiffness or mass matrix elements, and then the directions they apply
+to, e.g., ‘Kxy’ refers to the force along x due to a unit displacement
+along y; the ‘t’ refers to the rotation about one of the ‘x’,’y’, or ’z’
+axes in the global coordinate system.
+
+Units are in SI system (N/m; N/m/rad; Nm/rad, Kg, kgm, kgm2).
+
+Note that by selecting fixities of 1 in the various DOFs of the
+restrained nodes, the columns and rows associated with those DOFs will
+be removed, therefore the associated matrix elements will be ignored.
+
+A sample SubDyn SSI input file is given in Appendix C.
+
+1. Output Files
+
+SubDyn produces three types of output files: an echo file, a summary
+file, and a time-series results file. The following sections detail the
+purpose and contents of these files.
+
+1. Echo Files
+
+If the user sets the ***Echo*** flag to TRUE in the SubDyn driver file
+or the primary SubDyn input file, the contents of those files will be
+echoed to a file with the naming conventions, ***OutRootName**.dvr.ech*
+for the driver input file and ***OutRootName**.SD.ech* for the primary
+SubDyn input file. ***OutRootName*** is either specified in the SUBDYN
+section of the driver input file, or in the FAST input file. The echo
+files are helpful for debugging the input files. The contents of an echo
+file will be truncated if SubDyn encounters an error while parsing an
+input file. The error usually corresponds to the line after the last
+successfully echoed line.
+
+1. Summary File
+
+SubDyn generates a summary file with the naming convention,
+***OutRootName**.SD.sum* if the ***SDSum*** parameter is set to TRUE.
+This file summarizes key information about the substructure model,
+including:
+
+-  Undisplaced node geometry: a list of all of the (***NNodes***) nodes
+   and the *X*,\ *Y*,\ *Z* coordinates in the global SS coordinate
+   system. Note that ***NNodes*** may be greater or equal to
+   ***NJoints***, depending on ***NDiv*** (primary input file
+   parameters).
+
+-  Element connectivity and properties at end nodes: a list of all
+   (***NElems***) elements, the start and end nodes (***Node\_I***,
+   ***Node\_J***) and the ID of the property set (***Prop\_I***,
+   ***Prop\_J***) at the start and end nodes. ***NElems*** may be
+   greater or equal to ***NMembers***, depending on ***NDiv*** (primary
+   input file parameters).
+
+-  Property sets. If tapered members are used, additional property sets
+   may be included beyond those specified in the main input file, based
+   on interpolated diameter and thickness values. Headers and their
+   meanings are identical to those described in Section .
+
+-  Reaction DOFs and interface DOFs and their associated fixity; the
+   actual indices of the DOFs (***DOF\_ID***) associated with reaction
+   and interface nodes are listed together with the (1/0) flag to
+   distinguish the fixity level.
+
+-  Concentrated mass schedule. This is an echo of the equivalent section
+   in the primary input file. Refer to Section .
+
+-  Member schedule including connectivity to joints, nodes, and their
+   masses. A table lists all of the members by identifier
+   (***MemberID***), with their start and end nodes (***Joint1\_ID***,
+   ***Joint2\_ID***), associated mass (***Mass***), and list of node
+   identifiers along the length of the members.
+
+-  Direction cosine matrices for the members. Each row (columns 2-10)
+   corresponds to the direction cosine matrix entries (***DC(1,1)***
+   through ***DC(3,3)***) for the member whose identifier is listed in
+   the first column. The direction cosine matrices specify the
+   transformation from the global reference to the local coordinate
+   system for each member.
+
+-  Sorted eigenfrequencies [in Hertz (Hz)] for the full substructural
+   system (neglecting a possible coupling to ElastoDyn through FAST),
+   assuming the TP reference point is a free end. There are a total of
+   ***NDOFs*** eigenfrequencies and eigenvectors.
+
+-  Sorted eigenfrequencies (in Hz) for the C-B reduced system, assuming
+   the TP reference point is a fixed end. There are a total of
+   ***Nmodes*** C-B reduced eigenfrequencies and eigenvectors.
+
+-  Full substructural system eigenvectors. Each column represents an
+   eigenvector associated with the corresponding eigenfrequency
+   identified previously in the file.
+
+-  C-B reduced system eigenvectors (***PhiM*** matrix). Each column
+   represents an eigenvector associated with the corresponding
+   eigenfrequency identified previously in the file.
+
+-  ***PhiR*** matrix or displacements of the internal nodes caused by
+   unit rigid body motions of the interface DOFs (see Section ). Each
+   column of the matrix represents the internal DOF displacements for a
+   given unit rigid-body motion along an interface DOF for each base and
+   interface joint.
+
+-  Substructure equivalent stiffness and mass matrices referred to the
+   TP reference point (***KBBt*** and ***MBBt***), based on a Guyan
+   reduction. These are useful to calculate effects of substructure
+   flexibility while calculating tower eigenmodes for ElastoDyn.
+
+-  Rigid-body-equivalent mass matrix relative to global origin
+   (***MRB***); a 6x6 mass matrix.
+
+-  Substructure total (dry) mass.
+
+-  Substructure center of mass coordinates in the global coordinate
+   system.
+
+The various sections of the summary file and variables are
+self-explanatory and easily identifiable in the file.
+
+1. Results File
+
+The SubDyn time-series results are written to a text-based file with the
+naming convention ***OutRootName**.SD.out* when ***OutSwtch*** is set to
+either one or three. If SubDyn is coupled to FAST and ***OutSwtch*** is
+set to two or three, then FAST will generate a master results file that
+includes the SubDyn results. The results in ***OutRootName**.SD.out* are
+in table format, where each column is a data channel (the first column
+always being the simulation time), and each row corresponds to a
+simulation time step. The data channels are specified in the SDOutList
+section of the input file. The column format of the SubDyn-generated
+file is specified using the ***OutFmt*** and ***OutSFmt*** parameters of
+the input file.
+
+1. Modeling Considerations
+
+SubDyn was designed as a flexible tool for modeling a wide range of
+substructures for both land-based and offshore applications. This
+section provides some general guidance to help construct models that are
+compatible with SubDyn.
+
+Please refer to the theory in Section 6 for detailed information about
+SubDyn’s coordinate systems, and the theoretical approach we have
+followed in SubDyn.
+
+1. Model Discretization
+
+SubDyn allows for the specification of arbitrary multimember structure
+geometries. The user defines the geometry of a structure in SubDyn using
+joints and members. Specifically, the user specifies a list of joints
+that represent the endpoints of beams, and the connectivity between one
+or more members at each joint. Members and their cross-sectional
+properties are then defined between two joints. Members can be further
+subdivided into multiple (***NDiv***) elements to increase the model
+resolution. Nodes, where the numerical calculations take place, are
+located at the endpoints of each element. To keep the mesh as uniform as
+possible when using ***NDiv***, the initial member definition should
+also have a roughly uniform mesh. For tapered members, we recommend
+setting ***NDiv*** > 1. Improper discretization of the members may
+decrease the accuracy of the model.
+
+When SubDyn is coupled to FAST, the joints and members need not match
+between HydroDyn and SubDyn—FAST’s mesh-mapping utility handles the
+transfer of motion and loads across meshes in a physically relevant
+manner (Sprague et al. 2014), but consistency between the joints and
+members in HydroDyn and SubDyn is advised.
+
+For offshore applications, because of the exponential decay of
+hydrodynamic loads with depth, HydroDyn requires higher resolution near
+the water free surface to properly capture loads as waves oscillate
+about the still water level (SWL). We recommend that the HydroDyn
+discretization not exceed element lengths of 0.5 m in the region of the
+free surface (5 to 10 m above and below SWL), 1.0 m between 25- and 50-m
+depth, and 2.0 m in deeper waters.
+
+When SubDyn is hydro-elastically coupled to HydroDyn through FAST for
+the analysis of fixed-bottom offshore systems, we recommend that the
+length ratio between elements of SubDyn and HydroDyn not exceed 10 to 1.
+As such, we recommend that the SubDyn discretization not exceed element
+lengths of 5 m in the region of the free surface, 10 m down to 25- to
+50-m depth, and 20 m in deeper waters. These are not absolute rules, but
+rather a good starting point that will likely require refinement for a
+given substructure. Additional considerations for SubDyn discretization
+include aspects that will impact structural accuracy, such as member
+weight, substructure modes and/or natural frequencies, load transfer,
+tapered members, and so on.
+
+Members in SubDyn are assumed to be straight circular (and possibly
+tapered) cylinders. The use of more generic cross-sectional shapes will
+be considered in a future release.
+
+1. Foundations
+
+There are two methods that can be used to model foundation flexibility
+or soil-structure interaction in SubDyn. The first method makes us of
+the SSI stiffness and mass matrices at the partially restrained bottom
+joints as described in Sections 3.3.4, 3.4, and 6. The second method
+mimics the flexibility of the foundation through the apparent (or
+effective) fixity (AF) length approach, which idealizes a pile as a
+cantilever beam that has properties that are different above and below
+the mudline. The beam above the mudline should have the real properties
+(i.e., diameter, thickness, and material) of the pile. The beam below
+the mudline is specified with effective properties and a fictive length
+(i.e., the distance from the mudline to the cantilevered base) that are
+tuned to ensure that the overall response of the pile above the mudline
+is the same as the reality. The response can only be identical under a
+particular set of conditions; however, it is common for the properties
+of the fictive beam to be tuned so that the mudline displacement and
+rotation would be realistic when loaded by a mudline shear force and
+bending moment that are representative of the loading that exists when
+the offshore wind turbine is operating under normal conditions.
+
+Note that in HydroDyn, all members that are embedded into the seabed
+(e.g., through piles or suction buckets) must have a joint that is
+located below the water depth. In SubDyn, the bottom joint(s) will be
+considered clamped or partially restrained and therefore need not be
+located below the seabed when not applying the AF approach. For example,
+if the water depth is set to 20 m, and the user is modeling a
+fixed-bottom monopile with a rigid foundation, then the bottom-most
+joint in SubDyn can be set at *Z* = -20 m; HydroDyn, however, needs to
+have a Z-coordinate such that *Z* < -20 m. This configuration avoids
+HydroDyn applying static and dynamic pressure loads from the water on
+the bottom of the structure. When the AF approach is applied, the
+bottom-most joint in SubDyn should be set at *Z* < -20 m.
+
+1. Member Overlap
+
+As mentioned earlier, the current version of SubDyn is incapable of
+treating the overlap of members at the joints, resulting in an
+overestimate of the mass and potentially of the structure stiffness. One
+strategy to overcome this shortcoming employs virtual members to
+simulate the portion of each member within the overlap at a joint. The
+virtual members should be characterized by low self-mass and high
+stiffness. This can be achieved by introducing virtual joints at the
+approximate intersection of the finite-sized members, and then
+specifying additional members from these new joints to the original
+(centerline) joints. The new virtual members then use reduced material
+density and increased Young’s and shear moduli. Care is advised in the
+choice of these parameters as they may render the system matrix
+singular. Inspection of the eigenvalue results in the summary file
+should confirm whether acceptable approximations have been achieved.
+
+1. Substructure Tower/Turbine Coupling
+
+When SubDyn is coupled to FAST, the 6 DOFs of the platform in ElastoDyn
+must be enabled to couple loads and displacements between the turbine
+and the substructure. The platform reference-point coordinates in
+ElastoDyn should also be set equal to the TP reference-point’s
+coordinates (commonly indicating either the tower-base flange location,
+or TP centroid, or TP center of mass) that the user may have set in the
+stand-alone mode for checking the SubDyn model. A rigid connection
+between the SubDyn interface joints and TP reference point (? platform
+reference point) is assumed.
+
+For full lattice support structures or other structures with no
+transition piece, the entire support structure up to the yaw bearing may
+be modeled within SubDyn. Modeling the tower in SubDyn as opposed to
+ElastoDyn, for example, allows the ability to include more than the
+first two fore-aft and side-to-side bending modes, thus accounting for
+more general flexibility of the tower and its segments; however, for
+tubular towers, the structural model in ElastoDyn tends to be more
+accurate because ElastoDyn considers geometric nonlinearities not
+treated in SubDyn. When modeling full-lattice towers using SubDyn, the
+platform reference point in ElastoDyn can be located at the yaw bearing;
+in this case, the tower-bending DOFs in ElastoDyn should be disabled.
+
+If FAST is run with SubDyn but not HydroDyn, the water depth will be
+automatically set to 0 m. This will influence the calculation of the
+reaction loads. Reactions are always provided at the assumed mudline,
+therefore, they would not be correctly located for an offshore turbine
+as a result. Thus, it is recommended that HydroDyn always be enabled
+when modeling bottom-fixed offshore wind turbines.
+
+ElastoDyn also needs tower mode shapes specified (coefficients of
+best-fit sixth-order polynomials), derived using appropriate tower-base
+boundary conditions. They can be derived with an appropriate software
+(finite-element analysis, energy methods, or analytically) and by making
+use of the SubDyn-derived equivalent substructure stiffness and mass
+matrices (the *KBBt*/ and *MBBt*/ matrices found in the SubDyn summary
+file) to prescribe the boundary conditions at the base of the tower.
+
+For instance, using NREL’s BModes software, the SubDyn-obtained matrices
+can be used in place of the hydrodynamic stiffness (*hydro\_K*) and mass
+matrices (*hydro\_M)* (***mooring\_K*** can be set to zero). By setting
+the *hub\_conn* boundary condition to two (free-free), BModes will
+calculate the mode shapes of the tower when tower cross-sectional
+properties are supplied. To obtain eigenmodes that are compatible with
+the FAST modal treatment of the tower (i.e., no axial or torsional modes
+and no distributed rotational-inertia contribution to the eigenmodes),
+the tower-distributed properties should be modified accordingly in
+BModes (e.g., by reducing mass moments of inertia towards zero and by
+increasing torsional and axial stiffness while assuring convergence of
+the results; see also
+`**https://wind.nrel.gov/forum/wind/viewtopic.php?f=4&t=742** <https://wind.nrel.gov/forum/wind/viewtopic.php?f=4&t=742>`__).
+
+The rotational inertia of the undeflected tower about its centerline is
+not currently accounted for in ElastoDyn. Thus, when the nacelle-yaw DOF
+is enabled in ElastoDyn there will not be any rotational inertia of the
+platform-yaw DOF (which rotates the tower about its centerline) when
+both the platform-yaw inertia in ElastoDyn is zero and the tower is
+undeflected. To avoid a potential division-by-zero error in ElastoDyn
+when coupled to SubDyn, we recommend setting the platform-yaw inertia
+(***PtfmYIner***) in ElastoDyn equal to the total rotational inertia of
+the undeflected tower about its centerline. Note that the platform mass
+and inertia in ElastoDyn can be used to model heavy and rigid transition
+pieces that one would not want to model as a flexible body in either the
+ElastoDyn tower or SubDyn substructure models.
+
+The C-B method assumes no damping for the interface modes. This is
+equivalent to having six undamped rigid-body DOFs at the TP reference
+point in the absence of aerodynamic or hydrodynamic damping. Experience
+has shown that negligible platform-heave damping can cause numerical
+problems when SubDyn is coupled to FAST. One way to overcome this
+problem is to augment overall system damping with an additional linear
+damping for the platform-heave DOF. This augmentation can be achieved
+quite easily by calculating the damping from Eq. (1) and specifying this
+as the (3,3) element of HydroDyn’s additional linear damping matrix,
+***AddBLin***. Experience has shown that a damping ratio of 1% of
+critical () is sufficient. In Eq. (1), is the equivalent heave stiffness
+of the substructure (the (3,3) element of the ***KBBt*** (i.e.,) matrix
+found in the SubDyn summary file, see also Section 6), is the equivalent
+heave mass of the substructure (the (3,3) element of the ***MBBt***
+(i.e., ) matrix found in the SubDyn summary file, see also Section 6),
+and is the total mass of the rotor, nacelle, tower, and TP (found in the
+ElastoDyn summary file).
+
+To minimize extraneous excitation of the platform-heave DOF, it is
+useful to set the initial platform-heave displacement to its natural
+static-equilibrium position, which can be approximated by Eq. (2), where
+is the magnitude of gravity. *PtfmHeave* from Eq. (2) should be
+specified in the initial conditions section of the ElastoDyn input file.
+
+1. Self-Weight Calculations
+
+SubDyn will calculate the self-weight of the members and apply
+appropriate forces and moments at the element nodes. Lumped masses will
+also be considered as concentrated gravity loads at prescribed joints.
+The array of self-weight forces can be seen in the summary file if the
+code is compiled with DEBUG compiler directives. In general, SubDyn
+assumes that structural motions of the substructure are small, such that
+(1) small-angle assumptions apply to structural rotations and (2) the
+so-called P-? effect is negligible, and therefore undeflected node
+locations are used for self-weight calculations.
+
+1. Note On Other Load Calculations
+
+When SubDyn is coupled to HydroDyn through FAST, the hydrodynamic loads,
+which include buoyancy, marine-growth weight, and wave and current
+loads, will be applied to the effective, deflected location of the nodes
+by the mesh-mapping routines in the glue code. Those loads, however, are
+based on wave kinematics at the undeflected position (see Jonkman et al.
+2014 for more information).
+
+1. Craig-Bampton Guidelines
+
+When SubDyn is coupled with FAST, it is important to choose a sufficient
+number of C-B modes, ensuring that the vibrational modes of the coupled
+system are properly captured by the coupled model. We recommend that all
+modes up to at least 2-3 Hz be captured; wind, wave, and turbine
+excitations are important for frequencies up to 2-3 Hz. Eigenanalysis of
+the linearized, coupled system will make checking this condition
+possible and aid in the selection of the number of retained modes;
+however, the linearization process has yet to be implemented in FAST v8.
+Until full-system linearization is made available, experience has shown
+that it is sufficient to enable all C-B modes up to 10 Hz (the natural
+frequencies of the C-B modes are written to the SubDyn summary file). If
+SIM (see Section ) is not enabled, in addition to capturing physical
+modes up to a given frequency, the highest C-B mode must include the
+substructure axial modes so that gravity loading from self-weight is
+properly accounted for within SubDyn. This inclusion likely requires
+enabling a high number of C-B modes, reducing the benefit of the C-B
+reduction. Thus, we recommend employing the C-B reduction with SIM
+enabled. Because of the fixed-fixed treatment of the substructure
+boundary conditions in the C-B reduction, the C-B modes will always have
+higher natural frequencies than the physical modes.
+
+1. Integration Time Step Guidelines
+
+Another consideration when creating SubDyn input files is the time step
+size. SubDyn offers three explicit time-integrators—the fourth-order
+Runge-Kutta (RK4), fourth-order Adams-Bashforth (AB4), fourth-order
+Adams-Bashforth-Moulton (ABM4) methods—and the implicit second-order
+Adams-Moulton (AM2) method. Users have the option of using the global
+time step from the glue code or an alternative SubDyn-unique time step
+that is an integer multiple smaller than the glue-code time step\ **.**
+It is essential that a small enough time step is used to ensure solution
+accuracy (by providing a sufficient sampling rate to characterize all
+key frequencies of the system), numerical stability of the selected
+explicit time-integrator, and that the coupling with FAST is numerically
+stable.
+
+For the RK4 and ABM4 methods, we recommend that the SubDyn time step
+follow the relationship shown in Eq. (3), where is the higher of (1) the
+highest natural frequency of the retained C-B modes and (2) the highest
+natural frequency of the physical modes when coupled to FAST. Although
+the former can be obtained from the SubDyn summary file, the latter is
+hard to estimate before the full-system linearization of the coupled
+FAST model is realized. Until then, experience has shown that the
+highest physical mode when SubDyn is coupled to FAST is often the
+platform-heave mode of ElastoDyn, with a frequency given by Eq. (4),
+where the variables are defined in Section 5.3.
+
+For the AB4 method, the recommended time step is half the value given by
+Eq. (3).
+
+For AM2, being implicit, the required time step is not driven by natural
+frequencies within SubDyn, but should still be chosen to ensure solution
+accuracy and that the coupling to FAST is numerically stable.
+
+1. SubDyn Theory
+
+   1. Overview
+
+This section focuses on the theory behind the SubDyn module.
+
+SubDyn relies on two main engineering approaches: (1) a linear frame
+finite-element beam model (LFEB), and (2) a dynamics system reduction
+via the Craig-Bampton (C-B) method together with a static-improvement
+method (SIM), greatly reducing the number of modes needed to obtain an
+accurate solution.
+
+There are many nonlinearities present in offshore wind substructure
+models, including material nonlinearity, axial shortening caused by
+bending, large displacements, and so on. The material nonlinearity is
+not considered here because most offshore multimember support structures
+are designed to use steel and the maximum stress is intended to be below
+the yield strength of the material. Damiani et al. (2013) demonstrate
+that a linear finite-element method is suitable when analyzing wind
+turbine substructures. In this work, several wind turbine configurations
+that varied in base geometry, load paths, sizes, supported towers, and
+turbine masses were analyzed under extreme loads using nonlinear and
+linear models. The results revealed that the nonlinear behavior was
+mainly caused by the mono-tower response and had little effect on the
+multimember support structures. Therefore, an LFEB model for the
+substructure is considered appropriate for wind turbine substructures.
+The LFEB can accommodate different element types, including
+Euler-Bernoulli and Timoshenko beam elements of either constant or
+longitudinally tapered cross sections (Timoshenko beam elements account
+for shear deformation and are better suited to represent low aspect
+ratio beams that may be used within frames and to transfer the loads
+within the frame).
+
+The large number of DOFs (~10:sup:`3`) associated with a standard
+finite-element analysis of a typical multimember structure would hamper
+computational efficiency during wind turbine system dynamic simulations.
+As a result, the C-B system reduction was implemented to speed up
+processing time while retaining a high level of fidelity in the overall
+system response. The C-B reduction is used to recharacterize the
+substructure finite-element model into a reduced DOF model that
+maintains the fundamental low-frequency response modes of the structure.
+In the SubDyn initialization step, the large substructure physical DOFs
+(displacements) are reduced to a small number of modal DOFs and
+interface (boundary) DOFs, and during each time step, only the equations
+of motion of these DOFs need to be solved. SubDyn only solves the
+equations of motion for the modal DOFs, the motion of the interface
+(boundary) DOFs are either prescribed when running SubDyn in stand-alone
+mode or solved through equations of motion in ElastoDyn when SubDyn is
+coupled to FAST.
+
+Retaining just a few DOFs may, however, lead to the exclusion of axial
+modes (normally of very high frequencies), which are important to
+capture static load effects, such as those caused by gravity and
+buoyancy. The so-called SIM was implemented to mitigate this problem.
+SIM computes two static solutions at each time step: one based on the
+full system stiffness matrix and one based on the C-B reduced stiffness
+matrix. At each time step the time-varying, C-B based, dynamic solution
+is superimposed on the difference between the two static solutions,
+which amounts to quasi-statically accounting for the contribution of
+those modes not directly included within the dynamic solution.
+
+In SubDyn, the substructure is considered to be clamped, or connected
+via linear spring-like elements, at the bottom nodes (normally at the
+seabed) and rigidly connected to the TP at the substructure top nodes
+(interface nodes). The user can provide 6x6, equivalent stiffness and
+mass matrices for each of the bottom nodes to account for soil-pile
+interaction. As described in other sections of this document, the input
+file defines the substructure geometry, material properties, and
+constraints. Users can define: element types; full finite-element mode
+or C-B reduction; the number of modes to be retained in the C-B
+reduction; modal damping coefficients; whether to take advantage of SIM;
+and the number of elements for each member.
+
+The following sections discuss the integration of SubDyn within the FAST
+framework, the main coordinate systems used in the module, and the
+theory pertaining to the LFEB, the C-B reduction, and SIM. The
+state-space formulations to be used in the time-domain simulation are
+also presented. The last section discusses the calculation of the base
+reaction calculation. For further details, see also Song et al. (2013).
+
+1. Integration with the FAST Modularization Framework
+
+Based on a new modularization framework (Jonkman 2013), FAST joins an
+aerodynamics module, a hydrodynamics module, a control and electrical
+system (servo) module, and structural-dynamics (elastic) modules to
+enable coupled nonlinear aero-hydro-servo-elastic analysis of land-based
+and offshore wind turbines in the time domain. Figure 3 shows the basic
+layout of the SubDyn module within the FAST modularization framework.
+
+|image3|
+
+Figure 3. SubDyn layout within the modularization framework
+
+In the existing loosely coupled time-integration scheme, the glue-code
+transfers data at each time step. Such data includes hydrodynamic loads,
+substructure response, loads transmitted to the TP, and TP response
+among SubDyn, HydroDyn, and ElastoDyn. At the interface nodes, the TP
+displacement, rotation, velocity, and acceleration are inputs to SubDyn
+from ElastoDyn, and the reaction forces at the TP are outputs of SubDyn
+for input to ElastoDyn. SubDyn also outputs the substructure
+displacements, velocities, and accelerations for input to HydroDyn to
+calculate the hydrodynamic loads that become inputs for SubDyn. In
+addition, SubDyn can calculate the member forces, as requested by the
+user. Within this scheme, SubDyn tracks its states and integrates its
+equations through its own solver.
+
+In a tightly coupled time-integration scheme (yet to be implemented),
+SubDyn sets up its own equations, but its states and those of other
+modules are tracked and integrated by a solver within the glue-code that
+is common to all of the modules.
+
+SubDyn is implemented in a state-space formulation that forms the
+equation of motion of the substructure system with physical DOFs at the
+boundaries and modal DOFs representing all interior motions. At each
+time step, loads and motions are exchanged between modules through the
+driver code; the modal responses are calculated inside SubDyn’s
+state-space model; and the next time-step responses are calculated by
+the SubDyn integrator for loose coupling and the global system
+integrator for tight coupling.
+
+1. Coordinate Systems
+
+|image4|
+
+Figure 4. Global (coincident with the substructure) coordinate system.
+Also shown are the DOFs associated with the TP reference point.
+
+1. Global and Substructure Coordinate System: or ( )
+
+-  The global axes are represented by the unit vectors ,, and .
+
+-  The origin is set at the intersection between the undeflected tower
+   centerline and the horizontal plane identified by the mean sea level
+   (MSL) for offshore systems or ground level for land-based systems.
+
+-  The positive *Z* () axis is vertical and pointing upward, opposite
+   gravity.
+
+-  The positive :math:`X` () axis is along the nominal (zero-degree)
+   wind and wave propagation direction.
+
+-  The *Y* () axis is transverse and can be found assuming a
+   right-handed Cartesian coordinate system (directed to the left when
+   looking in the nominal downwind direction).
+
+   1. Member or Element Local Coordinate System ()
+
+-  Axes are represented by the unit vectors ,, and .
+
+-  The origin is set at the shear center of the cross section at the
+   start node (S,MJointID1).
+
+-  The local axis is along the elastic axis of the member, directed from
+   the start node (S) to the end node (E,MJointID2). Nodes are ordered
+   along the member main axis directed from start joint to end joint
+   (per user’s input definition).
+
+-  The local axis is parallel to the global :math:`\text{XY}` plane, and
+   directed such that a positive, less than or equal to 180º rotation
+   about it, would bring the local axis parallel to the global *Z* axis.
+
+-  The local axis can be found assuming a right-handed Cartesian
+   coordinate system.
+
+   |image5|
+
+Figure 5. The element coordinate system. The sketched member contains
+four elements, and the second element is called out with nodes S and E.
+
+1. Local to Global Transformation
+
+The transformation from local to global coordinate system can be
+expressed by the following equation:
+
+where is a generic vector in the local coordinate system, andthe same
+vector but in the global coordinate system; and is the direction cosine
+matrix of the member axes and can be obtained as follows:
+
+Where and are the start and end joints of the member (or nodes of the
+element of interest) in global coordinate system; and .
+
+If and , the matrix can be found as follows:
+
+if then
+
+else
+
+In the current SubDyn release, the transpose (global to local) of these
+direction cosine matrices for each member is returned in the summary
+file. Given the circular shape of the member cross sections, the
+direction cosine matrices have little importance on the member load
+verification. To verify joints following the standards (e.g., ISO 19902,
+API RP-2A), however, the bending moments need to be decomposed into
+in-plane and out-of-plane components, where the plane is that defined by
+either a pair of braces (for an X-joint), or by the pair brace(s) plus
+leg (for a K-joint). It is therefore important to have the direction
+cosines of the interested members readily available to properly
+manipulate and transform the local shear forces and bending moments.
+
+When member cross sections other than circular are allowed in future
+releases, the user will need to input cosine matrices to indicate the
+final orientation of the member principal axes with respect to the
+global reference frame.
+
+1. Linear Finite-Element Beam Model
+
+In SubDyn, the LFEB can accommodate different two-node beam element
+types, including Euler-Bernoulli and Timoshenko beam elements, either of
+constant or tapered cross sections. The tapered element formulation has
+been derived, but has not been implemented in the current SubDyn
+release.
+
+The uniform and tapered Euler-Bernoulli beam elements are
+displacement-based and use third-order interpolation functions that
+guarantee the displacement and rotation continuity between elements. The
+uniform Timoshenko beam element is derived by introducing the shear
+deformation into the uniform Euler-Bernoulli element, so the
+displacements are represented by third-order interpolation functions as
+well.
+
+1. Element Formulation
+
+Following the classic Timoshenko beam theory, the generic two-node
+element stiffness and consistent mass matrices can be written as follows
+(see, for instance, Panzer et al. 2009):
+
+where is the element cross-section area, are the area second moments of
+inertia with respect to principal axes of the cross section; is the
+length of the undisplaced element from start-node to end-node; , *E,*
+and *G* are material density, Young’s, and Shear moduli, respectively;
+,are shear correction factors as shown below (they are set to zero if
+the E-B formulation is chosen):
+
+where the shear areas along the local *x* and *y* (principal) axes are
+defined as:
+
+and
+
+Eq. is from Steinboeck et al. (2013) for hollow circular cross sections,
+with *?* denoting Poisson’s ratio.
+
+Before assembling the global system stiffness (*K*) and mass (*M*)
+matrices, the individual and are modified to the global coordinate
+system via as shown in the following equations:
+
+where and are element matrices in the global coordinate system.
+
+1. Self-Weight Loads
+
+The loads caused by self-weight are precomputed during initialization
+based on the undisplaced configuration. It is therefore assumed that the
+displacements will be small and that P-delta effects are small for the
+substructure. For a nontapered beam element, the lumped loads caused by
+gravity to be applied at the end nodes are as follows (in the global
+coordinate system):
+
+Note also that if lumped masses exist (selected by the user at
+prescribed joints), their contribution will be included as concentrated
+forces along global *Z* at the relevant nodes.
+
+1. Dynamic System of Equations and C-B Reduction
+
+The main equations of motion of SubDyn are written as follows:
+
+where and are the global mass and stiffness matrices of the substructure
+beam frame, assembled from the element mass and stiffness matrices.
+Additionally, and contain the contribution from any specified and that
+are directly added to the proper partially restrained node DOF rows and
+column indexed elements.
+
+and are the displacements and external forces along all of the DOFs of
+the assembled system. The damping matrix is not assembled from the
+element contributions, because those are normally unknown, but treated
+from a system point of view as shown in the following paragraphs. A
+derivative with respect to time is represented by a dot, so that and are
+the first- and second-time derivatives of , respectively.
+
+The number of DOFs associated with Eq. can easily grow to the thousands
+for typical beam frame substructures. That factor, combined with the
+need for time-domain simulations of turbine dynamics, may seriously slow
+down the computational efficiency of aeroelastic codes such as FAST
+(note that a typical wind turbine system model in ElastoDyn has about 20
+DOFs). For this reason, a C-B methodology was used to recharacterize the
+substructure finite-element model into a reduced DOF model that
+maintains the fundamental low-frequency response modes of the structure.
+With the C-B method, the DOFs of the substructure can be reduced to
+about 10 (user defined, see also Section ). This system reduction method
+was first introduced by Hurty (1964) and later expanded by Craig and
+Bampton (1968).
+
+In SubDyn’s C-B reduction, the substructure nodes are separated into two
+groups: 1) the boundary nodes (identified with a subscript “\ *R*\ ” in
+what follows) that include the nodes fully restrained at the base of the
+structure and the interface nodes; and 2) the interior nodes (or
+leftover nodes, identified with a subscript “\ *L*\ ”). The interface
+nodes are assumed rigidly connected among one another and to the TP
+reference point. Note that the DOFs of partially restrained or “free”
+nodes at the base of the structure are included in the “L” subset in
+this version of SubDyn that contains SSI capabilities.
+
+The derivation of the system reduction is shown below. After the LFEB
+assembly, the system equation of motion of Eq. can be partitioned as
+follows:
+
+where the subscript denotes the boundary DOFs (there are *R* DOFs), and
+the subscript the interior DOFs (there are *L* DOFs).
+
+In Eq. , the applied forces include external forces (e.g., hydrodynamic
+forces and those transmitted through the TP to the substructure) and
+gravity forces , which are considered static forces lumped at each node.
+The forces at the boundary nodes can be broken down into hydrodynamic
+forces and those transferred to and from ElastoDyn via the TP, thus:
+
+The fundamental assumption of the C-B method is that the contribution to
+the displacement of the interior nodes can be simply approximated by a
+subset (*m* ? *L*) of the interior generalized DOFs (). The relationship
+between physical DOFs and generalized DOFs can be written as:
+
+where is the identity matrix; (*L*\ ×\ *R* matrix) represents the
+physical displacements of the interior nodes for static, rigid body
+motions at the boundary (interface nodes’ DOFs, because the restrained
+nodes’ DOFs are locked by definition). By considering the homogeneous,
+static version of , the second row can be manipulated to yield:
+
+Rearranging and considering yields:
+
+where the brackets have been removed for simplicity.
+
+(*L*\ ×\ *L* matrix) represents the internal eigenmodes, i.e., the
+natural modes of the system restrained at the boundary (interface and
+bottom nodes), and can be obtained by solving the eigenvalue problem:
+
+The eigenvalue problem in Eq. leads to the reduced basis of generalized
+modal DOFs , which are chosen as the first few (*m*) eigenvectors that
+are arranged by increasing eigenfrequencies. is mass normalized, so
+that:
+
+By then reducing the number of generalized DOFs to *m* (? *L*), is
+chosen to denote the truncated set of (keeping *m* of the total internal
+modes, hence *m* columns), and is the diagonal (*m*\ ×\ *m*) matrix
+containing the corresponding eigenfrequencies. In SubDyn, the user
+decides how many modes to retain, including possibly zero or all modes.
+Retaining zero modes corresponds to a Guyan (static) reduction;
+retaining all modes corresponds to keeping the full finite-element
+model.
+
+The C-B transformation is therefore represented by:
+
+By using Eq. , the interior DOFs are hence transformed from physical
+DOFs to modal DOFs, and by pre-multiplying both sides of Eq. by , and
+making use of Eq. , Eq. can be rewritten as:
+
+Eq. assumes that:
+
+In other words, the only damping matrix term retained is the one
+associated with internal DOF damping. This assumption has implications
+on the damping at the interface with the turbine system, as discussed in
+Section 5.4. The diagonal (*m*\ ×\ *m*) matrix contains the modal
+damping ratios corresponding to each retained internal mode. In SubDyn,
+the user provides damping ratios (in percent of critical damping
+coefficients) for the retained modes.
+
+The matrix partitions in Eq. are calculated as follows:
+
+Next, the boundary nodes are partitioned into those at the interface, ,
+and those at the bottom, which are fixed:
+
+The overhead bar here and below denotes matrices/vectors after the
+fixed-bottom boundary conditions are applied. The interface nodes are
+treated as rigidly connected to the TP, hence it is convenient to use
+rigid-body TP DOFs (one node with 6 DOFs at the TP reference point) in
+place of the interface DOFs. The interface DOFs, , and the TP DOFs are
+related to each other as follows:
+
+where is a matrix, is the number of interface nodes, and is the 6 DOFs
+of the rigid transition piece. The matrix can be written as follows:
+
+with
+
+where are the coordinates of interface node and are the coordinates of
+the TP reference point within the global coordinate system.
+
+In terms of TP DOFs, the system equation of motion after the boundary
+constraints are applied (the rows and columns corresponding to the DOFs
+of the nodes that are restrained at the seabed are removed from the
+equation of motion) becomes:
+
+with
+
+where the TP reaction force, i.e., the force applied to the substructure
+through the TP, is denoted by:
+
+Equation represents the equations of motion of the substructure after
+the C-B reduction. The total DOFs of the substructure are reduced from
+(total number of nodes) to.
+
+During initialization, SubDyn calculates: the parameter matrices , ; the
+gravity arrays and ; and the internal frequency matrix . The
+substructure response at each time step can then be obtained by using
+the state-space formulation discussed in the next section.
+
+1. State-Space Formulation
+
+A state-space formulation of the substructure structural dynamics
+problem was devised to integrate SubDyn within the FAST modularization
+framework. The state-space formulation was developed in terms of inputs,
+outputs, states, and parameters. The notations highlighted here are
+consistent with those used in Jonkman (2013). Inputs (identified by *u*)
+are a set of values supplied to SubDyn that, along with the states, are
+needed to calculate future states and the system’s output. Outputs (*y*)
+are a set of values calculated by and returned from SubDyn that depend
+on the states, inputs, and/or parameters through output equations (with
+functions *Y*). States are a set of internal values of SubDyn that are
+influenced by the inputs and used to calculate future state values and
+the output. In SubDyn, only continuous states are considered. Continuous
+states (*x*) are states that are differentiable in time and
+characterized by continuous time differential equations (with functions
+*X*). Parameters (*p*) are a set of internal system values that are
+independent of the states and inputs. Furthermore, parameters can be
+fully defined at initialization and characterize the system’s state
+equations and output equations.
+
+In SubDyn, the inputs are defined as:
+
+where are the hydrodynamic forces on every interior node of the
+substructure from HydroDyn, and are the analogous forces at the boundary
+nodes; , , and are TP deflections (6 DOFs), velocities, and
+accelerations, respectively. For SubDyn in stand-alone mode (uncoupled
+from FAST), and are assumed to be zero.
+
+In first-order form, the states are defined as:
+
+From the system equation of motion, the state equation corresponding to
+Eq. can be written as a standard linear system state equation:
+
+where
+
+| In SubDyn, the outputs to the ElastoDyn module are the reaction forces
+  at the transition piece
+| :
+
+By examining Eq. , the output equation for can be found as:
+
+where
+
+Note that the overbar is used on the input vector to denote that the
+forces apply to the interface nodes only.
+
+The outputs to HydroDyn and other modules are the deflections,
+velocities, and accelerations of the substructure:
+
+The output equation for can then be written as:
+
+where
+
+,,
+
+1. Member Force Calculation
+
+SubDyn can also calculate member forces by starting from the forces
+computed at the nodes of the elements that are contained in the member
+as:
+
+| 
+| where [*k*] and [*m*] are element stiffness and mass matrices, respectively. And
+  :math:`U_e` and :math:`\dsot{U}_e`are element nodal deflections and accelerations respectively,
+  which can be obtained from Eq. :eq:`y2`.
+
+There is no good way to quantify the damping forces for each element, so
+the element damping forces are not calculated.
+
+1. Reaction Calculation
+
+The reactions at the base of the structure are the member forces at the
+base nodes. These are usually provided in member local reference frames.
+Additionally, the user may request an overall reaction
+:math:`\overrightarrow{R}` (six forces and moments) lumped at the center
+of the substructure (tower centerline) and mudline, i.e., at the
+reference point (0,0,-***WtrDpth***) in the global reference frame, with
+***WtrDpth*** denoting the water depth. :math:`\overrightarrow{R}` is a
+six-element array that can be calculated in matrix form as follows:
+
+:math:`\overrightarrow{R} = \begin{bmatrix}
+F_{X} \\
+ \vdots \\
+M_{Z} \\
+\end{bmatrix} = T_{\text{React}}\ F_{\text{React}}\ `
+
+where :math:`F_{\text{React}}` is a (6*N\ :sub:`react`*) array
+containing the forces and moments at the *N\ :sub:`react`* restrained
+nodes in the global coordinate frame, and :math:`T_{\text{React}}` is a
+(6×6*N\ :sub:`react`*) matrix, as follows:
+
+where :math:`X`\ *:sub:`i`*, :math:`Y`\ *:sub:`i`*, and
+:math:`Z`\ *:sub:`i`* (*i*\ =1..\ *N\ :sub:`react`*) are coordinates of
+the boundary nodes with respect to the reference point. For each element
+with a restrained node, :math:`F_{\text{React}}` is calculated starting
+from —see Eq. —subtracting out the contributions of gravity—, see Eq.
+—and hydrodynamic loads () at the restrained node. No direct
+element-level inertial or damping effect is therefore included in the
+reaction calculation.
+
+1. Time Integration
+
+At time , the initial states are specified as initial conditions (all
+assumed to be zero in SubDyn) and the initial inputs are supplied to
+SubDyn. During each subsequent time step, the inputs and states are
+known values, with the inputs coming from ElastoDyn and HydroDyn, and
+the states known from the previous time-step integration. All of the
+parameter matrices are calculated in the SubDyn initiation module. With
+known and , can be calculated using the state equation (see Eq. ), and
+the outputs and can be calculated solving Eqs. and . The element forces
+can also be calculated using Eq. . The next time-step states are
+obtained by integration:
+
+For loose coupling, SubDyn uses its own integrator, whereas for tight
+coupling, the states from all the modules will be integrated
+simultaneously using an integrator in the glue-code. SubDyn’s built-in
+time integrator options for loose coupling are:
+
+-  Fourth-order explicit Runge-Kutta
+
+-  Fourth-order explicit Adams-Bashforth predictor
+
+-  Fourth-order explicit Adams-Bashforth-Moulton predictor-corrector
+
+-  Implicit second-order Adams-Moulton.
+
+For more information, consult any numerical methods reference, e.g.,
+Chapra and Canale (2010).
+
+1. Static-Improvement Method
+
+To account for the effects of static gravity (member self-weight) and
+buoyancy forces, one would have to include all of the structural axial
+modes in the C-B reduction. This inclusion often translates into
+hundreds of modes to be retained for practical problems. An alternative
+method is thus promoted to reduce this limitation and speed up SubDyn.
+This method is denoted as SIM, and computes two static solutions at each
+time step: one based on the full system stiffness matrix and one based
+on the reduced stiffness matrix. The dynamic solution then proceeds as
+described in the previous sections, and at each time step the
+time-varying dynamic solution is superimposed on the difference between
+the two static solutions, which amounts to quasi-statically accounting
+for the contribution of those modes not directly included within the
+dynamic solution.
+
+Recalling the previous C-B formulation , and adding the total static
+deflection of all the internal DOFs (), and subtracting the static
+deflection associated with C-B modes (), the SIM formulation is cast as
+in :
+
+Eq. can be rewritten as:
+
+with:
+
+where and are the *m* and *L* modal coefficients that are assumed to be
+operating in a static fashion. For Eqs. and to be valid, and are
+calculated under the C-B hypothesis that the boundary nodes are fixed.
+
+The static displacement vectors can also be calculated as follows:
+
+By making use of , and by pre-multiplying both sides times , Eq. can be
+rewritten as: or, recalling that , as: , or equivalently in terms of :
+
+Similarly:
+
+Note that: and .
+
+The dynamic component is calculated following the usual procedure
+described in Sections 6.5.1-6.5.4. For example, states are still
+calculated and integrated as in Eq. , and the output to ElastoDyn, i.e.,
+the reaction provided by the substructure at the TP interface, is also
+calculated as it was done previously in Eqs. and .
+
+However, the state-space formulation is slightly modified to allow for
+the calculation of the outputs to HydroDyn as:
+
+where the matrices now have the following meaning:
+
+,,
+
+Finally, the element forces can be calculated as:
+
+with the element node DOFs expressed as:
+
+where the SIM decomposition is still used with , denoting the
+time-varying components of the elements nodes’ displacements and and are
+derived from the parent and arrays of displacements, respectively.
+
+1. Known Limitations and Future Work
+
+The following list contains known current limitations in the code:
+
+-  Tight coupling is not yet supported.
+
+-  Only nontapered two-node Euler-Bernoulli (E-B) or Timoshenko (T)
+   element formulations are available. (In the future, tapered E-B and
+   tapered Timoshenko element formulations will be implemented.)
+
+-  Only straight circular members are permitted. (In the future, a
+   generic cross section will be allowed.)
+
+-  The number of elements per member (***NDiv***) is constant throughout
+   the structure.
+
+-  Internal matrices are not stored in sparse form, limiting the total
+   number of possible nodes/DOFs to about 300/1800.
+
+-  The dynamics system reduction is performed in the absence of external
+   loading (e.g., hydrodynamic added mass).
+
+-  Gravitational loading does not impact the global substructure
+   stiffness.
+
+-  Loads (gravitational, inertial, hydrodynamic) can only be applied as
+   concentrated loads at element nodes; distributed loads (per unit
+   length) are not yet supported.
+
+-  The overlap of multiple members connected to a single joint is not
+   modeled with super-elements.
+
+-  Member-level outputs are only available for up to nine nodes of up to
+   nine members (although the ***OutAll*** flag can generate further
+   outputs at the member end nodes).
+
+-  No graphics/animation capability is yet available to visualize the
+   substructure geometry, modes, motion, and loads.
+
+1. References
+
+Chapra, S.C.; Canale, R.P. (2010). *Numerical Methods for Engineers*,
+McGraw-Hill Science/Engineering/Mat, 6\ :sup:`th` Edition, 960 pages.
+
+Craig, R.; Bampton, M. (1968). “Coupling of Substructures for Dynamic
+Analyses.” *AIAA Journal*, Vol. 6, No.7, July 1968, pp. 1313?1319.
+
+Damiani, R.; Song, H. (2013). “A Jacket Sizing Tool for Offshore Wind
+Turbines within the Systems Engineering Initiative.” *Offshore
+Technology Conference*, April 30?May 4, 2013, Houston, Texas.
+
+Damiani, R.; Song, H.; Robertson, A.; Jonkman, J. (2013). “Assessing the
+Importance of Nonlinear Structural Characteristics in the Development of
+a Jacket Model for the Wind Turbine CAE Tool FAST.” *32nd International
+Conference on Ocean, Offshore and Arctic Engineering (OMAE2013)*, June
+9?14, 2013, Nantes, France.
+
+Hurty, W.C. (1964). “On the Dynamic Analysis of Structural Systems Using
+Component Modes.” AIAA Paper No. 64-487, First AIAA Annual Meeting, June
+29?July 2, 1964, Washington, DC.
+
+Jonkman, J.M. (2013). “The New Modularization Framework for the FAST
+Wind Turbine CAE Tool.” *51st AIAA Aerospace Sciences Meeting and 31st
+ASME Wind Energy Symposium*, January 7?10, 2013, Grapevine, Texas.
+
+Jonkman, J.M.; Robertson, A.N.; and Hayman, G.J. (forthcoming).
+*HydroDyn User’s Guide and Theory Manual*. Golden, CO: National
+Renewable Energy Laboratory.
+
+Panzer, H.; Hubele, J.; Eid, R.; Lohmann, B. (2009*). Generating a
+Parametric Finite Element Model of a 3D Cantilever Timoshenko Beam Using
+Matlab*. Technical Reports on Automatic Control, Vol. TRAC-4, November
+2009, Technische Universitat Munchen.
+
+Song, H.; Damiani, R.; Robertson, A.; Jonkman, J. `(2013). “New
+Structural-Dynamics Module for Offshore Multimember Substructures within
+the Wind Turbine Computer-Aided Engineering Tool FAST.”
+Preprint. <http://nrelpubs.nrel.gov/WebtopSecure/ws/nich/int/nrel/Record?rpp=25&upp=0&m=3&w=NATIVE%28%27AUTHOR+ph+words+%27%27damiani%27%27%27%29&order=native%28%27pubyear%2FDescend%27%29>`__
+Presented at the 23rd International Ocean, Offshore and Polar
+Engineering Conference - ISOPE 2013, 30 June?5 July 2013, Anchorage,
+Alaska. 12 pp.; NREL Report No. CP-5000-58093.
+
+Sprague, M.A.; Jonkman, J.M.; Jonkman, B.J. `(2014). “FAST Modular Wind
+Turbine CAE Tool: Nonmatching Spatial and Temporal
+Meshes. <http://nrelpubs.nrel.gov/WebtopSecure/ws/nich/int/nrel/Record?rpp=25&upp=0&m=2&w=NATIVE%28%27AUTHOR+ph+words+%27%27sprague%27%27%27%29&order=native%28%27pubyear%2FDescend%27%29>`__\ ”
+*Proceedings of the 32nd ASME Wind Energy Symposium*, January 13?17,
+2014, National Harbor, Maryland. American Society of Mechanical
+Engineers (ASME) New York, New York. 24 pp.; NREL Report No.
+CP-2C00-61839.
+
+Steinboeck, A.; Kugi, A.; Mang, H. (2013). “Energy-consistent shear
+coefficients for beams with circular cross sections and radially in
+homogeneous materials.” *International Journal of Solids and
+Structures*, 50, no. 11-12, pp. 1,859–1,868, doi:
+10.1016/j.ijsolstr.2013.01.030.
+
+Appendix A. OC4 Jacket Input File (CertTest Test04)
+
+----------- SubDyn v1.01.x MultiMember Support Structure Input File
+------------
+
+OC4 'Jacket' SubStructure Input File. The grouted connection is
+simulated with an equivalent tubular beam of enhanced properties. RRD
+10/15/2013
+
+-------------------------- SIMULATION CONTROL
+---------------------------------
+
+False Echo - Echo input data to "<rootname>.SD.ech" (flag)
+
+"DEFAULT" SDdeltaT - Local Integration Step. If "default", the glue-code
+integration step will be used.
+
+3 IntMethod - Integration Method [1/2/3/4 = RK4/AB4/ABM4/AM2].
+
+True SttcSolve - Solve dynamics about static equilibrium point
+
+-------------------- FEA and CRAIG-BAMPTON
+PARAMETERS---------------------------
+
+3 FEMMod - FEM switch: element model in the FEM. [1=
+Euler-Bernoulli(E-B) ; 2=Tapered E-B (unavailable); 3= 2-node
+Timoshenko; 4= 2-node …
+
+2 NDiv - Number of sub-elements per member
+
+True CBMod - [T/F] If True perform C-B reduction, else full FEM dofs
+will be retained. If True, select Nmodes to retain in C-B reduced
+system.
+
+8 Nmodes - Number of internal modes to retain (ignored if CBMod=False).
+If Nmodes=0 --> Guyan Reduction.
+
+1 JDampings - Damping Ratios for each retained mode (% of critical) If
+Nmodes>0, list Nmodes structural damping ratios for each retained mode
+….
+
+---- STRUCTURE JOINTS: joints connect structure members (~Hydrodyn Input
+File)---
+
+64 NJoints - Number of joints (-)
+
+JointID JointXss JointYss JointZss [Coordinates of Member joints in
+SS-Coordinate System]
+
+(-) (m) (m) (m)
+
+1 6.00000 6.00000 -45.50000
+
+2 6.00000 6.00000 -45.00000
+
+3 5.96700 5.96700 -44.00100
+
+4 5.93900 5.93900 -43.12700
+
+5 5.33300 5.33300 -24.61400
+
+6 -6.00000 6.00000 -45.50000
+
+7 -6.00000 6.00000 -45.00000
+
+8 -5.96700 5.96700 -44.00100
+
+9 -5.93900 5.93900 -43.12700
+
+10 -5.33300 5.33300 -24.61400
+
+11 -6.00000 -6.00000 -45.50000
+
+12 -6.00000 -6.00000 -45.00000
+
+13 -5.96700 -5.96700 -44.00100
+
+14 -5.93900 -5.93900 -43.12700
+
+15 -5.33300 -5.33300 -24.61400
+
+16 6.00000 -6.00000 -45.50000
+
+17 6.00000 -6.00000 -45.00000
+
+18 5.96700 -5.96700 -44.00100
+
+19 5.93900 -5.93900 -43.12700
+
+20 5.33300 -5.33300 -24.61400
+
+21 4.82000 4.82000 -8.92200
+
+22 4.38500 4.38500 4.37800
+
+23 4.01600 4.01600 15.65100
+
+24 4.00000 4.00000 16.15000
+
+25 -4.82000 4.82000 -8.92200
+
+26 -4.38500 4.38500 4.37800
+
+27 -4.01600 4.01600 15.65100
+
+28 -4.00000 4.00000 16.15000
+
+29 -4.82000 -4.82000 -8.92200
+
+30 -4.38500 -4.38500 4.37800
+
+31 -4.01600 -4.01600 15.65100
+
+32 -4.00000 -4.00000 16.15000
+
+33 4.82000 -4.82000 -8.92200
+
+34 4.38500 -4.38500 4.37800
+
+35 4.01600 -4.01600 15.65100
+
+36 4.00000 -4.00000 16.15000
+
+37 5.62000 0.00000 -33.37300
+
+38 -5.62000 0.00000 -33.37300
+
+39 0.00000 5.62000 -33.37300
+
+40 0.00000 -5.62000 -33.37300
+
+41 5.06400 0.00000 -16.37100
+
+42 -5.06400 0.00000 -16.37100
+
+43 0.00000 5.06400 -16.37100
+
+44 0.00000 -5.06400 -16.37100
+
+45 4.59200 0.00000 -1.95800
+
+46 -4.59200 0.00000 -1.95800
+
+47 0.00000 4.59200 -1.95800
+
+48 0.00000 -4.59200 -1.95800
+
+49 4.19300 0.00000 10.26200
+
+50 -4.19300 0.00000 10.26200
+
+51 0.00000 4.19300 10.26200
+
+52 0.00000 -4.19300 10.26200
+
+53 4.00000 4.00000 20.15000
+
+54 -4.00000 4.00000 20.15000
+
+55 4.00000 -4.00000 20.15000
+
+56 -4.00000 -4.00000 20.15000
+
+57 6.00000 -6.00000 -49.50000
+
+58 6.00000 6.00000 -49.50000
+
+59 -6.00000 -6.00000 -49.50000
+
+60 -6.00000 6.00000 -49.50000
+
+61 6.00000 -6.00000 -50.00100
+
+62 6.00000 6.00000 -50.00100
+
+63 -6.00000 -6.00000 -50.00100
+
+64 -6.00000 6.00000 -50.00100
+
+------------------- BASE REACTION JOINTS: 1/0 for Locked/Free DOF @ each
+Reaction Node ---------------------
+
+4 NReact - Number of Joints with reaction forces; be sure to remove all
+rigid motion DOFs of the structure (else det([K])=[0])
+
+RJointID RctTDXss RctTDYss RctTDZss RctRDXss RctRDYss RctRDZss SSIfile
+[Global Coordinate System]
+
+(-) (flag) (flag) (flag) (flag) (flag) (flag) (string)
+
+61 1 1 1 1 1 1 “Soil.txt”
+
+62 1 1 1 1 1 1 “Soil.txt”
+
+63 1 1 1 1 1 1 “Soil.txt”
+
+64 1 1 1 1 1 1 “Soil.txt”
+
+------- INTERFACE JOINTS: 1/0 for Locked (to the TP)/Free DOF @each
+Interface Joint (only Locked-to-TP implemented thus far (=rigid TP))
+---------
+
+8 NInterf - Number of interface joints locked to the Transition Piece
+(TP): be sure to remove all rigid motion dofs
+
+IJointID ItfTDXss ItfTDYss ItfTDZss ItfRDXss ItfRDYss ItfRDZss [Global
+Coordinate System]
+
+(-) (flag) (flag) (flag) (flag) (flag) (flag)
+
+24 1 1 1 1 1 1
+
+28 1 1 1 1 1 1
+
+32 1 1 1 1 1 1
+
+36 1 1 1 1 1 1
+
+53 1 1 1 1 1 1
+
+54 1 1 1 1 1 1
+
+55 1 1 1 1 1 1
+
+56 1 1 1 1 1 1
+
+----------------------------------- MEMBERS
+--------------------------------------
+
+112 NMembers - Number of frame members
+
+MemberID MJointID1 MJointID2 MPropSetID1 MPropSetID2 COSMID
+
+(-) (-) (-) (-) (-) (-)
+
+1 1 2 2 2
+
+2 2 3 2 2
+
+3 3 4 2 2
+
+4 4 5 2 2
+
+5 6 7 2 2
+
+6 7 8 2 2
+
+7 8 9 2 2
+
+8 9 10 2 2
+
+9 11 12 2 2
+
+10 12 13 2 2
+
+11 13 14 2 2
+
+12 14 15 2 2
+
+13 16 17 2 2
+
+14 17 18 2 2
+
+15 18 19 2 2
+
+16 19 20 2 2
+
+17 5 21 3 3
+
+18 21 22 3 3
+
+19 22 23 3 3
+
+20 23 24 3 3
+
+21 10 25 3 3
+
+22 25 26 3 3
+
+23 26 27 3 3
+
+24 27 28 3 3
+
+25 15 29 3 3
+
+26 29 30 3 3
+
+27 30 31 3 3
+
+28 31 32 3 3
+
+29 20 33 3 3
+
+30 33 34 3 3
+
+31 34 35 3 3
+
+32 35 36 3 3
+
+33 8 3 1 1
+
+34 13 8 1 1
+
+35 13 18 1 1
+
+36 18 3 1 1
+
+37 4 37 1 1
+
+38 37 20 1 1
+
+39 19 37 1 1
+
+40 37 5 1 1
+
+41 9 38 1 1
+
+42 38 15 1 1
+
+43 14 38 1 1
+
+44 38 10 1 1
+
+45 4 39 1 1
+
+46 39 10 1 1
+
+47 9 39 1 1
+
+48 39 5 1 1
+
+49 19 40 1 1
+
+50 40 15 1 1
+
+51 14 40 1 1
+
+52 40 20 1 1
+
+53 5 41 1 1
+
+54 41 33 1 1
+
+55 20 41 1 1
+
+56 41 21 1 1
+
+57 10 42 1 1
+
+58 42 29 1 1
+
+59 15 42 1 1
+
+60 42 25 1 1
+
+61 5 43 1 1
+
+62 43 25 1 1
+
+63 10 43 1 1
+
+64 43 21 1 1
+
+65 20 44 1 1
+
+66 44 29 1 1
+
+67 15 44 1 1
+
+68 44 33 1 1
+
+69 21 45 1 1
+
+70 45 34 1 1
+
+71 33 45 1 1
+
+72 45 22 1 1
+
+73 25 46 1 1
+
+74 46 30 1 1
+
+75 29 46 1 1
+
+76 46 26 1 1
+
+77 21 47 1 1
+
+78 47 26 1 1
+
+79 25 47 1 1
+
+80 47 22 1 1
+
+81 33 48 1 1
+
+82 48 30 1 1
+
+83 29 48 1 1
+
+84 48 34 1 1
+
+85 22 49 1 1
+
+86 49 35 1 1
+
+87 34 49 1 1
+
+88 49 23 1 1
+
+89 26 50 1 1
+
+90 50 31 1 1
+
+91 30 50 1 1
+
+92 50 27 1 1
+
+93 22 51 1 1
+
+94 51 27 1 1
+
+95 26 51 1 1
+
+96 51 23 1 1
+
+97 34 52 1 1
+
+98 52 31 1 1
+
+99 30 52 1 1
+
+100 52 35 1 1
+
+101 24 53 4 4
+
+102 28 54 4 4
+
+103 32 56 4 4
+
+104 36 55 4 4
+
+105 58 1 5 5
+
+106 57 16 5 5
+
+107 60 6 5 5
+
+108 59 11 5 5
+
+109 62 58 6 6
+
+110 61 57 6 6
+
+111 64 60 6 6
+
+112 63 59 6 6
+
+------------------ MEMBER X-SECTION PROPERTY data 1/2 [isotropic
+material for now: use this table for circular-tubular elements]
+------------------------
+
+6 NPropSets - Number of structurally unique x-sections (i.e. how many
+groups of X-sectional properties are utilized throughout all of the
+members)
+
+PropSetID YoungE ShearG MatDens XsecD XsecT
+
+(-) (N/m2) (N/m2) (kg/m3) (m) (m)
+
+1 2.10000e+11 8.07690e+10 7850.00 0.800000 0.020000
+
+2 2.10000e+11 8.07690e+10 7850.00 1.200000 0.050000
+
+3 2.10000e+11 8.07690e+10 7850.00 1.200000 0.035000
+
+4 2.10000e+11 8.07690e+10 7850.00 1.200000 0.040000
+
+5 2.10000e+11 8.07690e+10 3339.12 2.082000 0.491000
+
+6 2.10000e+11 8.07690e+10 7850.00 2.082000 0.060000
+
+------------------ MEMBER X-SECTION PROPERTY data 2/2 [isotropic
+material for now: use this table if any section other than circular,
+however provide COSM(i,j) below]- 0 NXPropSets - Number of structurally
+unique non-circular x-sections (if 0 the following table is ignored)
+
+PropSetID YoungE ShearG MatDens XsecA XsecAsx XsecAsy XsecJxx XsecJyy
+XsecJ0
+
+(-) (N/m2) (N/m2) (kg/m3) (m2) (m2) (m2) (m4) (m4) (m4)
+
+---------------------- MEMBER COSINE MATRICES COSM(i,j)
+------------------------
+
+0 NCOSMs - Number of unique cosine matrices (i.e., of unique member
+alignments including principal axis rotations); ignored if NXPropSets=0
+…
+
+COSMID COSM11 COSM12 COSM13 COSM21 COSM22 COSM23 COSM31 COSM32 COSM33
+
+(-) (-) (-) (-) (-) (-) (-) (-) (-) (-)
+
+------------------------ JOINT ADDITIONAL CONCENTRATED
+MASSES--------------------------
+
+0 NCmass - Number of joints with concentrated masses; Global Coordinate
+System
+
+CMJointID JMass JMXX JMYY JMZZ
+
+(-) (kg) (kg\*m^2) (kg\*m^2) (kg\*m^2)
+
+---------------------------- OUTPUT: SUMMARY & OUTFILE
+------------------------------
+
+True SDSum - Output a Summary File (flag).It contains: matrices K,M and
+C-B reduced M\_BB, M-BM, K\_BB, K\_MM(OMG^2), PHI\_R, PHI\_L. IT can
+also …
+
+False OutCOSM - Output cosine matrices with the selected output member
+forces (flag)
+
+False OutAll - [T/F] Output all members' end forces
+
+1 OutSwtch - [1/2/3] Output requested channels to: 1=<rootname>.SD.out
+2=<rootname>.out (generated by FAST) 3=both files.
+
+True TabDelim - Generate a tab-delimited output in the <rootname>.SD.out
+file
+
+1 OutDec - Decimation of output in the <rootname>.SD.out file
+
+"ES11.4e2" OutFmt - Output format for numerical results in the
+<rootname>.SD.out file
+
+"A11" OutSFmt - Output format for header strings in the
+<rootname>.SD.out file
+
+------------------------- MEMBER OUTPUT LIST
+------------------------------------------
+
+8 NMOutputs - Number of members whose
+forces/displacements/velocities/accelerations will be output (-) [Must
+be <= 9].
+
+MemberID NOutCnt NodeCnt [NOutCnt=how many nodes to get output for [<
+10]; NodeCnt are local ordinal numbers from the start of the member, and
+must be >=1 and …
+
+(-) (-) (-)
+
+22 1 3
+
+30 1 3
+
+73 1 3
+
+83 1 3
+
+41 2 2 3
+
+51 2 2 3
+
+6 1 3
+
+14 1 3
+
+------------------------- SDOutList: The next line(s) contains a list of
+output parameters that will be output in <rootname>.SD.out or
+<rootname>.out. ------
+
+"M1N1FKZe, M2N1FKZe" - Axial force in leg 2 at K1L2 and in leg 4 at K1L4
+
+"M3N1TDXss, M3N1TDYss, M3N1TDZss, M4N1TDXss, M4N1TDYss, M4N1TDZss" -
+Deflections at X2S2, X2S3: use cosdir matrix to get Out-of-plane (OOP)
+deflection
+
+"M5N2TDXss, M5N2TDYss, M5N2TDZss, M6N2TDXss, M6N2TDYss, M6N2TDZss" -
+Deflections at X4S2, X4S3: use cosdir matrix to get OOP deflection
+
+"M5N1FKXe,M5N1FKYe,M5N1FKZe,M6N1FKXe,M6N1FKYe,M6N1FKZe" - Forces OOP and
+Axial at mid brace points x,y, z >> \*we will need to do some
+post-processing "M7N1FKZe, M8N1FKZe" - Axial force in leg 2 and leg 4 at
+mudbrace level: MudbraceL2, MudbraceL4
+
+"-ReactFXss, -ReactFYss, -ReactMXss, -ReactMYss, -ReactMZss, -ReactFZss"
+- Base reactions: fore-aft shear, side-to-side shear, side-to-side
+moment, fore-aft moment, …
+
+END of output channels and end of file. (the word "END" must appear in
+the first 3 columns of this line)
+
+Appendix B. OC4 Jacket Driver File
+
+SubDyn Driver file for Unit TestFrame.
+
+Compatible with SubDyn v1.00.00
+
+TRUE Echo - Echo the input file data (flag)
+
+---------------------- ENVIRONMENTAL CONDITIONS
+------------------------------
+
+9.81 Gravity - Gravity (m/s^2)
+
+43.127 WtrDpth - Water Depth (m) positive value
+
+---------------------- SubDyn
+------------------------------------------------
+
+"Test04\\Test04.txt" SDInputFile
+
+"Test04\\Test04" OutRootName
+
+600 NSteps - Number of time steps in the simulations (-)
+
+0.005 TimeStep - Time Step for the simulation (sec)
+
+0.0 0.0 18.15 TP\_RefPoint - Location of the TP reference point in
+global coordinates (m)
+
+0.0 SubRotateZ - Rotation angle of the structure geometry in degrees
+about the global Z axis.
+
+---------------------- INPUTS -----------------------------------------
+
+1 InputsMod - Inputs model {0: all inputs are zero for every timestep,
+1: steadystate inputs, 2: read inputs from a file (InputsFile)} (switch)
+
+"" InputsFile - Name of the inputs file if InputsMod = 2
+
+---------------------- STEADY INPUTS-----------------------------------
+
+3.821E-02 1.656E-03 -4.325E-02 -1.339E-04 7.266E-02 -2.411E-03
+uTPInSteady - input displacements and rotations ( m, rads )
+
+1.02 2.03 5.03 0.03 0.03 0.03 uDotTPInSteady - input translational and
+rotational velocities ( m/s, rads/s)
+
+2.02 3.03 -9.03 0.3 0.03 0.3 uDotDotTPInSteady - input translational and
+rotational accelerations( m/s^2, rads/s^2)
+
+END of driver input file
+
+Appendix C. OC4 Jacket SSI File
+
+!---------------- Pile Head K and M elements -------------------!
+
+!Equivalent Stiffness Constants: Kxx, Kyy, Kzz, Kxtx,
+Kxty..Kztx,Kzty,Kztz in any order; max 21 elements
+
+-1.98E+09 Kxty
+
+-6.83E-02 Kyty
+
+0.00E+00 Kzty
+
+-2.73E-01 Ktxty
+
+1.35E+10 Ktyty
+
+0.00E+00 Kxtz
+
+0.00E+00 Kytz
+
+0.00E+00 Kztz
+
+0.00E+00 Ktxtz
+
+0.00E+00 Ktytz
+
+7.00E+08 Ktztz
+
+5.04E+08 Kxx
+
+3.11E-02 Kxy
+
+5.06E+08 Kyy
+
+0.00E+00 Kxz
+
+0.00E+00 Kyz
+
+2.54E+09 Kzz
+
+6.83E-02 Kxtx
+
+1.99E+09 Kytx
+
+0.00E+00 Kztx
+
+1.35E+10 Ktxtx
+
+Appendix D. List of Output Channels
+
+This is a list of all possible output parameters for the SubDyn module.
+The names are grouped by meaning, but can be ordered in the OUTPUT
+CHANNELS section of the SubDyn input file as the user sees fit. M?N?,
+refers to node ? of member ?, where ? is a number in the range [1,9] and
+corresponds to row ? in the MEMBER OUTPUT LIST table (see Section ) and
+? is a number in the range [1,9] and corresponds to node ? in the
+***NodeCnt*** list of that table entry.
+
+Some outputs are in the SS reference coordinate system (global
+inertial-frame coordinate system), and end with the suffix ‘ss’; others
+refer to the local (member) reference system and they have suffixes
+‘Xe’, ‘Ye’, or ‘Ze’ (see Section 7).
+
+Table C-1. List of Output Channels.
+
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| Channel Name(s)                       | Units                                                        | Description                                                                                                                         |
++=======================================+==============================================================+=====================================================================================================================================+
+| *Base and Interface Reaction Loads*   |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| ReactFXss, ReactFYss, ReactFZss,      | (N), (N), (N),                                               | Total base reaction forces and moments at the (0.,0.,-***WtrDpth***) location in SS coordinate system                               |
+|                                       |                                                              |                                                                                                                                     |
+| ReactMXss, ReactMYss, ReactMZss,      | (N·m), (N·m), (N·m)                                          |                                                                                                                                     |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| IntfFXss, IntfFYss, IntfFZss,         | (N), (N), (N),                                               | Total interface reaction forces and moments at the TP reference point (platform reference point) location in SS coordinate system   |
+|                                       |                                                              |                                                                                                                                     |
+| IntfMXss, IntfMYss, IntfMZss,         | (N·m), (N·m), (N·m)                                          |                                                                                                                                     |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| Interface Kinematics                  |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| IntfTDXss, IntfTDYss, IntfTDZss,      | (m), (m), (m),                                               | Displacements and rotations of the TP reference point (platform reference point) location in SS coordinate system                   |
+|                                       |                                                              |                                                                                                                                     |
+| IntfRDXss, IntfRDYss IntfRDZss        | (rad), (rad), (rad)                                          |                                                                                                                                     |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| IntfTAXss, IntfTAYss, IntfTAZss,      | (m/s^2), (m/s^2), (m/s^2), (rad/s^2), (rad/s^2), (rad/s^2)   | Translational and rotational accelerations of the TP reference point (platform reference point) location in SS coordinate system    |
+|                                       |                                                              |                                                                                                                                     |
+| IntfRAXss, IntfRAYss IntfRAZss        |                                                              |                                                                                                                                     |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| *Modal Parameters*                    |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| SSqm01-SSqm99                         | (-)                                                          | C-B modal variables (up to first 99)                                                                                                |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| SSqmd01-SSqmd99                       | (1/s)                                                        | First time-derivatives of C-B modal variables (up to first 99)                                                                      |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| SSqmdd01-SSqmdd99                     | (1/s^2)                                                      | Second time-derivatives of C-B modal variables (up to first 99)                                                                     |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| *Node Kinematics*                     |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| M?N?TDxss, M?N?TDyss, M?N?TDzss,      | (m)                                                          | Nodal translational displacements of M?N? (up to 81 designated locations) in SS coordinate system                                   |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| M?N?RDxe, M?N?RDye, M?N?RDze          | (rad)                                                        | Nodal rotational displacements of M?N? (up to 81 designated locations) in member local coordinate system                            |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| M?N?TAxe, M?N?TAye, M?N?TAze          | (m/s:sup:`2`)                                                | Nodal translational accelerations of M?N? (up to 81 designated locations) in member local coordinate system                         |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| M?N?RAxe, M?N?RAye, M?N?RAze          | (rad/s:sup:`2`)                                              | Nodal rotational accelerations of M?N? (up to 81 designated locations) in member local coordinate system                            |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| *Node Forces and Moments*             |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| M?N?FKxe, M?N?FKye, M?N?FKze,         | (N), (N), (N),                                               | Static (elastic) component of reaction forces and moments at M?N? along local member coordinate system                              |
+|                                       |                                                              |                                                                                                                                     |
+| M?N?MKxe, M?N?MKye, M?N?MKze          | (N·m), (N·m), (N·m)                                          |                                                                                                                                     |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+| M?N?FMxe, M?N?FMye, M?N?FMze,         | (N), (N), (N),                                               | Dynamic (inertial) component of reaction forces and moments at M?N? along local member coordinate system                            |
+|                                       |                                                              |                                                                                                                                     |
+| M?N?MMxe, M?N?MMye, M?N?MMze          | (N·m), (N·m), (N·m)                                          |                                                                                                                                     |
++---------------------------------------+--------------------------------------------------------------+-------------------------------------------------------------------------------------------------------------------------------------+
+
+Appendix E. Compiling Stand-Alone SubDyn
+
+See the FAST documentation for instructions on how to compile SubDyn
+coupled to FAST.
+
+Future versions of the manual will include compiling instructions for
+building the stand-alone SubDyn program.
+
+Appendix F. Major Changes in SubDyn
+
+When first released, SubDyn (v0.4) was included as an undocumented
+feature of FAST v8 and packaged as a stand-alone archive. Since v0.4,
+SubDyn has been well integrated into FAST v8 and the stand-alone form is
+also available. This appendix outlines significant modifications to
+SubDyn made since v0.4. Following are the main changes that the user may
+notice, but for more information, refer to the *changelog.txt* text file
+within the official archive.
+
+V1.01.01a-rrd (September 2014)
+
+Version 1.01.01a-rrd integrates with the `*FAST v8
+software* <http://wind.nrel.gov/designcodes/simulators/fast8>`__
+v8.09.00a-bjj.
+
+-  Finite-element eigenvalue bug fixes: the full system eigenvalues were
+   incorrectly reported in the summary file, although with no further
+   consequences on the results. This bug is now fixed.
+
+-  Shear area correction factor improvement: the shear area correction
+   factor in the Timoshenko treatment is now aligned with Steinboeck et
+   al. (2013).
+
+-  The formulation for the TP reaction has been rearranged to adhere to
+   the theory manual, with no consequences on the output results.
+
+V1.01.00a-rrd (June 2014)
+
+Version 1.00.01a-rrd integrates with the `*FAST v8
+software* <http://wind.nrel.gov/designcodes/simulators/fast8>`__
+v8.08.00c-bjj.
+
+The new implementation has well-defined data exchange interfaces
+(`following the FAST modularization
+framework <http://wind.nrel.gov/designcodes/simulators/developers/>`__)
+that should make integration of SubDyn into other multiphysics software
+packages much simpler.
+
+Several improvements and bug fixes have been implemented since version
+v0.4 and the module has undergone an extensive verification effort with
+good results.
+
+-  Eigensolver bug fixes: the LAPACK solver proved to be unstable in
+   single precision, and now it is solely run in double precision,
+   regardless of the precision used in other parts of the code.
+
+-  The input file format has changed. Please refer to the sample input
+   file in Appendix A and the following notes:
+
+   -  First header line has been removed.
+
+   -  Simulation Control Section:
+
+      -  ***SDeltaT***: The ‘DEFAULT’ keyword (in place of 0.0) is now
+         used to indicate that the glue-code time step will be used for
+         time integration by SubDyn.
+
+      -  ***IntMethod***: Allowed values are now 1?4 (in place of 0?3).
+
+      -  ***SttcSolve***: New flag introduced. If set to TRUE, the
+         static-improvement method (SIM) will be used.
+
+   -  FEA and Craig-Bampton Parameters Section:
+
+      -  In v0.4, the damping coefficients had to be specified for all
+         retained Craig-Bampton modes, or just once for all the modes
+         (if ***CBMod*** = FALSE). In this version, the user can input
+         any number of damping coefficients. In case the number of
+         retained C-B modes (***NModes***) is larger than the input
+         number of damping coefficients (***JDampings***), the last
+         damping value will be replicated for all the remaining modes.
+
+   -  Base Reaction Joints, Interface Joints, Member, and Member Cosine
+      Matrices Sections:
+
+      -  One line with units, below the headers, is expected in all the
+         tables of the input file.
+
+   -  Output: Summary and Outfile Section:
+
+      -  This section now also contains the parameters previously
+         assigned under the Section titled “Output: Fast/Subdyn
+         Output-File Variables”
+
+-  Some of the quantities in the summary file have been fixed. Some of
+   the output matrices were, in fact, being output with wrong values
+   because of an index mismatch. The new summary file is shorter and
+   does not contain some of the CB method matrices, unless the compiler
+   directive, DEBUG, is set.
+
+-  SIM. This new implementation helps minimize the number of needed
+   modes to capture the contribution of certain loads (such as static
+   gravity and buoyancy loads or high-frequency loads transferred from
+   the turbine). In the previous version, a large number of internal
+   modes were needed to engage substructural modes excited by static and
+   high-frequency forces. These modes are no longer needed and fewer
+   modes can be retained while still achieving accurate results (see
+   also Section 6). With SIM enabled, all modes that are not considered
+   by the Craig-Bampton reduction are treated quasi-statically.
+
+-  There is now the possibility of retaining no internal C-B modes, thus
+   relying solely only on SIM, in those cases where the substructure’s
+   first eigenfrequencies are much higher than the expected
+   energy-containing modes of the entire system.
+
+-  The coupling of SubDyn within FAST now includes full hydro-elastic
+   coupling with the HydroDyn hydrodynamics module.
+
+.. |image0| image:: media/image3.wmf
+   :width: 0.24306in
+   :height: 0.22917in
+.. |image1| image:: media/image147.png
+   :width: 6.49916in
+   :height: 3.59236in
+.. |image2| image:: media/image148.png
+   :width: 3.31482in
+   :height: 2.19381in
+.. |image3| image:: media/image158.png
+   :width: 3.57476in
+   :height: 3.51250in
+.. |image4| image:: media/image159.png
+   :width: 2.31486in
+   :height: 3.99213in
+.. |image5| image:: media/image173.png
+   :width: 5.94353in
+   :height: 2.16667in

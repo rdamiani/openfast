@@ -1,0 +1,508 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Modeling Considerations &mdash; OpenFAST 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="SubDyn Theory" href="theory.html" />
+    <link rel="prev" title="Output Files" href="output_files.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenFAST
+          
+
+          
+            
+            <img src="_static/openfastlogo.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running_sd.html">Running SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input_files.html">Input Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="output_files.html">Output Files</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Modeling Considerations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#model-discretization">Model Discretization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#foundations">Foundations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#member-overlap">Member Overlap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#substructure-tower-turbine-coupling">Substructure Tower/Turbine Coupling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#self-weight-calculations">Self-Weight Calculations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#note-on-other-load-calculations">Note On Other Load Calculations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#craig-bampton-guidelines">Craig-Bampton Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#integration-time-step-guidelines">Integration Time Step Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">SubDyn Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="future_work.html">Known Limitations and Future Work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zrefs.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixA.html">Appendix A. OC4 Jacket Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixB.html">Appendix B. OC4 Jacket Driver File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixC.html">Appendix C. OC4 Jacket SSI Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixD.html">Appendix D. List of Output Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixE.html">Appendix E. Compiling Stand-Alone SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixF.html">Appendix F. Major Changes in SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#integration-with-the-fast-modularization-framework">Integration with the FAST Modularization Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#dynamic-system-of-equations-and-c-b-reduction">Dynamic System of Equations and C-B Reduction</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenFAST</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Modeling Considerations</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/modeling.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="modeling-considerations">
+<span id="id1"></span><h1>Modeling Considerations<a class="headerlink" href="#modeling-considerations" title="Permalink to this headline">¶</a></h1>
+<p>SubDyn was designed as a flexible tool for modeling a wide range of
+substructures for both land-based and offshore applications. This
+section provides some general guidance to help construct models that are
+compatible with SubDyn.</p>
+<p>Please refer to the theory in Section 6 for detailed information about
+SubDyn’s coordinate systems, and the theoretical approach we have
+followed in SubDyn.</p>
+<div class="section" id="model-discretization">
+<h2>Model Discretization<a class="headerlink" href="#model-discretization" title="Permalink to this headline">¶</a></h2>
+<p>SubDyn allows for the specification of arbitrary multimember structure
+geometries. The user defines the geometry of a structure in SubDyn using
+joints and members. Specifically, the user specifies a list of joints
+that represent the endpoints of beams, and the connectivity between one
+or more members at each joint. Members and their cross-sectional
+properties are then defined between two joints. Members can be further
+subdivided into multiple (<strong>NDiv</strong>) elements to increase the model
+resolution. Nodes, where the numerical calculations take place, are
+located at the endpoints of each element. To keep the mesh as uniform as
+possible when using <strong>NDiv</strong>, the initial member definition should
+also have a roughly uniform mesh. For tapered members, we recommend
+setting <strong>NDiv</strong> &gt; 1. Improper discretization of the members may
+decrease the accuracy of the model.</p>
+<p>When SubDyn is coupled to FAST, the joints and members need not match
+between HydroDyn and SubDyn—FAST’s mesh-mapping utility handles the
+transfer of motion and loads across meshes in a physically relevant
+manner <a class="reference internal" href="zrefs.html#sprague2014" id="id2">[SJJ14]</a>, but consistency between the joints and
+members in HydroDyn and SubDyn is advised.</p>
+<p>For offshore applications, because of the exponential decay of
+hydrodynamic loads with depth, HydroDyn requires higher resolution near
+the water free surface to properly capture loads as waves oscillate
+about the still water level (SWL). We recommend that the HydroDyn
+discretization not exceed element lengths of 0.5 m in the region of the
+free surface (5 to 10 m above and below SWL), 1.0 m between 25- and 50-m
+depth, and 2.0 m in deeper waters.</p>
+<p>When SubDyn is hydro-elastically coupled to HydroDyn through FAST for
+the analysis of fixed-bottom offshore systems, we recommend that the
+length ratio between elements of SubDyn and HydroDyn not exceed 10 to 1.
+As such, we recommend that the SubDyn discretization not exceed element
+lengths of 5 m in the region of the free surface, 10 m down to 25- to
+50-m depth, and 20 m in deeper waters. These are not absolute rules, but
+rather a good starting point that will likely require refinement for a
+given substructure. Additional considerations for SubDyn discretization
+include aspects that will impact structural accuracy, such as member
+weight, substructure modes and/or natural frequencies, load transfer,
+tapered members, and so on.</p>
+<p>Members in SubDyn are assumed to be straight circular (and possibly
+tapered) cylinders. The use of more generic cross-sectional shapes will
+be considered in a future release.</p>
+</div>
+<div class="section" id="foundations">
+<h2>Foundations<a class="headerlink" href="#foundations" title="Permalink to this headline">¶</a></h2>
+<p>There are two methods that can be used to model foundation flexibility
+or soil-structure interaction in SubDyn. The first method makes us of
+the SSI stiffness and mass matrices at the partially restrained bottom
+joints as described in Sections 3.3.4, 3.4, and 6. The second method
+mimics the flexibility of the foundation through the apparent (or
+effective) fixity (AF) length approach, which idealizes a pile as a
+cantilever beam that has properties that are different above and below
+the mudline. The beam above the mudline should have the real properties
+(i.e., diameter, thickness, and material) of the pile. The beam below
+the mudline is specified with effective properties and a fictive length
+(i.e., the distance from the mudline to the cantilevered base) that are
+tuned to ensure that the overall response of the pile above the mudline
+is the same as the reality. The response can only be identical under a
+particular set of conditions; however, it is common for the properties
+of the fictive beam to be tuned so that the mudline displacement and
+rotation would be realistic when loaded by a mudline shear force and
+bending moment that are representative of the loading that exists when
+the offshore wind turbine is operating under normal conditions.</p>
+<p>Note that in HydroDyn, all members that are embedded into the seabed
+(e.g., through piles or suction buckets) must have a joint that is
+located below the water depth. In SubDyn, the bottom joint(s) will be
+considered clamped or partially restrained and therefore need not be
+located below the seabed when not applying the AF approach. For example,
+if the water depth is set to 20 m, and the user is modeling a
+fixed-bottom monopile with a rigid foundation, then the bottom-most
+joint in SubDyn can be set at <em>Z</em> = -20 m; HydroDyn, however, needs to
+have a Z-coordinate such that <em>Z</em> &lt; -20 m. This configuration avoids
+HydroDyn applying static and dynamic pressure loads from the water on
+the bottom of the structure. When the AF approach is applied, the
+bottom-most joint in SubDyn should be set at <em>Z</em> &lt; -20 m.</p>
+</div>
+<div class="section" id="member-overlap">
+<h2>Member Overlap<a class="headerlink" href="#member-overlap" title="Permalink to this headline">¶</a></h2>
+<p>As mentioned earlier, the current version of SubDyn is incapable of
+treating the overlap of members at the joints, resulting in an
+overestimate of the mass and potentially of the structure stiffness. One
+strategy to overcome this shortcoming employs virtual members to
+simulate the portion of each member within the overlap at a joint. The
+virtual members should be characterized by low self-mass and high
+stiffness. This can be achieved by introducing virtual joints at the
+approximate intersection of the finite-sized members, and then
+specifying additional members from these new joints to the original
+(centerline) joints. The new virtual members then use reduced material
+density and increased Young’s and shear moduli. Care is advised in the
+choice of these parameters as they may render the system matrix
+singular. Inspection of the eigenvalue results in the summary file
+should confirm whether acceptable approximations have been achieved.</p>
+</div>
+<div class="section" id="substructure-tower-turbine-coupling">
+<h2>Substructure Tower/Turbine Coupling<a class="headerlink" href="#substructure-tower-turbine-coupling" title="Permalink to this headline">¶</a></h2>
+<p>When SubDyn is coupled to FAST, the 6 DOFs of the platform in ElastoDyn
+must be enabled to couple loads and displacements between the turbine
+and the substructure. The platform reference-point coordinates in
+ElastoDyn should also be set equal to the TP reference-point’s
+coordinates (commonly indicating either the tower-base flange location,
+or TP centroid, or TP center of mass) that the user may have set in the
+stand-alone mode for checking the SubDyn model. A rigid connection
+between the SubDyn interface joints and TP reference point (<span class="math notranslate nohighlight">\({\equiv}\)</span> platform
+reference point) is assumed.</p>
+<p>For full lattice support structures or other structures with no
+transition piece, the entire support structure up to the yaw bearing may
+be modeled within SubDyn. Modeling the tower in SubDyn as opposed to
+ElastoDyn, for example, allows the ability to include more than the
+first two fore-aft and side-to-side bending modes, thus accounting for
+more general flexibility of the tower and its segments; however, for
+tubular towers, the structural model in ElastoDyn tends to be more
+accurate because ElastoDyn considers geometric nonlinearities not
+treated in SubDyn. When modeling full-lattice towers using SubDyn, the
+platform reference point in ElastoDyn can be located at the yaw bearing;
+in this case, the tower-bending DOFs in ElastoDyn should be disabled.</p>
+<p>If FAST is run with SubDyn but not HydroDyn, the water depth will be
+automatically set to 0 m. This will influence the calculation of the
+reaction loads. Reactions are always provided at the assumed mudline,
+therefore, they would not be correctly located for an offshore turbine
+as a result. Thus, it is recommended that HydroDyn always be enabled
+when modeling bottom-fixed offshore wind turbines.</p>
+<p>ElastoDyn also needs tower mode shapes specified (coefficients of
+best-fit sixth-order polynomials), derived using appropriate tower-base
+boundary conditions. They can be derived with an appropriate software
+(finite-element analysis, energy methods, or analytically) and by making
+use of the SubDyn-derived equivalent substructure stiffness and mass
+matrices (the <strong>KBBt</strong> and <strong>MBBt</strong> matrices found in the SubDyn summary
+file) to prescribe the boundary conditions at the base of the tower.</p>
+<p>For instance, using NREL’s BModes software, the SubDyn-obtained matrices
+can be used in place of the hydrodynamic stiffness (<strong>hydro_K</strong>) and mass
+matrices (<strong>hydro_M</strong>) (<strong>mooring_K</strong> can be set to zero). By setting
+the <strong>hub_conn</strong> boundary condition to two (free-free), BModes will
+calculate the mode shapes of the tower when tower cross-sectional
+properties are supplied. To obtain eigenmodes that are compatible with
+the FAST modal treatment of the tower (i.e., no axial or torsional modes
+and no distributed rotational-inertia contribution to the eigenmodes),
+the tower-distributed properties should be modified accordingly in
+BModes (e.g., by reducing mass moments of inertia towards zero and by
+increasing torsional and axial stiffness while assuring convergence of
+the results; see also
+<a class="reference external" href="https://wind.nrel.gov/forum/wind/viewtopic.php?f=4&amp;t=742">https://wind.nrel.gov/forum/wind/viewtopic.php?f=4&amp;t=742</a>).</p>
+<p>The rotational inertia of the undeflected tower about its centerline is
+not currently accounted for in ElastoDyn. Thus, when the nacelle-yaw DOF
+is enabled in ElastoDyn there will not be any rotational inertia of the
+platform-yaw DOF (which rotates the tower about its centerline) when
+both the platform-yaw inertia in ElastoDyn is zero and the tower is
+undeflected. To avoid a potential division-by-zero error in ElastoDyn
+when coupled to SubDyn, we recommend setting the platform-yaw inertia
+(<strong>PtfmYIner</strong>) in ElastoDyn equal to the total rotational inertia of
+the undeflected tower about its centerline. Note that the platform mass
+and inertia in ElastoDyn can be used to model heavy and rigid transition
+pieces that one would not want to model as a flexible body in either the
+ElastoDyn tower or SubDyn substructure models.</p>
+<p>The C-B method assumes no damping for the interface modes. This is
+equivalent to having six undamped rigid-body DOFs at the TP reference
+point in the absence of aerodynamic or hydrodynamic damping. Experience
+has shown that negligible platform-heave damping can cause numerical
+problems when SubDyn is coupled to FAST. One way to overcome this
+problem is to augment overall system damping with an additional linear
+damping for the platform-heave DOF. This augmentation can be achieved
+quite easily by calculating the damping from Eq. <a class="reference internal" href="#equation-damping">(1)</a> and specifying this
+as the (3,3) element of HydroDyn’s additional linear damping matrix,
+<strong>AddBLin</strong>. Experience has shown that a damping ratio of 1% of
+critical (<span class="math notranslate nohighlight">\({\zeta=0.01}\)</span>) is sufficient. In Eq. <a class="reference internal" href="#equation-damping">(1)</a>, <span class="math notranslate nohighlight">\({K_{33}^{(SD)}}\)</span> is the equivalent heave stiffness
+of the substructure (the (3,3) element of the <strong>KBBt</strong> (i.e., <span class="math notranslate nohighlight">\({\tilde{K}_{BB}}\)</span>) matrix
+found in the SubDyn summary file, see also Section 6), <span class="math notranslate nohighlight">\({M_{33}^{(SD)}}\)</span> is the equivalent
+heave mass of the substructure (the (3,3) element of the <strong>MBBt</strong>
+(i.e., <span class="math notranslate nohighlight">\({\tilde{M}_{BB}}\)</span>) matrix found in the SubDyn summary file, see also Section 6),
+and <span class="math notranslate nohighlight">\({M^{(ED)}}\)</span> is the total mass of the rotor, nacelle, tower, and TP (found in the
+ElastoDyn summary file).</p>
+<div class="math notranslate nohighlight" id="equation-damping">
+<span class="eqno">(1)<a class="headerlink" href="#equation-damping" title="Permalink to this equation">¶</a></span>\[C_{33}^{(HD)} = 2 \zeta \sqrt{ K_{33}^{(SD)} \left( M_{33}^{(SD)}+M^{(ED)} \right)}\]</div>
+<p>To minimize extraneous excitation of the platform-heave DOF, it is
+useful to set the initial platform-heave displacement to its natural
+static-equilibrium position, which can be approximated by Eq. <a class="reference internal" href="#equation-ptfmheave">(2)</a>, where
+is the magnitude of gravity. <em>PtfmHeave</em> from Eq. <a class="reference internal" href="#equation-ptfmheave">(2)</a> should be
+specified in the initial conditions section of the ElastoDyn input file.</p>
+<div class="math notranslate nohighlight" id="equation-ptfmheave">
+<span class="eqno">(2)<a class="headerlink" href="#equation-ptfmheave" title="Permalink to this equation">¶</a></span>\[PtfmHeave = -\dfrac{ \left( M_{33}^{(SD)}+M^{(ED)} \right) g}{K_{33}^{(SD)}}\]</div>
+</div>
+<div class="section" id="self-weight-calculations">
+<h2>Self-Weight Calculations<a class="headerlink" href="#self-weight-calculations" title="Permalink to this headline">¶</a></h2>
+<p>SubDyn will calculate the self-weight of the members and apply
+appropriate forces and moments at the element nodes. Lumped masses will
+also be considered as concentrated gravity loads at prescribed joints.
+The array of self-weight forces can be seen in the summary file if the
+code is compiled with DEBUG compiler directives. In general, SubDyn
+assumes that structural motions of the substructure are small, such that
+(1) small-angle assumptions apply to structural rotations and (2) the
+so-called P- <span class="math notranslate nohighlight">\({\Delta}\)</span> effect is negligible, and therefore undeflected node
+locations are used for self-weight calculations.</p>
+</div>
+<div class="section" id="note-on-other-load-calculations">
+<h2>Note On Other Load Calculations<a class="headerlink" href="#note-on-other-load-calculations" title="Permalink to this headline">¶</a></h2>
+<p>When SubDyn is coupled to HydroDyn through FAST, the hydrodynamic loads,
+which include buoyancy, marine-growth weight, and wave and current
+loads, will be applied to the effective, deflected location of the nodes
+by the mesh-mapping routines in the glue code. Those loads, however, are
+based on wave kinematics at the undeflected position (see Jonkman et al.
+2014 for more information).</p>
+</div>
+<div class="section" id="craig-bampton-guidelines">
+<span id="cbguide"></span><h2>Craig-Bampton Guidelines<a class="headerlink" href="#craig-bampton-guidelines" title="Permalink to this headline">¶</a></h2>
+<p>When SubDyn is coupled with FAST, it is important to choose a sufficient
+number of C-B modes, ensuring that the vibrational modes of the coupled
+system are properly captured by the coupled model. We recommend that all
+modes up to at least 2-3 Hz be captured; wind, wave, and turbine
+excitations are important for frequencies up to 2-3 Hz. Eigenanalysis of
+the linearized, coupled system will make checking this condition
+possible and aid in the selection of the number of retained modes;
+however, the linearization process has yet to be implemented in FAST v8.
+Until full-system linearization is made available, experience has shown
+that it is sufficient to enable all C-B modes up to 10 Hz (the natural
+frequencies of the C-B modes are written to the SubDyn summary file). If
+SIM (see Section <code class="xref std std-numref docutils literal notranslate"><span class="pre">sim</span></code>) is not enabled, in addition to capturing physical
+modes up to a given frequency, the highest C-B mode must include the
+substructure axial modes so that gravity loading from self-weight is
+properly accounted for within SubDyn. This inclusion likely requires
+enabling a high number of C-B modes, reducing the benefit of the C-B
+reduction. Thus, we recommend employing the C-B reduction with SIM
+enabled. Because of the fixed-fixed treatment of the substructure
+boundary conditions in the C-B reduction, the C-B modes will always have
+higher natural frequencies than the physical modes.</p>
+</div>
+<div class="section" id="integration-time-step-guidelines">
+<h2>Integration Time Step Guidelines<a class="headerlink" href="#integration-time-step-guidelines" title="Permalink to this headline">¶</a></h2>
+<p>Another consideration when creating SubDyn input files is the time step
+size. SubDyn offers three explicit time-integrators — the fourth-order
+Runge-Kutta (RK4), fourth-order Adams-Bashforth (AB4), fourth-order
+Adams-Bashforth-Moulton (ABM4) methods — and the implicit second-order
+Adams-Moulton (AM2) method. Users have the option of using the global
+time step from the glue code or an alternative SubDyn-unique time step
+that is an integer multiple smaller than the glue-code time step.
+It is essential that a small enough time step is used to ensure solution
+accuracy (by providing a sufficient sampling rate to characterize all
+key frequencies of the system), numerical stability of the selected
+explicit time-integrator, and that the coupling with FAST is numerically
+stable.</p>
+<p>For the RK4 and ABM4 methods, we recommend that the SubDyn time step
+follow the relationship shown in Eq. <a class="reference internal" href="#equation-dtmax">(3)</a>, where <span class="math notranslate nohighlight">\({f_{max}}\)</span> is the higher of (1) the
+highest natural frequency of the retained C-B modes and (2) the highest
+natural frequency of the physical modes when coupled to FAST. Although
+the former can be obtained from the SubDyn summary file, the latter is
+hard to estimate before the full-system linearization of the coupled
+FAST model is realized. Until then, experience has shown that the
+highest physical mode when SubDyn is coupled to FAST is often the
+platform-heave mode of ElastoDyn, with a frequency given by Eq. <a class="reference internal" href="#equation-freq">(4)</a>,
+where the variables are defined in Section 5.3.</p>
+<div class="math notranslate nohighlight" id="equation-dtmax">
+<span class="eqno">(3)<a class="headerlink" href="#equation-dtmax" title="Permalink to this equation">¶</a></span>\[dt_{max} = \dfrac{1}{10 f_{max}}\]</div>
+<div class="math notranslate nohighlight" id="equation-freq">
+<span class="eqno">(4)<a class="headerlink" href="#equation-freq" title="Permalink to this equation">¶</a></span>\[f= \dfrac{1}{2\pi} \sqrt{\dfrac{K_{33}^{(SD)}}{ M_{33}^{(SD)}+M^{(ED)}}}\]</div>
+<p>For the AB4 method, the recommended time step is half the value given by
+Eq. <a class="reference internal" href="#equation-dtmax">(3)</a>.</p>
+<p>For AM2, being implicit, the required time step is not driven by natural
+frequencies within SubDyn, but should still be chosen to ensure solution
+accuracy and that the coupling to FAST is numerically stable.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="theory.html" class="btn btn-neutral float-right" title="SubDyn Theory" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="output_files.html" class="btn btn-neutral" title="Output Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, National Renewable Energy Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

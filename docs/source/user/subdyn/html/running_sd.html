@@ -1,0 +1,335 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Running SubDyn &mdash; OpenFAST 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Input Files" href="input_files.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenFAST
+          
+
+          
+            
+            <img src="_static/openfastlogo.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Running SubDyn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#downloading-the-subdyn-software">Downloading the SubDyn Software</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#stand-alone-subdyn-archive">Stand-Alone SubDyn Archive</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#fast-archive">FAST Archive</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id2">Running SubDyn</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#running-the-stand-alone-subdyn-program">Running the Stand-Alone SubDyn Program</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-subdyn-coupled-to-fast">Running SubDyn Coupled to FAST</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="input_files.html">Input Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="output_files.html">Output Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modeling.html">Modeling Considerations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">SubDyn Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="future_work.html">Known Limitations and Future Work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zrefs.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixA.html">Appendix A. OC4 Jacket Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixB.html">Appendix B. OC4 Jacket Driver File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixC.html">Appendix C. OC4 Jacket SSI Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixD.html">Appendix D. List of Output Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixE.html">Appendix E. Compiling Stand-Alone SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixF.html">Appendix F. Major Changes in SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#integration-with-the-fast-modularization-framework">Integration with the FAST Modularization Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#dynamic-system-of-equations-and-c-b-reduction">Dynamic System of Equations and C-B Reduction</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenFAST</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Running SubDyn</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/running_sd.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="running-subdyn">
+<span id="id1"></span><h1>Running SubDyn<a class="headerlink" href="#running-subdyn" title="Permalink to this headline">¶</a></h1>
+<p>This section discusses how to obtain and execute SubDyn from a personal
+computer. Both the stand-alone version and the FAST-coupled version of
+the software are considered.</p>
+<div class="section" id="downloading-the-subdyn-software">
+<h2>Downloading the SubDyn Software<a class="headerlink" href="#downloading-the-subdyn-software" title="Permalink to this headline">¶</a></h2>
+<p>There are two forms of the SubDyn software to choose from: stand alone
+and coupled to the FAST simulator. Although the user may not necessarily
+need both forms, he/she would likely need to be familiar with and run
+the stand-alone model if building a model of the substructure from
+scratch. The stand-alone version is also helpful for model
+troubleshooting and may benefit users who are interested in conducting
+aero-hydro-servo-elastic simulations of an offshore wind turbine. For
+this reason, SubDyn can be obtained from two different repositories: one
+for the stand-alone SubDyn and one for the coupled solution through
+FAST.</p>
+<div class="section" id="stand-alone-subdyn-archive">
+<h3>Stand-Alone SubDyn Archive<a class="headerlink" href="#stand-alone-subdyn-archive" title="Permalink to this headline">¶</a></h3>
+<p>Users can refer to <code class="xref std std-numref docutils literal notranslate"><span class="pre">installation</span></code> download the stand-alone SubDyn archive from our Web server at
+<a class="reference external" href="https://nwtc.nrel.gov/SubDyn">*https://nwtc.nrel.gov/SubDyn*</a>. The
+file has a name similar to <em>SD_v1.03.00a-rrd.exe</em>, but may have a
+different version number. The user can then download the self-extracting
+archive (.exe) to expand the archive into a folder he/she specifies.</p>
+<div class="figure" id="id3">
+<span id="self-extractor"></span><a class="reference internal image-reference" href="figs/self-extractor.png"><img alt="figs/self-extractor.png" src="figs/self-extractor.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">Fig. 2 </span><span class="caption-text">WinZip Self-Extractor main window –TO REPLACE WITH CURRENT</span></p>
+</div>
+<p>ARCHIVE METHODS ETC.</p>
+<p>The archive contains the <strong>bin</strong>, <strong>CertTest</strong>, <strong>Compiling</strong>,
+<strong>Documentation</strong>, and <strong>Source</strong> folders. The <strong>bin</strong> folder
+includes the main executable file, <em>SubDyn_win32.exe</em>, which is used to
+execute the stand-alone SubDyn program. The <strong>CertTest</strong> folder
+contains a collection of sample SubDyn input files and driver input
+files that can be used as templates for the user’s own models. If the
+user runs the <em>CertTest.bat</em> DOS script, he/she can compare the results
+to the ones stored in the <strong>NREL_Results</strong> subfolder. This manual may
+be found in the <strong>Documentation</strong> folder. The <strong>Compiling</strong> folder
+contains files for compiling the stand-alone <em>SubDyn_win32.exe</em> file
+with either Visual Studio or gFortran. The Fortran source code is
+located in the <strong>Source</strong> folder.</p>
+</div>
+<div class="section" id="fast-archive">
+<h3>FAST Archive<a class="headerlink" href="#fast-archive" title="Permalink to this headline">¶</a></h3>
+<p>Download the FAST archive, which includes a coupling to SubDyn, from our
+Web server at <a class="reference external" href="https://nwtc.nrel.gov/FAST8">https://nwtc.nrel.gov/FAST8</a>. The file has a name similar
+to <em>FAST_v8.08.00.exe</em>, but may have a different version number. Run
+the downloaded self-extracting archive (<em>.exe</em>) to expand the archive
+into a user-specified folder. The FAST executable file is located in the
+archive’s <strong>bin</strong> folder. Example models using the NREL 5-MW reference
+turbine and various substructures are located in the <strong>CertTest</strong>
+folder. These include Test19: OC3-Monopile, Test20: OC3-Tripod, Test21:
+OC4-jacket.</p>
+</div>
+</div>
+<div class="section" id="id2">
+<h2>Running SubDyn<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="running-the-stand-alone-subdyn-program">
+<h3>Running the Stand-Alone SubDyn Program<a class="headerlink" href="#running-the-stand-alone-subdyn-program" title="Permalink to this headline">¶</a></h3>
+<p>The stand-alone SubDyn program, <em>SubDyn_win32.exe</em>, simulates
+substructure dynamic responses of the user’s input model, without
+coupling to FAST. Unlike the coupled version, the stand-alone software
+requires the use of a driver file in addition to the primary SubDyn
+input file. This driver file specifies inputs normally provided to
+SubDyn by FAST, including motions of the TP reference point. Both the
+SubDyn summary file and the results output file are available when using
+the stand-alone SubDyn (see Section 4 for more information regarding the
+SubDyn output files).</p>
+<p>Run the standalone SubDyn software from a DOS command prompt by typing,
+for example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;SubDyn_win32.exe MyDriverFile.dvr
+</pre></div>
+</div>
+<p>where, <em>MyDriverFile.dvr</em> is the name of the SubDyn driver file, as
+described in Section <code class="xref std std-numref docutils literal notranslate"><span class="pre">main-input-file</span></code>. The SubDyn primary input file is described in
+Section <code class="xref std std-numref docutils literal notranslate"><span class="pre">driver-input-file</span></code>.</p>
+</div>
+<div class="section" id="running-subdyn-coupled-to-fast">
+<h3>Running SubDyn Coupled to FAST<a class="headerlink" href="#running-subdyn-coupled-to-fast" title="Permalink to this headline">¶</a></h3>
+<p>Run the coupled FAST software from a DOS command prompt by typing, for
+example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>&gt;FAST_Win32.exe Test21.fst
+</pre></div>
+</div>
+<p>where, <em>Test21.fst</em> is the name of the primary FAST input file. This
+input file has a feature switch to enable or disable the SubDyn
+capabilities within FAST, and a corresponding reference to the SubDyn
+input file. See the documentation supplied with FAST for further
+information.</p>
+</div>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="input_files.html" class="btn btn-neutral float-right" title="Input Files" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="introduction.html" class="btn btn-neutral" title="Introduction" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, National Renewable Energy Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

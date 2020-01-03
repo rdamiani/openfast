@@ -94,11 +94,11 @@ PROGRAM TestSubDyn
    INTEGER                         :: StrtTime (8)         ! Start time of simulation
    CHARACTER(200)                  :: git_commit           ! String containing the current git commit hash
    TYPE(ProgDesc), PARAMETER       :: version   = ProgDesc( 'SubDyn Driver', '', '' )  ! The version number of this program.
+
    !...............................................................................................................................
    ! Routines called in initialization
    !...............................................................................................................................
 
-   
    
         ! Get the current time
         

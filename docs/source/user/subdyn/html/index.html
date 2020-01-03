@@ -1,0 +1,301 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>SubDyn User Guide and Theory Manual &mdash; OpenFAST 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Introduction" href="introduction.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="#" class="icon icon-home"> OpenFAST
+          
+
+          
+            
+            <img src="_static/openfastlogo.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running_sd.html">Running SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input_files.html">Input Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="output_files.html">Output Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modeling.html">Modeling Considerations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">SubDyn Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="future_work.html">Known Limitations and Future Work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zrefs.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixA.html">Appendix A. OC4 Jacket Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixB.html">Appendix B. OC4 Jacket Driver File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixC.html">Appendix C. OC4 Jacket SSI Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixD.html">Appendix D. List of Output Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixE.html">Appendix E. Compiling Stand-Alone SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixF.html">Appendix F. Major Changes in SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#integration-with-the-fast-modularization-framework">Integration with the FAST Modularization Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#dynamic-system-of-equations-and-c-b-reduction">Dynamic System of Equations and C-B Reduction</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">OpenFAST</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>SubDyn User Guide and Theory Manual</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="subdyn-user-guide-and-theory-manual">
+<h1>SubDyn User Guide and Theory Manual<a class="headerlink" href="#subdyn-user-guide-and-theory-manual" title="Permalink to this headline">¶</a></h1>
+<p>This manual offers both a quick reference guide and a more in-depth theory guide for the SubDyn software program.
+It is intended to be used by the general user in combination with the FAST and HydroDyn manuals.
+The manual will be updated as new releases are issued and as needed to provide further information on advancements or modifications to the software.</p>
+<p>The authors would like to acknowledge Huimin Song, a post-doctoral researcher at the National Renewable Energy Laboratory,
+for her contribution to the development of SubDyn. Amy Robertson and Fabian Wendt provided helpful feedback on the document,
+and Braulio Barahona produced some of the graphics.
+We also are grateful to the U.S. Department of Energy Wind and Water Power Program for supporting the development of this software.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running_sd.html">Running SubDyn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="running_sd.html#downloading-the-subdyn-software">Downloading the SubDyn Software</a></li>
+<li class="toctree-l2"><a class="reference internal" href="running_sd.html#id2">Running SubDyn</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="input_files.html">Input Files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="input_files.html#units">Units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_files.html#subdyn-driver-input-file">SubDyn Driver Input File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_files.html#subdyn-primary-input-file">SubDyn Primary Input File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="input_files.html#ssi-input-file">SSI Input File</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="output_files.html">Output Files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="output_files.html#echo-file">Echo File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_files.html#summary-file">Summary File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="output_files.html#results-file">Results File</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modeling.html">Modeling Considerations</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="modeling.html#model-discretization">Model Discretization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modeling.html#foundations">Foundations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modeling.html#member-overlap">Member Overlap</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modeling.html#substructure-tower-turbine-coupling">Substructure Tower/Turbine Coupling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modeling.html#self-weight-calculations">Self-Weight Calculations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modeling.html#note-on-other-load-calculations">Note On Other Load Calculations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modeling.html#craig-bampton-guidelines">Craig-Bampton Guidelines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="modeling.html#integration-time-step-guidelines">Integration Time Step Guidelines</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">SubDyn Theory</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#integration-with-the-fast-modularization-framework">Integration with the FAST Modularization Framework</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#coordinate-systems">Coordinate Systems</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#linear-finite-element-beam-model">Linear Finite-Element Beam Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="theory.html#dynamic-system-of-equations-and-c-b-reduction">Dynamic System of Equations and C-B Reduction</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="future_work.html">Known Limitations and Future Work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zrefs.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixA.html">Appendix A. OC4 Jacket Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixB.html">Appendix B. OC4 Jacket Driver File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixC.html">Appendix C. OC4 Jacket SSI Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixD.html">Appendix D. List of Output Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixE.html">Appendix E. Compiling Stand-Alone SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixF.html">Appendix F. Major Changes in SubDyn</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="appendixF.html#v1-03-00a-rrd-september-2017">V1.03.00a-rrd (September 2017)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appendixF.html#v1-01-01a-rrd-september-2014">V1.01.01a-rrd (September 2014)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="appendixF.html#v1-01-00a-rrd-june-2014">V1.01.00a-rrd (June 2014)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#integration-with-the-fast-modularization-framework">Integration with the FAST Modularization Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#dynamic-system-of-equations-and-c-b-reduction">Dynamic System of Equations and C-B Reduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="UsrPtfm_theory.html#state-space-formulation">State-Space Formulation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="UsrPtfm_theory.html#time-integration">Time Integration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="UsrPtfm_theory.html#static-improvement-method">Static-Improvement Method</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="introduction.html" class="btn btn-neutral float-right" title="Introduction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, National Renewable Energy Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

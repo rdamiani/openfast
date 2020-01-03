@@ -3855,7 +3855,11 @@ p%OutAllDims=12*p%Nmembers*2    !size of AllOut Member Joint forces
       ErrMsg  = 'Error allocating p%MOutLst(I)%NodeIDs arrays in SDOut_Init'
       RETURN
    END IF
-   p%MOutLst(I)%NodeIDs=Init%MemberNodes(p%MoutLst(I)%MemberID,p%MOutLst(I)%NodeCnt)  !We are storing the actual node numbers corresponding to what the user ordinal number is requesting
+   !Next line had to be changed for the new compiler, weird that it seemed to work with the old one
+   !p%MOutLst(I)%NodeIDs=Init%MemberNodes(p%MoutLst(I)%MemberID,p%MOutLst(I)%NodeCnt)  !We are storing the actual node numbers corresponding to what the user ordinal number is requesting
+   DO J=1,p%MOutLst(I)%NOutCnt
+      p%MOutLst(I)%NodeIDs(J)=Init%MemberNodes(p%MoutLst(I)%MemberID,p%MOutLst(I)%NodeCnt(J))  !We are storing the actual node numbers corresponding to what the user ordinal number is requesting
+   END DO 
 
    ALLOCATE( p%MOutLst(I)%ElmIDs(p%MoutLst(I)%NoutCnt,p%NAvgEls), STAT = ErrStat ) !ElmIDs has for each selected node within the member, several element numbers to refer to for averaging (max 2 elements)
    IF ( ErrStat/= 0 ) THEN
@@ -4233,13 +4237,13 @@ SUBROUTINE SDOut_MapOutputs( CurrentTime, u,p,x, y, m, AllOuts, ErrStat, ErrMsg 
    INTEGER(IntKi), DIMENSION(2)             ::K3    ! It stores Node IDs for element under consideration (may not be consecutive numbers)
    INTEGER(IntKi)                           :: maxOutModes  ! maximum modes to output, the minimum of 99 or p%Nmodes
    REAL(ReKi), DIMENSION (6)                :: FM_elm, FK_elm, junk  !output static and dynamic forces and moments
-   REAL(ReKi), DIMENSION (6)                :: FM_elm2, FK_elm2  !output static and dynamic forces and moments
+   REAL(ReKi), DIMENSION (6)                :: FM_elm2, FK_elm2, Larray, Larray2 !output static and dynamic forces and moments, also temp array of indices 
    Real(ReKi), DIMENSION (3,3)              :: DIRCOS    !direction cosice matrix (global to local) (3x3)
    Real(ReKi), ALLOCATABLE                  :: ReactNs(:)    !6*Nreact reactions
    REAL(ReKi)                               :: Tmp_Udotdot(12), Tmp_y2(12) !temporary storage for calls to CALC_LOCAL
    
-   Real(reKi), DIMENSION( p%URbarL+p%DOFL+6*p%Nreact)      :: yout            ! modifications to Y2 and Udotdot to include constrained node DOFs
-   Real(ReKi),  DIMENSION(p%URbarL+p%DOFL+6*p%Nreact)      ::uddout           ! modifications to Y2 and Udotdot to include constrained node DOFs
+   Real(reKi), DIMENSION( p%URbarL+p%DOFL+p%DOFCR)      :: yout            ! modifications to Y2 and Udotdot to include constrained node DOFs
+   Real(ReKi),  DIMENSION(p%URbarL+p%DOFL+p%DOFCR)      ::uddout           ! modifications to Y2 and Udotdot to include constrained node DOFs
    Integer(IntKi)                              ::sgn !+1/-1 for node force calculations
    ErrStat = ErrID_None   
    ErrMsg  = ""
@@ -4275,9 +4279,13 @@ SUBROUTINE SDOut_MapOutputs( CurrentTime, u,p,x, y, m, AllOuts, ErrStat, ErrMsg 
              
              K3=p%Elems(K,2:3)  !first and second node ID associated with element K 
              
-              L=p%IDY((K3(1)-1)*6+1)! starting index for node K3(1) within yout
-              L2=p%IDY((K3(2)-1)*6+1)! starting index for node K3(2) within yout
-                 
+              !L=p%IDY((K3(1)-1)*6+1)! starting index for node K3(1) within yout --Changed due to SSI causing a non-sequential order when DOFs are left 'free'
+              !L2=p%IDY((K3(2)-1)*6+1)! starting index for node K3(2) within yout
+               L=(K3(1)-1)*6+1  !temporary index, it represents an index into IDY which points to the position of the first DOF for the node
+               Larray =p%IDY(L:L+5)! p%IDY((K3(1)-1)*6+1) starting index for node K3(1) within yout
+               L2=(K3(2)-1)*6+1! starting index for node K3(2) within yout
+               Larray2 =p%IDY(L2:L2+5)! 
+   
              DIRCOS=tranSpose(p%elemprops(K)%DirCos)! global to local dir-cosine matrix
              
              !I need to find the Udotdot() for the two nodes of the element of interest 
@@ -4285,12 +4293,17 @@ SUBROUTINE SDOut_MapOutputs( CurrentTime, u,p,x, y, m, AllOuts, ErrStat, ErrMsg 
              
                ! bjj: added these temporary storage variables so that the CALC_LOCAL call doesn't created
                !      new temporary *every time* it's called
-             Tmp_Udotdot(1: 6) = uddout( L : L+5  )
-             Tmp_Udotdot(7:12) = uddout( L2 : L2+5 )
+             !Tmp_Udotdot(1: 6) = uddout( L : L+5  )    --Changed due to SSI causing a non-sequential order when DOFs are left 'free'
+             !Tmp_Udotdot(7:12) = uddout( L2 : L2+5 )  
+             !
+             !Tmp_y2(1: 6)      = yout( L : L+5 )
+             !Tmp_y2(7:12)      = yout( L2 : L2+5 )
+             Tmp_Udotdot(1: 6) = uddout( Larray  )
+             Tmp_Udotdot(7:12) = uddout( Larray2 )
              
-             Tmp_y2(1: 6)      = yout( L : L+5 )
-             Tmp_y2(7:12)      = yout( L2 : L2+5 )
-
+             Tmp_y2(1: 6)      = yout( Larray )
+             Tmp_y2(7:12)      = yout( Larray2 )
+             
              CALL CALC_LOCAL( DIRCOS,p%MOutLst(I)%Me(:,:,J,1),p%MOutLst(I)%Ke(:,:,J,1),Tmp_Udotdot, &
                               Tmp_y2,p%MoutLst(I)%Fg(:,J,1), K2,FM_elm,FK_elm) 
              
@@ -4306,11 +4319,21 @@ SUBROUTINE SDOut_MapOutputs( CurrentTime, u,p,x, y, m, AllOuts, ErrStat, ErrMsg 
              
                  K3=p%Elems(K,2:3)  !first and second node ID associated with element K 
                  
-                 L=p%IDY((K3(1)-1)*6+1)! starting index for node K3(1) within yout
-                 L2=p%IDY((K3(2)-1)*6+1)! starting index for node K3(2) within yout
-                 CALL CALC_LOCAL(DIRCOS,p%MOutLst(I)%Me(:,:,J,p%NavgEls),p%MOutLst(I)%Ke(:,:,J,p%NavgEls),(/uddout( L : L+5  ),uddout( L2 : L2+5 )/), &
-                                 (/yout( L : L+5 ),       yout( L2 : L2+5 )/), p%MoutLst(I)%Fg(:,J,p%NavgEls), K2,FM_elm,FK_elm ) 
-                                   
+                 !L=p%IDY((K3(1)-1)*6+1)! starting index for node K3(1) within yout  --Changed due to SSI causing a non-sequential order when DOFs are left 'free'
+                 !L2=p%IDY((K3(2)-1)*6+1)! starting index for node K3(2) within yout
+               
+                 L=(K3(1)-1)*6+1  !temporary index, it represents an index into IDY which points to the position of the first DOF for the node
+                 Larray =p%IDY(L:L+5)! p%IDY((K3(1)-1)*6+1) starting index for node K3(1) within yout
+                 L2=(K3(2)-1)*6+1! starting index for node K3(2) within yout
+                 Larray2 =p%IDY(L2:L2+5)! 
+                 
+                 
+                 !CALL CALC_LOCAL(DIRCOS,p%MOutLst(I)%Me(:,:,J,p%NavgEls),p%MOutLst(I)%Ke(:,:,J,p%NavgEls),(/uddout( L : L+5  ),uddout( L2 : L2+5 )/), & --Changed due to SSI causing a non-sequential order when DOFs are left 'free'
+                 !                (/yout( L : L+5 ),       yout( L2 : L2+5 )/), p%MoutLst(I)%Fg(:,J,p%NavgEls), K2,FM_elm,FK_elm ) 
+                 
+                 CALL CALC_LOCAL(DIRCOS,p%MOutLst(I)%Me(:,:,J,p%NavgEls),p%MOutLst(I)%Ke(:,:,J,p%NavgEls),(/uddout( Larray  ),uddout( Larray2 )/), &
+                                 (/yout( Larray ),       yout( Larray2 )/), p%MoutLst(I)%Fg(:,J,p%NavgEls), K2,FM_elm,FK_elm ) 
+                 
                  FM_elm2=0.5*( FM_elm2 + sgn*FM_elm ) !Now Average
                  FK_elm2=0.5*( FK_elm2 + sgn*FK_elm) !Now Average
              ENDIF
@@ -4350,13 +4373,19 @@ SUBROUTINE SDOut_MapOutputs( CurrentTime, u,p,x, y, m, AllOuts, ErrStat, ErrMsg 
                 
                 K3=p%Elems(K,2:3)  !first and second node ID associated with element K 
                 
-                L=p%IDY((K3(1)-1)*6+1)! starting index for node K3(1) within yout
-                L2=p%IDY((K3(2)-1)*6+1)! starting index for node K3(2) within yout
-                 
+!                L=p%IDY((K3(1)-1)*6+1)! starting index for node K3(1) within yout      --Changed due to SSI causing a non-sequential order when DOFs are left 'free'
+!                L2=p%IDY((K3(2)-1)*6+1)! starting index for node K3(2) within yout
+                L=(K3(1)-1)*6+1  !temporary index, it represents an index into IDY which points to the position of the first DOF for the node
+                Larray =p%IDY(L:L+5)! p%IDY((K3(1)-1)*6+1) starting index for node K3(1) within yout
+                L2=(K3(2)-1)*6+1! starting index for node K3(2) within yout
+                Larray2 =p%IDY(L2:L2+5)! 
+ 
                 DIRCOS=tranSpose(p%elemprops(K)%DirCos)! global to local
                 
-                CALL CALC_LOCAL( DIRCOS,p%MOutLst2(I)%Me2(:,:,J),p%MOutLst2(I)%Ke2(:,:,J),(/uddout( L : L+5  ),uddout( L2 : L2+5 )/), &
-                                 (/yout( L : L+5 ),       yout( L2 : L2+5 )/), p%MoutLst2(I)%Fg2(:,J),  K2,FM_elm,FK_elm) 
+                !CALL CALC_LOCAL( DIRCOS,p%MOutLst2(I)%Me2(:,:,J),p%MOutLst2(I)%Ke2(:,:,J),(/uddout( L : L+5  ),uddout( L2 : L2+5 )/), &  --Changed due to SSI causing a non-sequential order when DOFs are left 'free'
+                !                    (/yout( L : L+5 ),       yout( L2 : L2+5 )/), p%MoutLst2(I)%Fg2(:,J),  K2,FM_elm,FK_elm) 
+                CALL CALC_LOCAL( DIRCOS,p%MOutLst2(I)%Me2(:,:,J),p%MOutLst2(I)%Ke2(:,:,J),(/uddout( Larray ),uddout( Larray2 )/), &
+                                    (/yout( Larray ),       yout( Larray2)/), p%MoutLst2(I)%Fg2(:,J),  K2,FM_elm,FK_elm) 
                 
                ! FM_elm2=sgn*FM_elm 
                ! FK_elm2=sgn*FK_elm
@@ -4417,14 +4446,22 @@ SUBROUTINE SDOut_MapOutputs( CurrentTime, u,p,x, y, m, AllOuts, ErrStat, ErrMsg 
                 !Assign the sign depending on whether it is the 1st or second node                
                 K3=p%Elems(K,2:3)  !first and second node ID associated with element K 
                 
-                L =p%IDY((K3(1)-1)*6+1)! starting index for node K3(1) within yout
-                L2=p%IDY((K3(2)-1)*6+1)! starting index for node K3(2) within yout
+                !Need to find the indices for node K3(1), cannot rely on them being consecutive anymore, as some might have gone into the "L" internal set
                 
+                !!!!!--Changed L and L2 to Larray/LArray2 due to SSI causing a non-sequential order when DOFs are left 'free'!!!!
+                
+                L=(K3(1)-1)*6+1  !temporary index, it represents an index into IDY which points to the position of the first DOF for the node
+                Larray =p%IDY(L:L+5)! p%IDY((K3(1)-1)*6+1) starting index for node K3(1) within yout
+                L2=(K3(2)-1)*6+1! p%IDY((K3(2)-1)*6+1)! starting index for node K3(2) within yout
+                Larray2 =p%IDY(L2:L2+5)! 
                 DIRCOS=tranSpose(p%elemprops(K)%DirCos)! global to local
                 
-                CALL CALC_LOCAL( DIRCOS,p%MOutLst3(I)%Me(:,:,1,J),p%MOutLst3(I)%Ke(:,:,1,J),(/uddout( L : L+5  ),uddout( L2 : L2+5 )/), &
-                                 (/yout( L : L+5 ),       yout( L2 : L2+5 )/),  p%MoutLst3(I)%Fg(:,1,J),   K2,FM_elm,FK_elm) 
+                CALL CALC_LOCAL( DIRCOS,p%MOutLst3(I)%Me(:,:,1,J),p%MOutLst3(I)%Ke(:,:,1,J),(/uddout( Larray  ),uddout( Larray2 )/), &
+                                 (/yout( Larray ),       yout( Larray2 )/),  p%MoutLst3(I)%Fg(:,1,J),   K2,FM_elm,FK_elm) 
                 
+                !CALL CALC_LOCAL( DIRCOS,p%MOutLst3(I)%Me(:,:,1,J),p%MOutLst3(I)%Ke(:,:,1,J),(/uddout( L : L+5  ),uddout( L2 : L2+5 )/), &
+                !                 (/yout( L : L+5 ),       yout( L2 : L2+5 )/),  p%MoutLst3(I)%Fg(:,1,J),   K2,FM_elm,FK_elm) 
+                !
                 !transform back to global, need to do 3 at a time since cosine matrix is 3x3
                 DO L=1,2  
                    FM_elm2((L-1)*3+1:L*3) = FM_elm2((L-1)*3+1:L*3) + matmul(p%elemprops(K)%DirCos,FM_elm((L-1)*3+1:L*3))  !sum forces at joint in GLOBAL REF

@@ -1,0 +1,339 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Output Files &mdash; OpenFAST 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Modeling Considerations" href="modeling.html" />
+    <link rel="prev" title="Input Files" href="input_files.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenFAST
+          
+
+          
+            
+            <img src="_static/openfastlogo.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running_sd.html">Running SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input_files.html">Input Files</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Output Files</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#echo-file">Echo File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#summary-file">Summary File</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#results-file">Results File</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="modeling.html">Modeling Considerations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">SubDyn Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="future_work.html">Known Limitations and Future Work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zrefs.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixA.html">Appendix A. OC4 Jacket Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixB.html">Appendix B. OC4 Jacket Driver File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixC.html">Appendix C. OC4 Jacket SSI Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixD.html">Appendix D. List of Output Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixE.html">Appendix E. Compiling Stand-Alone SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixF.html">Appendix F. Major Changes in SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#integration-with-the-fast-modularization-framework">Integration with the FAST Modularization Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#dynamic-system-of-equations-and-c-b-reduction">Dynamic System of Equations and C-B Reduction</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenFAST</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Output Files</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/output_files.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="output-files">
+<span id="id1"></span><h1>Output Files<a class="headerlink" href="#output-files" title="Permalink to this headline">¶</a></h1>
+<p>SubDyn produces three types of output files: an echo file, a summary
+file, and a time-series results file. The following sections detail the
+purpose and contents of these files.</p>
+<div class="section" id="echo-file">
+<h2>Echo File<a class="headerlink" href="#echo-file" title="Permalink to this headline">¶</a></h2>
+<p>If the user sets the <strong>Echo</strong> flag to TRUE in the SubDyn driver file
+or the primary SubDyn input file, the contents of those files will be
+echoed to a file with the naming conventions, <strong>OutRootName.dvr.ech</strong>
+for the driver input file and <strong>OutRootName.SD.ech</strong> for the primary
+SubDyn input file. <strong>OutRootName</strong> is either specified in the SUBDYN
+section of the driver input file, or in the FAST input file. The echo
+files are helpful for debugging the input files. The contents of an echo
+file will be truncated if SubDyn encounters an error while parsing an
+input file. The error usually corresponds to the line after the last
+successfully echoed line.</p>
+</div>
+<div class="section" id="summary-file">
+<span id="sum-file"></span><h2>Summary File<a class="headerlink" href="#summary-file" title="Permalink to this headline">¶</a></h2>
+<p>SubDyn generates a summary file with the naming convention,
+<strong>OutRootName.SD.sum</strong> if the <strong>SDSum</strong> parameter is set to TRUE.
+This file summarizes key information about the substructure model,
+including:</p>
+<ul class="simple">
+<li>Undisplaced node geometry: a list of all of the (<strong>NNodes</strong>) nodes
+and the <em>X</em>,<em>Y</em>,<em>Z</em> coordinates in the global SS coordinate
+system. Note that <strong>NNodes</strong> may be greater or equal to
+<strong>NJoints</strong>, depending on <strong>NDiv</strong> (primary input file
+parameters).</li>
+<li>Element connectivity and properties at end nodes: a list of all
+(<strong>NElems</strong>) elements, the start and end nodes (<strong>Node_I</strong>,
+<strong>Node_J</strong>) and the ID of the property set (<strong>Prop_I</strong>,
+<strong>Prop_J</strong>) at the start and end nodes. <strong>NElems</strong> may be
+greater or equal to <strong>NMembers</strong>, depending on <strong>NDiv</strong> (primary
+input file parameters).</li>
+<li>Property sets. If tapered members are used, additional property sets
+may be included beyond those specified in the main input file, based
+on interpolated diameter and thickness values. Headers and their
+meanings are identical to those described in Section .</li>
+<li>Reaction DOFs and interface DOFs and their associated fixity; the
+actual indices of the DOFs (<strong>DOF_ID</strong>) associated with reaction
+and interface nodes are listed together with the (1/0) flag to
+distinguish the fixity level.</li>
+<li>Concentrated mass schedule. This is an echo of the equivalent section
+in the primary input file. Refer to Section .</li>
+<li>Member schedule including connectivity to joints, nodes, and their
+masses. A table lists all of the members by identifier
+(<strong>MemberID</strong>), with their start and end nodes (<strong>Joint1_ID</strong>,
+<strong>Joint2_ID</strong>), associated mass (<strong>Mass</strong>), and list of node
+identifiers along the length of the members.</li>
+<li>Direction cosine matrices for the members. Each row (columns 2-10)
+corresponds to the direction cosine matrix entries (<strong>DC(1,1)</strong>
+through <strong>DC(3,3)</strong>) for the member whose identifier is listed in
+the first column. The direction cosine matrices specify the
+transformation from the global reference to the local coordinate
+system for each member.</li>
+<li>Sorted eigenfrequencies [in Hertz (Hz)] for the full substructural
+system (neglecting a possible coupling to ElastoDyn through FAST),
+assuming the TP reference point is a free end. There are a total of
+<strong>NDOFs</strong> eigenfrequencies and eigenvectors.</li>
+<li>Sorted eigenfrequencies (in Hz) for the C-B reduced system, assuming
+the TP reference point is a fixed end. There are a total of
+<strong>Nmodes</strong> C-B reduced eigenfrequencies and eigenvectors.</li>
+<li>Full substructural system eigenvectors. Each column represents an
+eigenvector associated with the corresponding eigenfrequency
+identified previously in the file.</li>
+<li>C-B reduced system eigenvectors (<strong>PhiM</strong> matrix). Each column
+represents an eigenvector associated with the corresponding
+eigenfrequency identified previously in the file.</li>
+<li><strong>PhiR</strong> matrix or displacements of the internal nodes caused by
+unit rigid body motions of the interface DOFs (see Section ). Each
+column of the matrix represents the internal DOF displacements for a
+given unit rigid-body motion along an interface DOF for each base and
+interface joint.</li>
+<li>Substructure equivalent stiffness and mass matrices referred to the
+TP reference point (<strong>KBBt</strong> and <strong>MBBt</strong>), based on a Guyan
+reduction. These are useful to calculate effects of substructure
+flexibility while calculating tower eigenmodes for ElastoDyn.</li>
+<li>Rigid-body-equivalent mass matrix relative to global origin
+(<strong>MRB</strong>); a 6x6 mass matrix.</li>
+<li>Substructure total (dry) mass.</li>
+<li>Substructure center of mass coordinates in the global coordinate
+system.</li>
+</ul>
+<p>The various sections of the summary file and variables are
+self-explanatory and easily identifiable in the file.</p>
+</div>
+<div class="section" id="results-file">
+<h2>Results File<a class="headerlink" href="#results-file" title="Permalink to this headline">¶</a></h2>
+<p>The SubDyn time-series results are written to a text-based file with the
+naming convention <strong>OutRootName.SD.out</strong> when <strong>OutSwtch</strong> is set to
+either one or three. If SubDyn is coupled to FAST and <strong>OutSwtch</strong> is
+set to two or three, then FAST will generate a master results file that
+includes the SubDyn results. The results in <strong>OutRootName.SD.out</strong> are
+in table format, where each column is a data channel (the first column
+always being the simulation time), and each row corresponds to a
+simulation time step. The data channels are specified in the SDOutList
+section of the input file. The column format of the SubDyn-generated
+file is specified using the <strong>OutFmt</strong> and <strong>OutSFmt</strong> parameters of
+the input file.</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="modeling.html" class="btn btn-neutral float-right" title="Modeling Considerations" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="input_files.html" class="btn btn-neutral" title="Input Files" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, National Renewable Energy Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

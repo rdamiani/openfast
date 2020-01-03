@@ -1,0 +1,403 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Appendix D. List of Output Channels &mdash; OpenFAST 1.0 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Appendix E. Compiling Stand-Alone SubDyn" href="appendixE.html" />
+    <link rel="prev" title="Appendix C. OC4 Jacket SSI Input File" href="appendixC.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> OpenFAST
+          
+
+          
+            
+            <img src="_static/openfastlogo.jpg" class="logo" alt="Logo"/>
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running_sd.html">Running SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="input_files.html">Input Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="output_files.html">Output Files</a></li>
+<li class="toctree-l1"><a class="reference internal" href="modeling.html">Modeling Considerations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">SubDyn Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="future_work.html">Known Limitations and Future Work</a></li>
+<li class="toctree-l1"><a class="reference internal" href="zrefs.html">References</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixA.html">Appendix A. OC4 Jacket Input File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixB.html">Appendix B. OC4 Jacket Driver File</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixC.html">Appendix C. OC4 Jacket SSI Input File</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Appendix D. List of Output Channels</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixE.html">Appendix E. Compiling Stand-Alone SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="appendixF.html">Appendix F. Major Changes in SubDyn</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#integration-with-the-fast-modularization-framework">Integration with the FAST Modularization Framework</a></li>
+<li class="toctree-l1"><a class="reference internal" href="UsrPtfm_theory.html#dynamic-system-of-equations-and-c-b-reduction">Dynamic System of Equations and C-B Reduction</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">OpenFAST</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Appendix D. List of Output Channels</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/appendixD.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="appendix-d-list-of-output-channels">
+<span id="sd-appendix-d"></span><h1>Appendix D. List of Output Channels<a class="headerlink" href="#appendix-d-list-of-output-channels" title="Permalink to this headline">¶</a></h1>
+<p>This is a list of all possible output parameters for the SubDyn module.
+The names are grouped by meaning, but can be ordered in the OUTPUT
+CHANNELS section of the SubDyn input file as the user sees fit. <span class="math notranslate nohighlight">\(M \alpha N \beta\)</span>,
+refers to node <span class="math notranslate nohighlight">\(\beta\)</span> of member <span class="math notranslate nohighlight">\(\alpha\)</span>, where <span class="math notranslate nohighlight">\(\alpha\)</span> is a number in the range [1,9] and
+corresponds to row <span class="math notranslate nohighlight">\(\alpha\)</span> in the MEMBER OUTPUT LIST table (see Section ) and
+<span class="math notranslate nohighlight">\(\beta\)</span> is a number in the range [1,9] and corresponds to node <span class="math notranslate nohighlight">\(\beta\)</span> in the
+<strong>NodeCnt</strong> list of that table entry.</p>
+<p>Some outputs are in the SS reference coordinate system (global
+inertial-frame coordinate system), and end with the suffix <cite>ss</cite>; others
+refer to the local (member) reference system and they have suffixes
+“Xe”, “Ye”, or “Ze” (see Section 7).</p>
+<p>Table C-1. List of Output Channels.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="17%" />
+<col width="26%" />
+<col width="57%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Channel Name(s)</th>
+<th class="head">Units</th>
+<th class="head">Description</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><em>Base and Interface Reaction Loads</em></td>
+<td colspan="2">&#160;</td>
+</tr>
+<tr class="row-odd"><td><p class="first">ReactFXss, ReactFYss, ReactFZss,</p>
+<p class="last">ReactMXss, ReactMYss, ReactMZss,</p>
+</td>
+<td><p class="first">(N), (N), (N),</p>
+<p class="last">(Nm), (Nm), (Nm)</p>
+</td>
+<td><p class="first">Total base reaction forces and moments</p>
+<p class="last">at the (0.,0.,-<strong>WtrDpth</strong>) location in SS coordinate system</p>
+</td>
+</tr>
+<tr class="row-even"><td><p class="first">IntfFXss, IntfFYss, IntfFZss,</p>
+<p class="last">IntfMXss, IntfMYss, IntfMZss,</p>
+</td>
+<td><p class="first">(N), (N), (N),</p>
+<p class="last">(Nm), (Nm), (Nm)</p>
+</td>
+<td><p class="first">Total interface reaction forces and moments</p>
+<p class="last">at the TP reference point (platform reference point) location in SS coordinate system</p>
+</td>
+</tr>
+<tr class="row-odd"><td>Interface Kinematics</td>
+<td colspan="2">&#160;</td>
+</tr>
+<tr class="row-even"><td><p class="first">IntfTDXss, IntfTDYss, IntfTDZss,</p>
+<p class="last">IntfRDXss, IntfRDYss IntfRDZss</p>
+</td>
+<td><p class="first">(m), (m), (m),</p>
+<p class="last">(rad), (rad), (rad)</p>
+</td>
+<td><p class="first">Displacements and rotations of the TP reference point</p>
+<p class="last">(platform reference point) location in SS coordinate system</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p class="first">IntfTAXss, IntfTAYss, IntfTAZss,</p>
+<p class="last">IntfRAXss, IntfRAYss IntfRAZss</p>
+</td>
+<td><p class="first">(<span class="math notranslate nohighlight">\({m/s^2}\)</span>), (<span class="math notranslate nohighlight">\({m/s^2}\)</span>), (<span class="math notranslate nohighlight">\({m/s^2}\)</span>),</p>
+<p class="last">(<span class="math notranslate nohighlight">\({rad/s^2}\)</span>), (<span class="math notranslate nohighlight">\({rad/s^2}\)</span>), (<span class="math notranslate nohighlight">\({rad/s^2}\)</span>)</p>
+</td>
+<td><p class="first">Translational and rotational accelerations of the TP reference point</p>
+<p class="last">(platform reference point) location in SS coordinate system</p>
+</td>
+</tr>
+<tr class="row-even"><td><em>Modal Parameters</em></td>
+<td colspan="2">&#160;</td>
+</tr>
+<tr class="row-odd"><td>SSqm01-SSqm99</td>
+<td>(-)</td>
+<td>C-B modal variables (up to first 99)</td>
+</tr>
+<tr class="row-even"><td>SSqmd01-SSqmd99</td>
+<td>(1/s)</td>
+<td>First time-derivatives of C-B modal variables (up to first 99)</td>
+</tr>
+<tr class="row-odd"><td>SSqmdd01-SSqmdd99</td>
+<td>(<span class="math notranslate nohighlight">\({1/s^2}\)</span>)</td>
+<td>Second time-derivatives of C-B modal variables (up to first 99)</td>
+</tr>
+<tr class="row-even"><td><em>Node Kinematics</em></td>
+<td colspan="2">&#160;</td>
+</tr>
+<tr class="row-odd"><td><p class="first"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> TDxss,</p>
+<p><span class="math notranslate nohighlight">\(M \alpha N \beta\)</span> TDyss,</p>
+<p class="last"><span class="math notranslate nohighlight">\(M \alpha N \beta\)</span> TDzss,</p>
+</td>
+<td><ol class="first last loweralpha simple" start="13">
+<li></li>
+</ol>
+</td>
+<td><p class="first">Nodal translational displacements of <span class="math notranslate nohighlight">\(M \alpha N \beta\)</span></p>
+<p class="last">(up to 81 designated locations) in SS coordinate system</p>
+</td>
+</tr>
+<tr class="row-even"><td><p class="first"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> RDxe,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> RDye,</p>
+<p class="last"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> RDze</p>
+</td>
+<td>(rad)</td>
+<td><p class="first">Nodal rotational displacements of <span class="math notranslate nohighlight">\(M \alpha N \beta\)</span></p>
+<p class="last">(up to 81 designated locations) in member local coordinate system</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p class="first"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> TAxe,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> TAye,</p>
+<p class="last"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> TAze</p>
+</td>
+<td>(<span class="math notranslate nohighlight">\({m/s^2}\)</span>)</td>
+<td><p class="first">Nodal translational accelerations  of <span class="math notranslate nohighlight">\(M \alpha N \beta\)</span></p>
+<p class="last">(up to 81 designated locations) in member local coordinate system</p>
+</td>
+</tr>
+<tr class="row-even"><td><p class="first"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> RAxe,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> RAye,</p>
+<p class="last"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> RAze</p>
+</td>
+<td>(<span class="math notranslate nohighlight">\({rad/s^2}\)</span>)</td>
+<td><p class="first">Nodal rotational accelerations  of <span class="math notranslate nohighlight">\(M \alpha N \beta\)</span></p>
+<p class="last">(up to 81 designated locations) in member local coordinate system</p>
+</td>
+</tr>
+<tr class="row-odd"><td><em>Node Forces and Moments</em></td>
+<td colspan="2">&#160;</td>
+</tr>
+<tr class="row-even"><td><p class="first"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> FKxe,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> FKye,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> FKze</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> MKxe,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> MKye,</p>
+<p class="last"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> MKze</p>
+</td>
+<td><p class="first">(N),</p>
+<p>(N),</p>
+<p>(N),</p>
+<p>(Nm),</p>
+<p>(Nm),</p>
+<p class="last">(Nm)</p>
+</td>
+<td><p class="first">Static (elastic) component of reaction forces and moments</p>
+<p class="last">at <span class="math notranslate nohighlight">\(M \alpha N \beta\)</span>  along local member coordinate system</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p class="first"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> FMxe,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> FMye,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> FMze</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> MMxe,</p>
+<p><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> MMye,</p>
+<p class="last"><span class="math notranslate nohighlight">\({M \alpha N \beta}\)</span> MMze</p>
+</td>
+<td><p class="first">(N),</p>
+<p>(N),</p>
+<p>(N),</p>
+<p>(Nm),</p>
+<p>(Nm),</p>
+<p class="last">(Nm)</p>
+</td>
+<td><p class="first">Dynamic (inertial) component of reaction forces and moments</p>
+<p class="last">at <span class="math notranslate nohighlight">\(M \alpha N \beta\)</span>  along local member coordinate system</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="appendixE.html" class="btn btn-neutral float-right" title="Appendix E. Compiling Stand-Alone SubDyn" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="appendixC.html" class="btn btn-neutral" title="Appendix C. OC4 Jacket SSI Input File" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, National Renewable Energy Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -6,10 +6,6 @@
 !! code to compile in double vs. single precision.   
 !
 !**********************************************************************************************************************************
-! File last committed: $Date: 2016-07-16 14:54:28 -0600 (Sat, 16 Jul 2016) $
-! (File) Revision #: $Rev: 391 $
-! URL: $HeadURL: https://windsvn2.nrel.gov/NWTC_Library/branches/NetLib/NWTC_source/NWTC_LAPACK.f90 $
-!**********************************************************************************************************************************
 MODULE NWTC_LAPACK
 
    USE NWTC_Base        ! we only need the precision and error level constants
@@ -97,12 +93,17 @@ MODULE NWTC_LAPACK
       MODULE PROCEDURE LAPACK_spptrf
    END INTERFACE
 
-!> Compute the SVD for a general matrix A = USV^T.
+   !> Compute the SVD for a general matrix A = USV^T.
    INTERFACE LAPACK_gesvd
       MODULE PROCEDURE LAPACK_dgesvd
       MODULE PROCEDURE LAPACK_sgesvd
    END INTERFACE
 
+   !> Unpack  packed (1D) to regular matrix format (2D)
+   INTERFACE LAPACK_TPTTR  
+      MODULE PROCEDURE LAPACK_STPTTR
+      MODULE PROCEDURE LAPACK_DTPTTR
+   END INTERFACE   
       
    CONTAINS
 
@@ -1324,7 +1325,90 @@ MODULE NWTC_LAPACK
 
 
    RETURN
-   END SUBROUTINE LAPACK_SPPTRF
+END SUBROUTINE LAPACK_SPPTRF   
+!=======================================================================
+   
+   !=======================================================================
+!INTERFACE LAPACK_TPTTR:
+!  Unpack a by-column-packed array into a 2D matrix format
+!  See documentation in  DTPTTR/STPTTR source code.
+  SUBROUTINE LAPACK_DTPTTR( UPLO, N, AP, A, LDA, ErrStat, ErrMsg )
+          
+      ! passed parameters
+ 
+      CHARACTER(1),       intent(in   ) :: UPLO              ! = 'U': A is an upper triangular matrix; 'L': A is a lower triangular matrix
+      INTEGER,         intent(in   ) :: N                 ! The order of matrix A and AP.
+      INTEGER,         intent(in)    :: LDA               ! The leading dimension of the matrix A. LDA ? max(1,N)
+      INTEGER(IntKi),  intent(  out) :: ErrStat           ! Error level 
+      CHARACTER(*),    intent(  out) :: ErrMsg            ! Message describing error
+
+      !     .. Array Arguments ..
+      REAL(R8Ki),intent(in) :: AP( : )              !Packed array
+      
+      REAL(R8Ki),intent(out) :: A( :,: )            ! Unpacked array : Note AP(1)=A(1,1); AP(2)=A(1,2); AP(3)=A(2,2); AP(4)=A(1,3) etc. by column, upper triang
+
+         ! Local variable
+      INTEGER                        :: INFO              ! = 0:  successful exit; < 0:  if INFO = -i, the i-th argument had an illegal value 
+      
+      
+      ErrStat = ErrID_None
+      ErrMsg  = ""
+      
+      
+      CALL DTPTTR( UPLO, N, AP, A, LDA, INFO )                
+      
+      IF (INFO /= 0) THEN
+         ErrStat = ErrID_FATAL
+         WRITE( ErrMsg, * ) INFO
+         IF (INFO < 0) THEN
+            ErrMsg  = "LAPACK_DTPTTR: illegal value in argument "//TRIM(ErrMsg)//"."
+         ELSE
+            ErrMsg = 'LAPACK_DTPTTR: Unknown error '//TRIM(ErrMsg)//'.'
+         END IF
+      END IF      
+ 
+      
+   RETURN
+   END SUBROUTINE LAPACK_DTPTTR
+!=======================================================================
+  SUBROUTINE LAPACK_STPTTR( UPLO, N, AP, A, LDA, ErrStat, ErrMsg )
+          
+      ! passed parameters
+ 
+      CHARACTER(1),       intent(in   ) :: UPLO              ! = 'U': A is an upper triangular matrix; 'L': A is a lower triangular matrix
+      INTEGER,         intent(in   ) :: N                 ! The order of matrix A and AP.
+      INTEGER,         intent(in)    :: LDA               ! The leading dimension of the matrix A. LDA ? max(1,N)
+      INTEGER(IntKi),  intent(  out) :: ErrStat           ! Error level 
+      CHARACTER(*),    intent(  out) :: ErrMsg            ! Message describing error
+
+      !     .. Array Arguments ..
+      REAL(SiKi), intent(in) :: AP( : )              !Packed array
+      
+      REAL(SiKi), intent(out) :: A( :,: )            ! Unpacked array : Note AP(1)=A(1,1); AP(2)=A(1,2); AP(3)=A(2,2); AP(4)=A(1,3) etc. by column, upper triang
+
+         ! Local variable
+      INTEGER                        :: INFO              ! = 0:  successful exit; < 0:  if INFO = -i, the i-th argument had an illegal value 
+      
+      
+      ErrStat = ErrID_None
+      ErrMsg  = ""
+      
+      
+      CALL STPTTR( UPLO, N, AP, A, LDA, INFO )                
+      
+      IF (INFO /= 0) THEN
+         ErrStat = ErrID_FATAL
+         WRITE( ErrMsg, * ) INFO
+         IF (INFO < 0) THEN
+            ErrMsg  = "LAPACK_STPTTR: illegal value in argument "//TRIM(ErrMsg)//"."
+         ELSE
+            ErrMsg = 'LAPACK_STPTTR: Unknown error '//TRIM(ErrMsg)//'.'
+         END IF
+      END IF      
+ 
+      
+   RETURN
+END SUBROUTINE LAPACK_STPTTR
 !=======================================================================
 !> Compute singular value decomposition (SVD) for a general matrix, A.
 !! use LAPACK_DGESVD (nwtc_lapack::lapack_dgesvd) instead of this specific function.
@@ -1403,7 +1487,6 @@ MODULE NWTC_LAPACK
       INTEGER                        :: LDU               ! The leading dimension of the array U.  LDU >= 1; if JOBU = 'S' or 'A', LDU >= M.
       INTEGER                        :: LDVT              ! The leading dimension of the array VT.  LDVT >= 1; if
                                                           !! JOBVT = 'A', LDVT >= N; if JOBVT = 'S', LDVT >= min(M,N).
-      CHARACTER(20)                  :: n_str
 
       LDA  = SIZE(A,1)
       LDU  = SIZE(U,1)
@@ -1508,7 +1591,6 @@ MODULE NWTC_LAPACK
       INTEGER                        :: LDU               ! The leading dimension of the array U.  LDU >= 1; if JOBU = 'S' or 'A', LDU >= M.
       INTEGER                        :: LDVT              ! The leading dimension of the array VT.  LDVT >= 1; if
                                                           !! JOBVT = 'A', LDVT >= N; if JOBVT = 'S', LDVT >= min(M,N).
-      CHARACTER(20)                  :: n_str
 
       LDA  = SIZE(A,1)
       LDU  = SIZE(U,1)
@@ -1535,5 +1617,7 @@ MODULE NWTC_LAPACK
 
    RETURN
    END SUBROUTINE LAPACK_SGESVD
+   !=======================================================================
+
 !=======================================================================
 END MODULE NWTC_LAPACK
