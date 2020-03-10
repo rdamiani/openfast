@@ -79,7 +79,7 @@ function(bd_regression TESTNAME LABEL)
   set(TEST_SCRIPT "${CMAKE_CURRENT_LIST_DIR}/executeBeamdynRegressionCase.py")
   set(BEAMDYN_EXECUTABLE "${CTEST_BEAMDYN_EXECUTABLE}")
   set(SOURCE_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/..")
-  set(BUILD_DIRECTORY "${CTEST_BINARY_DIR}/modules-local/beamdyn")
+  set(BUILD_DIRECTORY "${CTEST_BINARY_DIR}/modules/beamdyn")
   regression(${TEST_SCRIPT} ${BEAMDYN_EXECUTABLE} ${SOURCE_DIRECTORY} ${BUILD_DIRECTORY} ${TESTNAME} "${LABEL}")
 endfunction(bd_regression)
 
@@ -119,6 +119,7 @@ of_regression_linear("WP_Stationary_Linear"         "openfast;linear;elastodyn;a
 of_regression_linear("Ideal_Beam_Fixed_Free_Linear" "openfast;linear;beamdyn")
 of_regression_linear("Ideal_Beam_Free_Free_Linear"  "openfast;linear;beamdyn")
 of_regression_linear("5MW_Land_BD_Linear"           "openfast;linear;beamdyn;servodyn")
+of_regression_linear("5MW_OC4Semi_Linear"           "openfast;linear;hydrodyn;servodyn")
 
 # BeamDyn regression tests
 bd_regression("bd_5MW_dynamic"              "beamdyn;dynamic")
