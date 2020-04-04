@@ -316,23 +316,13 @@ SUBROUTINE SD_Init( InitInput, u, p, x, xd, z, OtherState, y, m, Interval, InitO
    ! Parse the SubDyn inputs 
    CALL SD_Input(InitInput%SDInputFile, Init, p, ErrStat2, ErrMsg2); if(Failed()) return
       
-   ! Discretize the structure according to the division size 
-   ! sets Init%NNode, Init%NElm
-   CALL SD_Discrt(Init,p, ErrStat2, ErrMsg2); if(Failed()) return
    
    !.................................
    !-------------  Discretize the structure according to the division size -----------------
    !.................................
+   ! sets Init%NNode, Init%NElm
+   CALL SD_Discrt(Init,p, ErrStat2, ErrMsg2); if(Failed()) return
          
-   CALL SD_Discrt(Init,p, ErrStat2, ErrMsg2) ! sets Init%NNode, Init%NElm
-      CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'SD_Init' )
-      IF ( ErrStat >= AbortErrLev ) THEN
-         CALL CleanUp()
-         RETURN
-      END IF
-   
-      
-      
    CALL AssembleKM(Init,p, ErrStat2, ErrMsg2)
       CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'SD_Init' )
       IF ( ErrStat >= AbortErrLev ) THEN
@@ -2416,17 +2406,20 @@ SUBROUTINE ReduceKMdofs(Init, p, RetDOFs, ErrStat, ErrMsg )
          Mred(I,J) = REAL( Init%M( idx(I), idx(J) ), LAKi )
       END DO
    END DO
+  
+   RetDOFs=idx(1:DOF_reduced)  
+   
    ! clean up local variables:
    CALL CleanUp()
    
 CONTAINS
    
     subroutine CleanUp()
-      IF (ALLOCATED(idx)) DEALLOCATE(idx)
+    
+    IF (ALLOCATED(idx)) DEALLOCATE(idx)
       CALL MOVE_ALLOC(Kred, Init%K)
       CALL MOVE_ALLOC(Mred, Init%M)
-      RetDOFs=idx(1:DOF_reduced)
-      DEALLOCATE(idx)
+      
    end subroutine
    
 END SUBROUTINE ReduceKMdofs
