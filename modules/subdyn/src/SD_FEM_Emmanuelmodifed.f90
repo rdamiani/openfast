@@ -19,12 +19,10 @@
 MODULE SD_FEM
   USE NWTC_Library
   USE SubDyn_Types
-  USE NWTC_LAPACK
-   
   IMPLICIT NONE
-  
-   INTEGER,         PARAMETER  :: LAKi            = R8Ki                  ! Define the kind to be used for LAPACK routines for getting eigenvalues/vectors. Apparently there is a problem with SGGEV's eigenvectors
-  
+
+  INTEGER,          PARAMETER  :: LAKi            = R8Ki                  ! Define the kind to be used for LAPACK routines for getting eigenvalues/vectors. Apparently there is a problem with SGGEV's eigenvectors
+ 
   INTEGER(IntKi),   PARAMETER  :: MaxMemjnt       = 10                    ! Maximum number of members at one joint
   INTEGER(IntKi),   PARAMETER  :: MaxOutChs       = 2000                  ! Max number of Output Channels to be read in
   INTEGER(IntKi),   PARAMETER  :: TPdofL          = 6                     ! 6 degrees of freedom (length of u subarray [UTP])
@@ -38,20 +36,28 @@ MODULE SD_FEM
   INTEGER(IntKi),   PARAMETER  :: PropSetsCol     = 6                     ! Number of columns in PropSets  (PropSetID,YoungE,ShearG,MatDens,XsecD,XsecT)  !bjj: this really doesn't need to store k, does it? or is this supposed to be an ID, in which case we shouldn't be storing k (except new property sets), we should be storing IDs
   INTEGER(IntKi),   PARAMETER  :: XPropSetsCol    = 10                    ! Number of columns in XPropSets (PropSetID,YoungE,ShearG,MatDens,XsecA,XsecAsx,XsecAsy,XsecJxx,XsecJyy,XsecJ0)
   INTEGER(IntKi),   PARAMETER  :: COSMsCol        = 10                    ! Number of columns in (cosine matrices) COSMs (COSMID,COSM11,COSM12,COSM13,COSM21,COSM22,COSM23,COSM31,COSM32,COSM33)
-  INTEGER(IntKi),   PARAMETER  :: CMassCol        = 11                     ! Number of columns in Concentrated Mass (CMJointID,JMass,JMXX,JMYY,JMZZ,JMXY,JMXZ,JMYZ,CGX,CGY,CGZ)
-  
+  INTEGER(IntKi),   PARAMETER  :: CMassCol        = 5                     ! Number of columns in Concentrated Mass (CMJointID,JMass,JMXX,JMYY,JMZZ)
+  ! Indices in Members table
+  INTEGER(IntKi),   PARAMETER  :: iMProp= 4 ! Index in Members table where the PropSet1 and 2 are stored
+
   INTEGER(IntKi),   PARAMETER  :: SDMaxInpCols    = MAX(JointsCol,ReactCol,InterfCol,MembersCol,PropSetsCol,XPropSetsCol,COSMsCol,CMassCol)
 
-    CONTAINS
+
+  INTERFACE FINDLOCI ! In the future, use FINDLOC from intrinsic
+     MODULE PROCEDURE FINDLOCI_ReKi
+     MODULE PROCEDURE FINDLOCI_IntKi
+  END INTERFACE
+
+CONTAINS
     
 !> Maps nodes to elements 
 !! allocate NodesConnE and NodesConnN                                                                               
 SUBROUTINE NodeCon(Init,p, ErrStat, ErrMsg)
   USE qsort_c_module ,only: QsortC
-  TYPE(SD_InitType),              INTENT( INOUT )  ::Init   
-  TYPE(SD_ParameterType),         INTENT( IN    )  ::p  
-  INTEGER(IntKi),                 INTENT(   OUT )  :: ErrStat     ! Error status of the operation
-  CHARACTER(*),                   INTENT(   OUT )  :: ErrMsg      ! Error message if ErrStat /= ErrID_None
+  TYPE(SD_InitType),              INTENT( INOUT ) :: Init
+  TYPE(SD_ParameterType),         INTENT( IN    ) :: p
+  INTEGER(IntKi),                 INTENT(   OUT ) :: ErrStat     ! Error status of the operation
+  CHARACTER(*),                   INTENT(   OUT ) :: ErrMsg      ! Error message if ErrStat /= ErrID_None
   ! Local variables
   INTEGER(IntKi) :: SortA(MaxMemJnt,1)  !To sort nodes and elements
   INTEGER(IntKi) :: I,J,K  !counter
@@ -89,6 +95,111 @@ SUBROUTINE NodeCon(Init,p, ErrStat, ErrMsg)
    ENDDO                            
 
 END SUBROUTINE NodeCon
+!----------------------------------------------------------------------------
+!>
+! - Removes the notion of "ID" and use Index instead
+! - Creates Nodes (use indices instead of ID), similar to Joints array
+! - Creates Elems (use indices instead of ID)  similar to Members array
+! - Updates Reacts (use indices instead of ID)
+! - Updates Interf (use indices instead of ID)
+SUBROUTINE SD_ReIndex_CreateNodesAndElems(Init,p, ErrStat, ErrMsg)
+   TYPE(SD_InitType),            INTENT(INOUT)  ::Init
+   TYPE(SD_ParameterType),       INTENT(INOUT)  ::p
+   INTEGER(IntKi),               INTENT(  OUT)  :: ErrStat     ! Error status of the operation
+   CHARACTER(*),                 INTENT(  OUT)  :: ErrMsg      ! Error message if ErrStat /= ErrID_None
+   ! local variable
+   INTEGER                       :: I, n, iMem, iNode, JointID   
+   CHARACTER(1024)               :: sType !< String for element type
+   INTEGER(IntKi)                :: ErrStat2
+   CHARACTER(1024)               :: ErrMsg2
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+
+   CALL AllocAry(p%Elems,         Init%NElem,    MembersCol, 'p%Elems',         ErrStat2, ErrMsg2); if(Failed()) return
+   CALL AllocAry(Init%Nodes,      Init%NNode,    JointsCol,  'Init%Nodes',      ErrStat2, ErrMsg2); if(Failed()) return
+
+   ! --- Initialize Nodes
+   Init%Nodes = 0   
+   do I = 1,Init%NJoints
+      Init%Nodes(I, 1) = I                ! JointID replaced by index I
+      Init%Nodes(I, 2) = Init%Joints(I, 2)
+      Init%Nodes(I, 3) = Init%Joints(I, 3)
+      Init%Nodes(I, 4) = Init%Joints(I, 4)
+   enddo
+
+   ! --- Re-Initialize Reactions, pointing to index instead of JointID
+   do I = 1, p%NReact
+      JointID=p%Reacts(I,1)
+      p%Reacts(I,1) = FINDLOCI(Init%Joints(:,1), JointID ) ! Replace JointID with Index
+      if (p%Reacts(I,1)<=0) then
+         CALL Fatal('Reaction joint table: line '//TRIM(Num2LStr(I))//' refers to JointID '//trim(Num2LStr(JointID))//' which is not in the joint list!')
+         return
+      endif
+   enddo
+
+   ! --- Re-Initialize interface joints, pointing to index instead of JointID
+   Init%IntFc = 0
+   do I = 1, Init%NInterf
+      JointID=Init%Interf(I,1)
+      Init%Interf(I,1) = FINDLOCI(Init%Joints(:,1), JointID )
+      if (Init%Interf(I,1)<=0) then
+         CALL Fatal('Interface joint table: line '//TRIM(Num2LStr(I))//' refers to JointID '//trim(Num2LStr(JointID))//' which is not in the joint list!')
+         return
+      endif
+   enddo
+
+   ! Change numbering in concentrated mass matrix
+   do I = 1, Init%NCMass
+      JointID = Init%CMass(I,1)
+      Init%CMass(I,1) = FINDLOCI(Init%Joints(:,1), JointID )
+      if (Init%Interf(I,1)<=0) then
+         CALL Fatal('Concentrated mass table: line '//TRIM(Num2LStr(I))//' refers to JointID '//trim(Num2LStr(JointID))//' which is not in the joint list!')
+         return
+      endif
+   enddo
+
+
+   ! --- Initialize Elems, starting with each member as an element (we'll take NDiv into account later)
+   p%Elems = 0
+   ! --- Replacing "MemberID"  "JointID", and "PropSetID" by simple index in this tables
+   DO iMem = 1, p%NMembers
+      ! Column 1  : member index (instead of MemberID)
+      p%Elems(iMem,     1)  = iMem
+      ! Column 2-3: Joint index (instead of JointIDs)
+      p%Elems(iMem,     1)  = iMem  ! NOTE: element/member number (not MemberID)
+      do iNode=2,3
+         p%Elems(iMem,iNode) = FINDLOCI(Init%Joints(:,1), Init%Members(iMem, iNode) ) 
+         if (p%Elems(iMem,iNode)<=0) then
+            CALL Fatal(' MemberID '//TRIM(Num2LStr(Init%Members(iMem,1)))//' has JointID'//TRIM(Num2LStr(iNode-1))//' = '// TRIM(Num2LStr(Init%Members(iMem, iNode)))//' which is not in the joint list!')
+            return
+         endif
+      enddo
+      ! Column 4-5: PropIndex 1-2 (instead of PropSetID1&2)
+      ! NOTE: this index has different meaning depending on the member type !
+      DO n=iMProp,iMProp+1
+
+         sType='Member x-section property'
+         p%Elems(iMem,n) = FINDLOCI(Init%PropSets(:,1), Init%Members(iMem, n) ) 
+
+         if (p%Elems(iMem,n)<=0) then
+            CALL Fatal('For MemberID '//TRIM(Num2LStr(Init%Members(iMem,1)))//'the PropSetID'//TRIM(Num2LStr(n-3))//' is not in the'//trim(sType)//' table!')
+         endif
+      END DO !n, loop through property ids         
+   END DO !iMem, loop through members
+    
+   ! TODO in theory, we shouldn't need these anymore
+   ! deallocate(Init%Members)
+   ! deallocate(Init%Joints)
+CONTAINS
+   LOGICAL FUNCTION Failed()
+      call SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'SD_ReIndex_CreateNodesAndElems') 
+      Failed =  ErrStat >= AbortErrLev
+   END FUNCTION Failed
+   SUBROUTINE Fatal(ErrMsg_in)
+      CHARACTER(len=*), intent(in) :: ErrMsg_in
+      CALL SetErrStat(ErrID_Fatal, ErrMsg_in, ErrStat, ErrMsg, 'SD_ReIndex_CreateNodesAndElems');
+   END SUBROUTINE Fatal
+END SUBROUTINE SD_ReIndex_CreateNodesAndElems
 
 !----------------------------------------------------------------------------
 SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
@@ -96,18 +207,19 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
    TYPE(SD_ParameterType),       INTENT(INOUT)  ::p
    INTEGER(IntKi),               INTENT(  OUT)  :: ErrStat     ! Error status of the operation
    CHARACTER(*),                 INTENT(  OUT)  :: ErrMsg      ! Error message if ErrStat /= ErrID_None
-      ! local variable
-   INTEGER                       :: I, J, n, Node, Node1, Node2, Prop, Prop1, Prop2   
-   INTEGER                       :: OldJointIndex(Init%NJoints)
+   ! local variable
+   INTEGER                       :: I, J, n, Node1, Node2, Prop1, Prop2   
    INTEGER                       :: NNE      ! number of nodes per element
    INTEGER                       :: MaxNProp
    REAL(ReKi), ALLOCATABLE       :: TempProps(:, :)
-   INTEGER, ALLOCATABLE          :: TempMembers(:, :) ,TempReacts(:,:)         
+   INTEGER, ALLOCATABLE          :: TempMembers(:, :)
    INTEGER                       :: knode, kelem, kprop, nprop
    REAL(ReKi)                    :: x1, y1, z1, x2, y2, z2, dx, dy, dz, dd, dt, d1, d2, t1, t2
    LOGICAL                       :: found, CreateNewProp
    INTEGER(IntKi)                :: ErrStat2
-   CHARACTER(1024)               :: ErrMsg2
+   CHARACTER(ErrMsgLen)          :: ErrMsg2
+   
+   
    ErrStat = ErrID_None
    ErrMsg  = ""
    
@@ -119,14 +231,11 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
       RETURN
    ENDIF
    
-   Init%NNode = Init%NJoints + ( Init%NDiv - 1 )*p%NMembers    ! Calculate total number of nodes according to divisions 
-   Init%NElem = p%NMembers*Init%NDiv                           ! Total number of element   
-   MaxNProp   = Init%NPropSets + Init%NElem*NNE                ! Maximum possible number of property sets (temp): This is property set per element node, for all elements (bjj, added Init%NPropSets to account for possibility of entering many unused prop sets)
-   
-   ! Calculate total number of nodes and elements according to element types
-   ! for 3-node or 4-node beam elements
-   Init%NNode = Init%NNode + (NNE - 2)*Init%NElem
-   !bjj: replaced with max value instead of NNE: Init%MembersCol = Init%MembersCol + (NNE - 2) 
+   ! Total number of element   
+   Init%NElem = p%NMembers*Init%NDiv  
+   ! Total number of nodes - Depends on division and number of nodes per element
+   Init%NNode = Init%NJoints + ( Init%NDiv - 1 )*p%NMembers 
+   Init%NNode = Init%NNode + (NNE - 2)*Init%NElem 
    
    ! check the number of interior modes
    IF ( p%Nmodes > 6*(Init%NNode - Init%NInterf - p%NReact) ) THEN
@@ -134,286 +243,222 @@ SUBROUTINE SD_Discrt(Init,p, ErrStat, ErrMsg)
       RETURN
    ENDIF
    
-   CALL AllocAry(p%Elems,         Init%NElem,    MembersCol, 'p%Elems',         ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt')
-   
-   CALL AllocAry(Init%Nodes,      Init%NNode,    JointsCol,  'Init%Nodes',      ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt')
-   CALL AllocAry(Init%MemberNodes,p%NMembers,    Init%NDiv+1,'Init%MemberNodes',ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt')  ! for two-node element only, otherwise the number of nodes in one element is different
-   CALL AllocAry(Init%BCs,        6*p%NReact,    2,          'Init%BCs',        ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt') !!!! RRD: THIS MAY NEED TO CHANGE IF NOT ALL NODES ARE RESTRAINED
-   CALL AllocAry(Init%IntFc,      6*Init%NInterf,2,          'Init%IntFc',      ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt')
-   
-   CALL AllocAry(TempMembers,     p%NMembers,    MembersCol, 'TempMembers',     ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt') 
-   CALL AllocAry(TempProps,       MaxNProp,      PropSetsCol,'TempProps',       ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt') 
-   CALL AllocAry(TempReacts,      p%NReact,      ReactCol,   'TempReacts',      ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt')
-   
-   IF ( ErrStat >= AbortErrLev ) THEN
-      CALL CleanUp_Discrt()
-      RETURN
-   ENDIF
+   CALL AllocAry(Init%MemberNodes,p%NMembers,    Init%NDiv+1,'Init%MemberNodes',ErrStat2, ErrMsg2); if(Failed()) return ! for two-node element only, otherwise the number of nodes in one element is different
+   CALL AllocAry(Init%IntFc,      6*Init%NInterf,2,          'Init%IntFc',      ErrStat2, ErrMsg2); if(Failed()) return
 
-   ! Initialize Nodes
-   Init%Nodes = 0   
-   DO I = 1,Init%NJoints
-      OldJointIndex(I) = Init%Joints(I, 1)
-      Init%Nodes(I, 1) = I
-      Init%Nodes(I, 2) = Init%Joints(I, 2)
-      Init%Nodes(I, 3) = Init%Joints(I, 3)
-      Init%Nodes(I, 4) = Init%Joints(I, 4)
-   ENDDO
+   ! --- Reindexing JointsID and MembersID into Nodes and Elems arrays
+   ! NOTE: need NNode and NElem 
+   CALL SD_ReIndex_CreateNodesAndElems(Init,p, ErrStat2, ErrMsg2);  if(Failed()) return
    
-   ! Initialize Elems, starting with each member as an element (we'll take NDiv into account later)
-   p%Elems = 0
-   DO I = 1, p%NMembers
-      p%Elems(I,     1) = I                     ! element/member number (not MemberID)
-!bjj: TODO: JMJ wants check that YoungE, ShearG, and MatDens are equal in the two properties because we aren't going to interpolate them. This should be less confusing for users.                                                
+   ! --- Initialize boundary constraint vector - TODO: assumes order of DOF, NOTE: Needs Reindexing first
+   CALL AllocAry(Init%BCs, 6*p%NReact, 2, 'Init%BCs', ErrStat2, ErrMsg2); if(Failed()) return
+   CALL InitConstr(Init, p)
       
-         ! loop through the JointIDs for this member and find the corresponding indices into the Joints array
-      DO n = 2,3  ! Members column for JointIDs for nodes 1 and 2
-         Node = Init%Members(I, n)  ! n=2 or 3
-            ! ...... search for index of joint whose JointID matches Node ......
-         J = 1
-         found = .false.      
-         DO WHILE ( .NOT. found .AND. J <= Init%NJoints )
-            IF ( Node == NINT(Init%Joints(J, 1)) ) THEN
-               p%Elems(I, n) = J                ! index of the joint/node n-1 (i.e., nodes 1 and 2)
-               found = .TRUE.
-            END IF
-            J = J + 1
-         END DO 
-         IF ( .NOT. found) THEN
-            CALL Fatal(' Member '//TRIM(Num2LStr(I))//' has JointID'//TRIM(Num2LStr(n-1))//' = '// TRIM(Num2LStr(Node))//' which is not in the node list !')
-            RETURN
-         END IF
-      END DO ! loop through nodes/joints
-      
-         ! loop through the PropSetIDs for this member and find the corresponding indices into the Joints array
-      ! we're setting these two values:   
-      !p%Elems(I, 4) = property set for node 1 (note this sets the YoungE, ShearG, and MatDens columns for the ENTIRE element)   
-      !p%Elems(I, 5) = property set for node 2 (note this should be used only for the XsecD and XsecT properties in the element [for a linear distribution from node 1 to node 2 of D and T])
-      DO n=4,5 ! Member column for MPropSetID1 and MPropSetID2
-         Prop = Init%Members(I, n)  ! n=4 or 5
-            ! ...... search for index of property set whose PropSetID matches Prop ......
-         J = 1
-         found = .false.      
-         DO WHILE ( .NOT. found .AND. J <= Init%NPropSets )
-            IF ( Prop == NINT(Init%PropSets(J, 1)) ) THEN
-               p%Elems(I, n) = J                ! index of the property set n-3 (i.e., property sets 1 and 2)  ! note that previously, this used Prop instead of J, which assumed the list of MemberIDs was sequential, starting at 1.
-               found = .TRUE.
-            END IF
-            J = J + 1
-         END DO
-         IF ( .NOT. found) THEN
-            CALL Fatal(' Member '//TRIM(Num2LStr(I))//' has PropSetID'//TRIM(Num2LStr(n-3))//' = '//TRIM(Num2LStr(Prop))//' which is not in the Member X-Section Property data!')
-            RETURN
-         END IF
-      END DO ! loop through property ids         
-   END DO ! loop through members
-   
-   ! Initialize TempMembers
-   TempMembers = p%Elems(1:p%NMembers,:)
-   
-   ! Initialize Temp property set, first user defined sets
-   TempProps = 0
-   TempProps(1:Init%NPropSets, :) = Init%PropSets   
-   
-   ! Initialize boundary constraint vector
-   ! Change the node number
-    !Allocate array that will be p%Reacts renumbered and ordered so that ID does not play a role, just ordinal position number will count -RRD
-   Init%BCs = 0
-   DO I = 1, p%NReact
-      Node1 = p%Reacts(I, 1);  !NODE ID
-      TempReacts(I,2:ReactCol)=p%Reacts(I, 2:ReactCol)  !Assign all the appropriate fixity to the new Reacts array -RRD
-      found = .false.
-      DO J = 1, Init%NJoints
-         IF ( Node1 == NINT(Init%Joints(J, 1)) ) THEN
-            Node2 = J
-            found = .true.
-            TempReacts(I,1)=Node2      !New node ID for p!React  -RRD
-            EXIT  !Exit J loop if node found -RRD
-         ENDIF
-      ENDDO
-      IF (.not. found) THEN
-         CALL Fatal(' React has node not in the node list !')
-         RETURN
-      ENDIF
-      DO J = 1, 6
-         Init%BCs( (I-1)*6+J, 1) = (Node2-1)*6+J;
-         Init%BCs( (I-1)*6+J, 2) = p%Reacts(I, J+1);
-      ENDDO
-   ENDDO
-   p%Reacts=TempReacts   !UPDATED REACTS
-      
-   ! Initialize interface constraint vector
-   ! Change the node number
-   Init%IntFc = 0
+   ! --- Initialize interface constraint vector - TODO: assumes order of DOF, NOTE: Needs Reindexing first
    DO I = 1, Init%NInterf
-      Node1 = Init%Interf(I, 1);
-      found = .false.
-      DO J = 1, Init%NJoints
-         IF ( Node1 == NINT(Init%Joints(J, 1)) ) THEN
-            Node2 = J
-            found = .true.
-         ENDIF
-      ENDDO
-      IF (.not. found) THEN
-         CALL Fatal(' Interf has node not in the node list !')
-         RETURN
-      ENDIF
       DO J = 1, 6
-         Init%IntFc( (I-1)*6+J, 1) = (Node2-1)*6+J;
+         Init%IntFc( (I-1)*6+J, 1) = (Init%Interf(I,1)-1)*6+J; ! TODO assumes order of DOF, and needs Interf1 reindexed
          Init%IntFc( (I-1)*6+J, 2) = Init%Interf(I, J+1);
       ENDDO
    ENDDO
-  
-   ! Change numbering in concentrated mass matrix
-   DO I = 1, Init%NCMass
-      Node1 = NINT( Init%CMass(I, 1) )
-      DO J = 1, Init%NJoints
-         IF ( Node1 == NINT(Init%Joints(J, 1)) ) THEN
-            Init%CMass(I, 1) = J  !bjj: todo: check this. if there is no return after this is found, are we overwritting the value if Node1 == NINT(Init%Joints(J, 1)) is true for multiple Js?
-         ENDIF
-      ENDDO
-   ENDDO
 
-! discretize structure according to NDiv 
-knode = Init%NJoints
-kelem = 0
-kprop = Init%NPropSets
-Init%MemberNodes = 0
+    Init%MemberNodes = 0
+    ! --- Setting up MemberNodes (And Elems, Props, Nodes if divisions)
+    if (Init%NDiv==1) then
+       ! NDiv = 1
+       Init%MemberNodes(1:p%NMembers, 1:2) = p%Elems(1:Init%NElem, 2:3) 
+       Init%NProp = Init%NPropSets
 
-    IF (Init%NDiv > 1) THEN
-   DO I = 1, p%NMembers !the first p%NMembers rows of p%Elems contain the element information
-      ! create new node
-      Node1 = TempMembers(I, 2)
-      Node2 = TempMembers(I, 3)
-      
-      IF ( Node1==Node2 ) THEN
+    else if (Init%NDiv > 1) then
+
+       ! Discretize structure according to NDiv 
+       ! - Elems is fully reinitialized, connectivity needs to be done again using SetNewElem
+       ! - Nodes are not  reinitialized, but appended to NNodes
+       ! 
+
+       ! Initialize Temp arrays that will contain user inputs + input from the subdivided members
+       !  We don't know how many properties will be needed, so allocated to size MaxNProp
+       MaxNProp   = Init%NPropSets + Init%NElem*NNE ! Maximum possible number of property sets (temp): This is property set per element node, for all elements (bjj, added Init%NPropSets to account for possibility of entering many unused prop sets)
+       CALL AllocAry(TempMembers, p%NMembers,    MembersCol , 'TempMembers', ErrStat2, ErrMsg2); if(Failed()) return
+       CALL AllocAry(TempProps,  MaxNProp,      PropSetsCol,'TempProps',  ErrStat2, ErrMsg2); if(Failed()) return
+       TempProps = -9999.
+       TempMembers                    = p%Elems(1:p%NMembers,:)
+       TempProps(1:Init%NPropSets, :) = Init%PropSets   
+
+       kelem = 0
+       knode = Init%NJoints
+       kprop = Init%NPropSets
+       DO I = 1, p%NMembers !the first p%NMembers rows of p%Elems contain the element information
+          ! Member data
+          Node1 = TempMembers(I, 2)
+          Node2 = TempMembers(I, 3)
+          Prop1 = TempMembers(I, iMProp  )
+          Prop2 = TempMembers(I, iMProp+1)
+
+          IF ( Node1==Node2 ) THEN
              CALL Fatal(' Same starting and ending node in the member.')
-         RETURN
-      ENDIF
-    
-      Prop1 = TempMembers(I, 4)
-      Prop2 = TempMembers(I, 5)
-      
-      Init%MemberNodes(I,           1) = Node1
-      Init%MemberNodes(I, Init%NDiv+1) = Node2
-      
-      IF  ( ( .not. EqualRealNos(TempProps(Prop1, 2),TempProps(Prop2, 2) ) ) &
-       .OR. ( .not. EqualRealNos(TempProps(Prop1, 3),TempProps(Prop2, 3) ) ) &
-       .OR. ( .not. EqualRealNos(TempProps(Prop1, 4),TempProps(Prop2, 4) ) ) )  THEN
-      
+             RETURN
+          ENDIF
+  
+          
+          Init%MemberNodes(I,           1) = Node1
+          Init%MemberNodes(I, Init%NDiv+1) = Node2
+          
+          IF  ( ( .not. EqualRealNos(TempProps(Prop1, 2),TempProps(Prop2, 2) ) ) &
+           .OR. ( .not. EqualRealNos(TempProps(Prop1, 3),TempProps(Prop2, 3) ) ) &
+           .OR. ( .not. EqualRealNos(TempProps(Prop1, 4),TempProps(Prop2, 4) ) ) )  THEN
+          
              CALL Fatal(' Material E,G and rho in a member must be the same')
-         RETURN
-      ENDIF
+             RETURN
+          ENDIF
 
-      x1 = Init%Nodes(Node1, 2)
-      y1 = Init%Nodes(Node1, 3)
-      z1 = Init%Nodes(Node1, 4)
+          x1 = Init%Nodes(Node1, 2)
+          y1 = Init%Nodes(Node1, 3)
+          z1 = Init%Nodes(Node1, 4)
 
-      x2 = Init%Nodes(Node2, 2)
-      y2 = Init%Nodes(Node2, 3)
-      z2 = Init%Nodes(Node2, 4)
-      
-      dx = ( x2 - x1 )/Init%NDiv
-      dy = ( y2 - y1 )/Init%NDiv
-      dz = ( z2 - z1 )/Init%NDiv
-      
-      d1 = TempProps(Prop1, 5)
-      t1 = TempProps(Prop1, 6)
+          x2 = Init%Nodes(Node2, 2)
+          y2 = Init%Nodes(Node2, 3)
+          z2 = Init%Nodes(Node2, 4)
+          
+          dx = ( x2 - x1 )/Init%NDiv
+          dy = ( y2 - y1 )/Init%NDiv
+          dz = ( z2 - z1 )/Init%NDiv
+          
+          d1 = TempProps(Prop1, 5)
+          t1 = TempProps(Prop1, 6)
 
-      d2 = TempProps(Prop2, 5)
-      t2 = TempProps(Prop2, 6)
-      
-      dd = ( d2 - d1 )/Init%NDiv
-      dt = ( t2 - t1 )/Init%NDiv
-      
-         ! If both dd and dt are 0, no interpolation is needed, and we can use the same property set for new nodes/elements. otherwise we'll have to create new properties for each new node
+          d2 = TempProps(Prop2, 5)
+          t2 = TempProps(Prop2, 6)
+          
+          dd = ( d2 - d1 )/Init%NDiv
+          dt = ( t2 - t1 )/Init%NDiv
+          
+             ! If both dd and dt are 0, no interpolation is needed, and we can use the same property set for new nodes/elements. otherwise we'll have to create new properties for each new node
           CreateNewProp = .NOT. ( EqualRealNos( dd , 0.0_ReKi ) .AND.  EqualRealNos( dt , 0.0_ReKi ) )  
-      
-      ! node connect to Node1
-      knode = knode + 1
-      Init%MemberNodes(I, 2) = knode
+          
+          ! node connect to Node1
+          knode = knode + 1
+          Init%MemberNodes(I, 2) = knode
           CALL SetNewNode(knode, x1+dx, y1+dy, z1+dz, Init)
-      
-      
-      IF ( CreateNewProp ) THEN   
-           ! create a new property set 
-           ! k, E, G, rho, d, t, Init
-           kprop = kprop + 1
+              
+          IF ( CreateNewProp ) THEN   
+               ! create a new property set 
+               ! k, E, G, rho, d, t, Init
+               kprop = kprop + 1
                CALL SetNewProp(kprop, TempProps(Prop1, 2), TempProps(Prop1, 3), TempProps(Prop1, 4), d1+dd, t1+dt, TempProps)           
-           kelem = kelem + 1
+               kelem = kelem + 1
                CALL SetNewElem(kelem, Node1, knode, Prop1, kprop, p)  
-           nprop = kprop              
-      ELSE
-           kelem = kelem + 1
+               nprop = kprop              
+          ELSE
+               kelem = kelem + 1
                CALL SetNewElem(kelem, Node1, knode, Prop1, Prop1, p)                
-           nprop = Prop1 
-      ENDIF
-      
-      ! interior nodes
-      DO J = 2, (Init%NDiv-1)
-         knode = knode + 1
-         Init%MemberNodes(I, J+1) = knode
+               nprop = Prop1 
+          ENDIF
+          
+          ! interior nodes
+          DO J = 2, (Init%NDiv-1)
+             knode = knode + 1
+             Init%MemberNodes(I, J+1) = knode
 
              CALL SetNewNode(knode, x1 + J*dx, y1 + J*dy, z1 + J*dz, Init)
-         
-         IF ( CreateNewProp ) THEN   
-              ! create a new property set 
-              ! k, E, G, rho, d, t, Init
-              
-              kprop = kprop + 1
+             
+             IF ( CreateNewProp ) THEN   
+                  ! create a new property set 
+                  ! k, E, G, rho, d, t, Init               
+                  kprop = kprop + 1
                   CALL SetNewProp(kprop, TempProps(Prop1, 2), TempProps(Prop1, 3),&
-                              Init%PropSets(Prop1, 4), d1 + J*dd, t1 + J*dt, &
-                              TempProps)           
-              kelem = kelem + 1
+                                  Init%PropSets(Prop1, 4), d1 + J*dd, t1 + J*dt, &
+                                  TempProps)           
+                  kelem = kelem + 1
                   CALL SetNewElem(kelem, knode-1, knode, nprop, kprop, p)
-              nprop = kprop                
-         ELSE
-              kelem = kelem + 1
+                  nprop = kprop                
+             ELSE
+                  kelem = kelem + 1
                   CALL SetNewElem(kelem, knode-1, knode, nprop, nprop, p)         
-               
-         ENDIF
-      ENDDO
-      
-      ! the element connect to Node2
-      kelem = kelem + 1
+                   
+             ENDIF
+          ENDDO
+          
+          ! the element connect to Node2
+          kelem = kelem + 1
           CALL SetNewElem(kelem, knode, Node2, nprop, Prop2, p)                
 
-   ENDDO ! loop over all members
+       ENDDO ! loop over all members
+       !
+       Init%NProp = kprop
 
-ELSE ! NDiv = 1
+    ENDIF ! if NDiv is greater than 1
 
-   Init%MemberNodes(1:p%NMembers, 1:2) = p%Elems(1:Init%NElem, 2:3)   
+    ! set the props in Init
+    CALL AllocAry(Init%Props, Init%NProp, PropSetsCol, 'Init%PropsBeams', ErrStat2, ErrMsg2); if(Failed()) return
 
-ENDIF ! if NDiv is greater than 1
+    if (Init%NDiv==1) then
+       Init%Props(1:Init%NProp, 1:PropSetsCol) = Init%PropSets(1:Init%NProp, 1:PropSetsCol)
+    else if (Init%NDiv>1) then
+       Init%Props(1:Init%NProp, 1:PropSetsCol) = TempProps(1:Init%NProp, 1:PropSetsCol)
+    endif
+    !Init%Props(1:kprop, 1:Init%PropSetsCol) = TempProps
+    Init%Props = TempProps(1:Init%NProp, :)  !!RRD fixed it on 1/23/14 to account for NDIV=1
 
-! set the props in Init
-Init%NProp = kprop
-CALL AllocAry(Init%Props, Init%NProp, PropSetsCol,  'Init%Props', ErrStat2, ErrMsg2); CALL SetErrStat(ErrStat2,ErrMsg2,ErrStat,ErrMsg,'SD_Discrt')
-   IF (ErrStat >= AbortErrLev ) THEN
-      CALL SetErrStat(ErrStat2,ErrMsg2, ErrStat,ErrMsg,'SD_Discrt');
-      CALL CleanUp_Discrt()
-   RETURN
-ENDIF
-!Init%Props(1:kprop, 1:Init%PropSetsCol) = TempProps
-Init%Props = TempProps(1:Init%NProp, :)  !!RRD fixed it on 1/23/14 to account for NDIV=1
-
-CALL CleanUp_Discrt()
+    CALL CleanUp_Discrt()
 
 CONTAINS
+   LOGICAL FUNCTION Failed()
+      call SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'SD_Discrt') 
+      Failed =  ErrStat >= AbortErrLev
+      if (Failed) CALL CleanUp_Discrt()
+   END FUNCTION Failed
+
    SUBROUTINE Fatal(ErrMsg_in)
       CHARACTER(len=*), intent(in) :: ErrMsg_in
       CALL SetErrStat(ErrID_Fatal, ErrMsg_in, ErrStat, ErrMsg, 'SD_Discrt');
       CALL CleanUp_Discrt()
    END SUBROUTINE Fatal
-   
+
    SUBROUTINE CleanUp_Discrt()
-! deallocate temp matrices
-IF (ALLOCATED(TempProps)) DEALLOCATE(TempProps)
-IF (ALLOCATED(TempMembers)) DEALLOCATE(TempMembers)
-IF (ALLOCATED(TempReacts)) DEALLOCATE(TempReacts)
+      ! deallocate temp matrices
+      IF (ALLOCATED(TempProps))   DEALLOCATE(TempProps)
+      IF (ALLOCATED(TempMembers)) DEALLOCATE(TempMembers)
    END SUBROUTINE CleanUp_Discrt
 
 END SUBROUTINE SD_Discrt
+
+
+!> Returns index of val in Array (val is an integer!)
+! NOTE: in the future use intrinsinc function findloc
+FUNCTION FINDLOCI_ReKi(Array, Val) result(i)
+   real(ReKi)    , dimension(:), intent(in) :: Array !< Array to search in
+   integer(IntKi), intent(in)               :: val   !< Val
+   integer(IntKi)                           :: i     !< Index of joint in joint table
+   logical :: found
+   i = 1
+   do while ( i <= size(Array) )
+      if ( Val == NINT(Array(i)) ) THEN
+         return ! Exit when found
+      else
+         i = i + 1
+      endif
+   enddo
+   i=-1
+END FUNCTION
+!> Returns index of val in Array (val is an integer!)
+! NOTE: in the future use intrinsinc function findloc
+FUNCTION FINDLOCI_IntKi(Array, Val) result(i)
+   integer(IntKi), dimension(:), intent(in) :: Array !< Array to search in
+   integer(IntKi), intent(in)               :: val   !< Val
+   integer(IntKi)                           :: i     !< Index of joint in joint table
+   logical :: found
+   i = 1
+   do while ( i <= size(Array) )
+      if ( Val == Array(i) ) THEN
+         return ! Exit when found
+      else
+         i = i + 1
+      endif
+   enddo
+   i=-1
+END FUNCTION
+
 
 !------------------------------------------------------------------------------------------------------
 !> Set properties of node k
@@ -438,15 +483,15 @@ SUBROUTINE SetNewElem(k, n1, n2, p1, p2, p)
    INTEGER,                INTENT(IN   )   :: p1
    INTEGER,                INTENT(IN   )   :: p2
    TYPE(SD_ParameterType), INTENT(INOUT)   :: p
-  
+   
    p%Elems(k, 1) = k
    p%Elems(k, 2) = n1
    p%Elems(k, 3) = n2
-   p%Elems(k, 4) = p1
-   p%Elems(k, 5) = p2
+   p%Elems(k, iMProp  ) = p1
+   p%Elems(k, iMProp+1) = p2
 
 END SUBROUTINE SetNewElem
-   
+
 !------------------------------------------------------------------------------------------------------
 !> Set material properties of element k
 SUBROUTINE SetNewProp(k, E, G, rho, d, t, TempProps)
@@ -466,12 +511,10 @@ END SUBROUTINE SetNewProp
 !------------------------------------------------------------------------------------------------------
 !> Assemble stiffness and mass matrix, and gravity force vector
 SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
-   
-   
-   TYPE(SD_InitType),            INTENT(INOUT)  ::Init
-   TYPE(SD_ParameterType),       INTENT(INOUT)  ::p
-   INTEGER(IntKi),               INTENT(  OUT)  :: ErrStat     ! Error status of the operation
-   CHARACTER(*),                 INTENT(  OUT)  :: ErrMsg      ! Error message if ErrStat /= ErrID_None
+   TYPE(SD_InitType),            INTENT(INOUT) :: Init
+   TYPE(SD_ParameterType),       INTENT(INOUT) :: p
+   INTEGER(IntKi),               INTENT(  OUT) :: ErrStat     ! Error status of the operation
+   CHARACTER(*),                 INTENT(  OUT) :: ErrMsg      ! Error message if ErrStat /= ErrID_None
    ! Local variables
    INTEGER                  :: I, J, K, Jn, Kn
    INTEGER, PARAMETER       :: NNE=2      ! number of nodes in one element, fixed to 2
@@ -484,21 +527,18 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
    REAL(ReKi)               :: r1, r2, t, Iyy, Jzz, Ixx, A, kappa, nu, ratioSq, D_inner, D_outer
    LOGICAL                  :: shear
    REAL(ReKi), ALLOCATABLE  :: Ke(:,:), Me(:, :), FGe(:) ! element stiffness and mass matrices gravity force vector
-   REAL(ReKi), DIMENSION(6,6)  :: SSIK, SSIM ! Auxiliary stiffness Matrix for SSI
    INTEGER, DIMENSION(NNE)  :: nn                        ! node number in element 
    INTEGER                  :: r
-   REAL(ReKi)               :: ixy, ixz, iyz ! skewed mass moments of inertia of concentrated mass due to their offsets from (0,0,0)
-   REAL(ReKi), DIMENSION(2)  :: adder ! Auxiliary variable
-   
-   INTEGER(IntKi)           :: ErrStat2,info
-   CHARACTER(1024)          :: ErrMsg2
+   INTEGER(IntKi)           :: ErrStat2
+   CHARACTER(ErrMsgLen)     :: ErrMsg2
 
-      ! for current application
+   
+   ! for current application
    if    (Init%FEMMod == 2) THEN ! tapered Euler-Bernoulli
        CALL Fatal ('FEMMod = 2 is not implemented.')
        return
    elseif (Init%FEMMod == 4) THEN ! tapered Timoshenko
-       CALL Fatal ('FEMMod = 4 is not implemented.')
+       CALL Fatal ('FEMMod = 2 is not implemented.')
        return
    elseif ((Init%FEMMod == 1) .or. (Init%FEMMod == 3)) THEN !
       ! 1: uniform Euler-Bernouli,  3: uniform Timoshenko
@@ -511,39 +551,23 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
    Init%TDOF = 6*Init%NNode
    
    ALLOCATE( p%ElemProps(Init%NElem), STAT=ErrStat2)
-      IF (ErrStat2 /= 0) THEN
+   IF (ErrStat2 /= 0) THEN
        CALL Fatal('Error allocating p%ElemProps')
        return
    ENDIF
-   
+
    CALL AllocAry( Ke,     NNE*6,         NNE*6 , 'Ke',      ErrStat2, ErrMsg2); if(Failed()) return; ! element stiffness matrix
    CALL AllocAry( Me,     NNE*6,         NNE*6 , 'Me',      ErrStat2, ErrMsg2); if(Failed()) return; ! element mass matrix 
    CALL AllocAry( FGe,    NNE*6,                 'FGe',     ErrStat2, ErrMsg2); if(Failed()) return; ! element gravity force vector 
    CALL AllocAry( Init%K, Init%TDOF, Init%TDOF , 'Init%K',  ErrStat2, ErrMsg2); if(Failed()) return; ! system stiffness matrix 
-   CALL AllocAry( Init%M, Init%TDOF, Init%TDOF , 'Init%M',  ErrStat2, ErrMsg2); if(Failed()) return; ! system mass matrix 
+   CALL AllocAry( Init%m, Init%TDOF, Init%TDOF , 'Init%M',  ErrStat2, ErrMsg2); if(Failed()) return; ! system mass matrix 
    CALL AllocAry( Init%FG,Init%TDOF,             'Init%FG', ErrStat2, ErrMsg2); if(Failed()) return; ! system gravity force vector 
- 
-  CALL AllocAry( Init%Korig, Init%TDOF, Init%TDOF , 'Init%Korig',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! will remain full system stiffness matrix 
-  CALL AllocAry( Init%Morig, Init%TDOF, Init%TDOF , 'Init%Morig',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! will remain full  system mass matrix 
-  CALL AllocAry( Init%KorignoSSI, Init%TDOF, Init%TDOF , 'Init%KorignoSSI',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! will remain full system stiffness matrix  no SSI contrib
-  CALL AllocAry( Init%MorignoSSI, Init%TDOF, Init%TDOF , 'Init%MorignoSSI',  ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! will remain full system mass matrix  no SSI contrib
-  CALL AllocAry( Init%FG,Init%TDOF,             'Init%FG', ErrStat2, ErrMsg2); CALL SetErrStat ( ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'AssembleKM' )    ! system gravity force vector 
-
-  IF (ErrStat >= AbortErrLev) THEN
-      CALL CleanUp_AssembleKM()
-      RETURN
-   ENDIF
-       !DEBUG
-   !OPEN(100,FILE='.\Test06\ssimats', ACCESS='APPEND')
-   !WRITE(100, '(A, I3, A, I3)') "In AssembleKM, K AND M Size" ,size(Init%K,1) ,"x", size(Init%K,1)
-   !CLOSE(100)
-
-   Init%K = 0.0_ReKi
-   Init%M = 0.0_ReKi
+   Init%K  = 0.0_ReKi
+   Init%M  = 0.0_ReKi
    Init%FG = 0.0_ReKi
 
    
-      ! loop over all elements
+   ! loop over all elements
    DO I = 1, Init%NElem
    
       DO J = 1, NNE
@@ -574,51 +598,51 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
 
       CALL GetDirCos(X1, Y1, Z1, X2, Y2, Z2, DirCos, L, ErrStat2, ErrMsg2); if(Failed()) return
          
-         r1 = 0.25*(D1 + D2)
-         t  = 0.5*(t1+t2)
-         
-         IF ( EqualRealNos(t, 0.0_ReKi) ) THEN
-            r2 = 0
-         ELSE
-            r2 = r1 - t
-         ENDIF
-         
-         A = Pi_D*(r1*r1-r2*r2)
-         Ixx = 0.25*Pi_D*(r1**4-r2**4)
-         Iyy = Ixx
-         Jzz = 2.0*Ixx
-         
-         IF( Init%FEMMod == 1 ) THEN ! uniform Euler-Bernoulli
-            Shear = .false.
-            kappa = 0
-         ELSEIF( Init%FEMMod == 3 ) THEN ! uniform Timoshenko
-            Shear = .true.
-          ! kappa = 0.53            
-               ! equation 13 (Steinboeck et al) in SubDyn Theory Manual 
-            nu = E / (2.0_ReKi*G) - 1.0_ReKi
-            D_outer = 2.0_ReKi * r1  ! average (outer) diameter
-            D_inner = D_outer - 2*t  ! remove 2x thickness to get inner diameter
-            ratioSq = ( D_inner / D_outer)**2
-            kappa =   ( 6.0 * (1.0 + nu) **2 * (1.0 + ratioSq)**2 ) &
-                    / ( ( 1.0 + ratioSq )**2 * ( 7.0 + 14.0*nu + 8.0*nu**2 ) + 4.0 * ratioSq * ( 5.0 + 10.0*nu + 4.0 *nu**2 ) )
-         ENDIF
-         
-         p%ElemProps(i)%Area = A
-         p%ElemProps(i)%Length = L
-         p%ElemProps(i)%Ixx = Ixx
-         p%ElemProps(i)%Iyy = Iyy
-         p%ElemProps(i)%Jzz = Jzz
-         p%ElemProps(i)%Shear = Shear
-         p%ElemProps(i)%kappa = kappa
-         p%ElemProps(i)%YoungE = E
-         p%ElemProps(i)%ShearG = G
-         p%ElemProps(i)%Rho = rho
-         p%ElemProps(i)%DirCos = DirCos
-         
-         CALL ElemK(A, L, Ixx, Iyy, Jzz, Shear, kappa, E, G, DirCos, Ke)
-         CALL ElemM(A, L, Ixx, Iyy, Jzz, rho, DirCos, Me)
-         CALL ElemG(A, L, rho, DirCos, FGe, Init%g)
-         
+      r1 = 0.25*(D1 + D2)
+      t  = 0.5*(t1+t2)
+      
+      IF ( EqualRealNos(t, 0.0_ReKi) ) THEN
+         r2 = 0
+      ELSE
+         r2 = r1 - t
+      ENDIF
+      
+      A = Pi_D*(r1*r1-r2*r2)
+      Ixx = 0.25*Pi_D*(r1**4-r2**4)
+      Iyy = Ixx
+      Jzz = 2.0*Ixx
+      
+      IF( Init%FEMMod == 1 ) THEN ! uniform Euler-Bernoulli
+         Shear = .false.
+         kappa = 0
+      ELSEIF( Init%FEMMod == 3 ) THEN ! uniform Timoshenko
+         Shear = .true.
+       ! kappa = 0.53            
+         ! equation 13 (Steinboeck et al) in SubDyn Theory Manual 
+         nu = E / (2.0_ReKi*G) - 1.0_ReKi
+         D_outer = 2.0_ReKi * r1  ! average (outer) diameter
+         D_inner = D_outer - 2*t  ! remove 2x thickness to get inner diameter
+         ratioSq = ( D_inner / D_outer)**2
+         kappa =   ( 6.0 * (1.0 + nu) **2 * (1.0 + ratioSq)**2 ) &
+                 / ( ( 1.0 + ratioSq )**2 * ( 7.0 + 14.0*nu + 8.0*nu**2 ) + 4.0 * ratioSq * ( 5.0 + 10.0*nu + 4.0 *nu**2 ) )
+      ENDIF
+      
+      p%ElemProps(i)%Area = A
+      p%ElemProps(i)%Length = L
+      p%ElemProps(i)%Ixx = Ixx
+      p%ElemProps(i)%Iyy = Iyy
+      p%ElemProps(i)%Jzz = Jzz
+      p%ElemProps(i)%Shear = Shear
+      p%ElemProps(i)%kappa = kappa
+      p%ElemProps(i)%YoungE = E
+      p%ElemProps(i)%ShearG = G
+      p%ElemProps(i)%Rho = rho
+      p%ElemProps(i)%DirCos = DirCos
+      
+      CALL ElemK(A, L, Ixx, Iyy, Jzz, Shear, kappa, E, G, DirCos, Ke)
+      CALL ElemM(A, L, Ixx, Iyy, Jzz, rho, DirCos, Me)
+      CALL ElemG(A, L, rho, DirCos, FGe, Init%g)
+      
       ! assemble element matrices to global matrices
       DO J = 1, NNE
          jn = nn(j)
@@ -630,107 +654,23 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
          ENDDO !K
       ENDDO !J
    ENDDO ! I end loop over elements
-               
-      ! add concentrated mass 
+      
+   ! add concentrated mass 
    DO I = 1, Init%NCMass
-
-      ixy=-Init%CMass(I, 2) * (Init%CMass(I, 9)  * Init%CMass(I, 10)) !-m*xG*yG
-      ixz=-Init%CMass(I, 2) * (Init%CMass(I, 9)  * Init%CMass(I, 11)) !-m*xG*zG
-      iyz=-Init%CMass(I, 2) * (Init%CMass(I, 10) * Init%CMass(I, 11)) !-m*yG*zG
-
-      jn = Init%CMass(I, 1)*6-5 !starting index in M matrix
       DO J = 1, 3
-          !!!r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + J   !check NDIV and how this plays, and then 1st or 2nd node
-          r= jn + J-1 
-          PRINT *, 'CMass I=',I, 'J,Jn=',J,'  ',jn,'  index in M  r=',r
-   
+          r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + J
           Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2)
-          SELECT CASE(J)
-          CASE (1)
-              adder= Init%CMass(I, 2)*(/Init%CMass(I, 11),-Init%CMass(I, 10)/) !I believe this should be Init%CMass(I,2)*.... not (I,1)!
-              Init%M(r, r+4:r+5)     =Init%M(r, r+4:r+5)     +  adder 
-              Init%M(r+4:r+5, r)     =Init%M(r+4:r+5,r)      +  adder
-          CASE (2)
-              adder = Init%CMass(I, 2)*(/-Init%CMass(I, 11),Init%CMass(I,9)/)
-              Init%M(r, (/r+2,r+4/)) =Init%M(r, (/r+2,r+4/)) + adder !forgot to account for r increasing here, so subtract 1
-              Init%M((/r+2,r+4/),r)  =Init%M((/r+2,r+3/),r)  + adder
-          CASE (3)
-              adder =  Init%CMass(I, 2)*(/Init%CMass(I, 10),-Init%CMass(I, 9)/) !here 10 instead of 11 in the index!
-              Init%M(r, (/r+1,r+2/)) =Init%M(r, (/r+1,r+2/)) + adder  !forgot to account for r increasing here, so subtract 2
-              Init%M((/r+1,r+2/),r)  =Init%M((/r+1,r+2/),r)  + adder
-          END SELECT
       ENDDO
-
       DO J = 4, 6
-          !!!r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + J
-          r= jn + J-1 
-          PRINT *, 'CMass I=',I, 'J,Jn=',J,'  ',Jn,'  index in M  r=',r, 'CMASS(J-1) added=', Init%CMass(I, J-1) !debug
-          
+          r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + J
           Init%M(r, r) = Init%M(r, r) + Init%CMass(I, J-1)
-          SELECT CASE(J)
-          CASE (4)
-              Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2) * (Init%CMass(I, 10)**2+Init%CMass(I, 11)**2)  !Account for mass offsets in Ixx,Iyy, Izz
-              adder= (/Init%CMass(I, 6) +ixy ,Init%CMass(I, 7) +ixz/)
-              Init%M(r, r+4-3:r+5-3)     =Init%M(r, r+4-3:r+5-3)     + adder 
-              Init%M(r+4-3:r+5-3, r)     =Init%M(r+4-3:r+5-3,r)      + adder
-          CASE (5)
-              Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2) * (Init%CMass(I, 9)**2+Init%CMass(I, 11)**2)
-              adder=  (/Init%CMass(I, 6) +ixy ,Init%CMass(I,8) +iyz/)
-              Init%M(r, (/r-1,r+1/)) =Init%M(r, (/r-1,r+1/))  + adder
-              Init%M((/r-1,r+1/),r)  =Init%M((/r-1,r+1/),r)   + adder
-          CASE (6)
-              Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2) * (Init%CMass(I, 9)**2+Init%CMass(I, 10)**2)
-              adder=  (/Init%CMass(I, 7) +ixz, Init%CMass(I, 8) +iyz/)
-              Init%M(r, (/r-2,r-1/)) =Init%M(r, (/r-2,r-1/))  + adder
-              Init%M((/r-2,r-1/),r)  =Init%M((/r-2,r-1/),r)   + adder
-          END SELECT
-
       ENDDO
    ENDDO ! Loop on concentrated mass
- 
-   Init%MorignoSSI=Init%M  !original M, full and no SSI m
-   Init%KorignoSSI=Init%K  !original K, full and no SSI k
-   
-   IF (ANY(Init%SSIK .NE. HUGE(Init%SSIK)) .OR. ANY(Init%SSIM  .NE. 0.0_ReKi)) THEN
-         !AUGMENT FOR SSI- need to find rows and columns
-          
-       DO I=1, p%NReact  !Do this for all Constraint Nodes
-           SSIK=0.0_ReKi !initialize
-           SSIM=0.0_ReKi !initialize
-           
-           jn=p%Reacts(I,1)*6 -5  !starting index for this node to be used later 
-           IF (ANY(Init%SSIK(I,:) .LT. HUGE(Init%SSIK))) THEN
-         !first reconstruct K, M from sparse elements; these elements are of a 6x6 matrix that goes at (Node*6-5:Node*6,Node*6-5:Node*6) only, because it is on one element only, and one node of that
-              CALL LAPACK_TPTTR('U',6,Init%SSIK(I,:),SSIK,6,ErrStat, ErrMsg)
-              DO J=1,6
-                SSIK(J,J)=SSIK(J,J)/2
-              ENDDO  
-              SSIK=SSIK+TRANSPOSE(SSIK)  !Full symmetric matrix
-              Init%K( jn:jn+5, jn:jn+5 ) = Init%K( jn:jn+5, jn:jn+5 ) + SSIK
-           ENDIF
-              !DEBUG
-         !CALL LAPACK_TPTTR('U',6,(/REAL(ReKi)::1e8,0,1e9,0,0,3e8,0,0,0,5e10,0,0,0,0,6e10,0,0,0,0,0,7e10/),SSIK,6,ErrStat, ErrMsg)
-         !CALL LAPACK_TPTTR('L',6,(/1e8,0,0,0,0,0,1e9,0,0,0,0,3e8,0,0,0,5e10,0,0,6e10,0,7e10/),SSIK,6,ErrStat, ErrMsg,)
-         !END DEBUG
-         IF (ANY(Init%SSIM(I,:)  .GT. 0.0_ReKi)) THEN
-            CALL LAPACK_TPTTR('U',6,Init%SSIM(I,:),SSIM,6,ErrStat, ErrMsg)
-            DO J=1,6
-               SSIM(J,J)=SSIM(J,J)/2
-            ENDDO   
-            SSIM=SSIM+TRANSPOSE(SSIM)
-            Init%M( jn:jn+5, jn:jn+5 ) = Init%M( jn:jn+5, jn:jn+5 ) + SSIM
-        ENDIF
-      ENDDO
-   ENDIF
-   !END OF SSI 
-   
-   Init%Morig=Init%M  !original M, full and WITH SSI-k effects
-   Init%Korig=Init%K  !original K, full and WITH SSI-k effects
-   
-      ! add concentrated mass induced gravity force
+
+   ! add concentrated mass induced gravity force
    DO I = 1, Init%NCMass
-      r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + 3
-      Init%FG(r) = Init%FG(r) - Init%CMass(I, 2)*Init%g 
+       r = ( NINT(Init%CMass(I, 1)) - 1 )*6 + 3
+       Init%FG(r) = Init%FG(r) - Init%CMass(I, 2)*Init%g 
    ENDDO ! I concentrated mass induced gravity
    
    CALL CleanUp_AssembleKM()
@@ -749,9 +689,9 @@ CONTAINS
    END SUBROUTINE Fatal
 
    SUBROUTINE CleanUp_AssembleKM()
-      IF (ALLOCATED(Ke)) DEALLOCATE(Ke)
-      IF (ALLOCATED(Me)) DEALLOCATE(Me)
-      IF (ALLOCATED(FGe)) DEALLOCATE(FGe)
+      IF(ALLOCATED(Ke )) DEALLOCATE(Ke )
+      IF(ALLOCATED(Me )) DEALLOCATE(Me )
+      IF(ALLOCATED(FGe)) DEALLOCATE(FGe)
    END SUBROUTINE CleanUp_AssembleKM
    
 END SUBROUTINE AssembleKM
@@ -816,9 +756,9 @@ END SUBROUTINE GetDirCos
 !! shear is true  -- non-tapered Timoshenko beam 
 !! shear is false -- non-tapered Euler-Bernoulli beam 
 SUBROUTINE ElemK(A, L, Ixx, Iyy, Jzz, Shear, kappa, E, G, DirCos, K)
-   REAL(ReKi), INTENT( IN)               :: A, L, Ixx, Iyy, Jzz, E, G, kappa
-   REAL(ReKi), INTENT( IN)               :: DirCos(3,3)
-   LOGICAL, INTENT( IN)                  :: Shear
+   REAL(ReKi), INTENT( IN) :: A, L, Ixx, Iyy, Jzz, E, G, kappa
+   REAL(ReKi), INTENT( IN) :: DirCos(3,3)
+   LOGICAL   , INTENT( IN) :: Shear
    REAL(ReKi), INTENT(OUT) :: K(12, 12) 
    ! Local variables
    REAL(ReKi)                            :: Ax, Ay, Kx, Ky
@@ -827,7 +767,7 @@ SUBROUTINE ElemK(A, L, Ixx, Iyy, Jzz, Shear, kappa, E, G, DirCos, K)
    Ax = kappa*A
    Ay = kappa*A
    
-   K = 0
+   K(1:12,1:12) = 0
    
    IF (Shear) THEN
       Kx = 12.0*E*Iyy / (G*Ax*L*L)
@@ -886,26 +826,25 @@ SUBROUTINE ElemK(A, L, Ixx, Iyy, Jzz, Shear, kappa, E, G, DirCos, K)
    DC(10:12, 10:12) = DirCos
    
    K = MATMUL( MATMUL(DC, K), TRANSPOSE(DC) ) ! TODO: change me if DirCos convention is  transposed
-
+   
 END SUBROUTINE ElemK
 
 !------------------------------------------------------------------------------------------------------
 !> Element mass matrix for classical beam elements
 SUBROUTINE ElemM(A, L, Ixx, Iyy, Jzz, rho, DirCos, M)
-   REAL(ReKi), INTENT( IN)               :: A, L, Ixx, Iyy, Jzz, rho
-   REAL(ReKi), INTENT( IN)               :: DirCos(3,3)
+   REAL(ReKi), INTENT( IN) :: A, L, Ixx, Iyy, Jzz, rho
+   REAL(ReKi), INTENT( IN) :: DirCos(3,3)
    REAL(ReKi), INTENT(OUT) :: M(12, 12)
-         
-   REAL(ReKi)                            :: t, rx, ry, po
-   REAL(ReKi)                            :: DC(12, 12)
+
+   REAL(ReKi) :: t, rx, ry, po
+   REAL(ReKi) :: DC(12, 12)
    
    t = rho*A*L;
    rx = rho*Ixx;
    ry = rho*Iyy;
    po = rho*Jzz*L;   
 
-   M = 0
-   
+   M(1:12,1:12) = 0
       
    M( 9,  9) = t/3.0
    M( 7,  7) = 13.0*t/35.0 + 6.0*ry/(5.0*L)
@@ -960,23 +899,40 @@ SUBROUTINE ElemM(A, L, Ixx, Iyy, Jzz, rho, DirCos, M)
 END SUBROUTINE ElemM
 
 !------------------------------------------------------------------------------------------------------
+!> Sets a list of DOF indices and the value these DOF should have
+!! NOTE: need p%Reacts to have an updated first column that uses indices and not JointID
+SUBROUTINE InitConstr(Init, p)
+   TYPE(SD_InitType     ),INTENT(INOUT) :: Init
+   TYPE(SD_ParameterType),INTENT(IN   ) :: p
+   !
+   INTEGER(IntKi) :: I,J
+
+   Init%BCs = 0
+   DO I = 1, p%NReact
+      DO J = 1, 6
+         Init%BCs( (I-1)*6+J, 1) = (p%Reacts(I,1)-1)*6+J; ! DOF Index, looping through Joints in index order
+         Init%BCs( (I-1)*6+J, 2) = p%Reacts(I, J+1);
+      ENDDO
+   ENDDO
+END SUBROUTINE InitConstr
+
 !> Apply constraint (Boundary conditions) on Mass and Stiffness matrices
 SUBROUTINE ApplyConstr(Init,p)
-   TYPE(SD_InitType), INTENT(INOUT)   :: Init
-   TYPE(SD_ParameterType), INTENT(IN)   :: p
+   TYPE(SD_InitType     ),INTENT(INOUT):: Init
+   TYPE(SD_ParameterType),INTENT(IN   ):: p
    
-   INTEGER                  :: I !, J, k
-   INTEGER                  :: row_n !bgn_j, end_j, 
+   INTEGER :: I !, J, k
+   INTEGER :: row_n !bgn_j, end_j,
    
    DO I = 1, p%NReact*6
       row_n = Init%BCs(I, 1)
       IF (Init%BCs(I, 2) == 1) THEN
-         Init%K(row_n, :) = 0
-         Init%K(:, row_n) = 0
-         Init%K(row_n, row_n) = 1
-      
-         Init%M(row_n, :) = 0
-         Init%M(:, row_n) = 0
+         Init%K(row_n,:    )= 0
+         Init%K(:    ,row_n)= 0
+         Init%K(row_n,row_n)= 1
+
+         Init%M(row_n,:    )= 0
+         Init%M(:    ,row_n)= 0
          Init%M(row_n,row_n)= 0
       ENDIF
    ENDDO ! I, loop on reaction nodes
@@ -994,17 +950,17 @@ SUBROUTINE ElemG(A, L, rho, DirCos, F, g)
    REAL(ReKi), INTENT( IN )           :: DirCos(3, 3) !< direction cosine matrix (for determining distance between nodes 1 and 2)
    REAL(ReKi), INTENT( IN )           :: g            !< gravity
    REAL(ReKi), INTENT( OUT)           :: F(12)        !< returned loads. positions 1-6 are the loads for node 1; 7-12 are loads for node 2.
-   REAL(ReKi)                         :: TempCoeff
-   REAL(ReKi)                         :: w            ! weight per unit length
-
+   REAL(ReKi) :: TempCoeff
+   REAL(ReKi) :: w            ! weight per unit length
+   
    F = 0             ! initialize whole array to zero, then set the non-zero portions
    w = rho*A*g       ! weight per unit length
    
-      ! lumped forces on both nodes (z component only):
+   ! lumped forces on both nodes (z component only):
    F(3) = -0.5*L*w 
    F(9) = F(3)
           
-      ! lumped moments on node 1 (x and y components only):
+   ! lumped moments on node 1 (x and y components only):
    ! bjj: note that RRD wants factor of 1/12 because of boundary conditions. Our MeshMapping routines use factor of 1/6 (assuming generic/different boundary  
    !      conditions), so we may have some inconsistent behavior. JMJ suggests using line2 elements for SubDyn's input/output meshes to improve the situation.
    TempCoeff = L*L*w/12.0_ReKi ! let's not calculate this twice  
@@ -1028,16 +984,15 @@ SUBROUTINE LumpForces(Area1,Area2,crat,L,rho, g, DirCos, F)
    REAL(ReKi), INTENT( IN ) :: rho              !< density
    REAL(ReKi), INTENT( IN ) :: DirCos(3, 3)     !< Direction cosine matrix
    REAL(ReKi), INTENT( OUT) :: F(12)            !< Lumped forces
-    !LOCALS
+   !LOCALS
    REAL(ReKi)                         :: TempCoeff,a0,a1,a2  !coefficients of the gravity quadratically distributed force
+   print*,'Error: the function lumpforces is not ready to use'
+   STOP
 
-   A1 = -99999  !bjj initialized this to avoid getting warning by Intel Analyzers; needs to be set differently
-   A2 = -99999  !bjj initialized this to avoid getting warning by Intel Analyzers; needs to be set differently
-   
    !Calculate quadratic polynomial coefficients
-   a0=A1
-   a2=( (Area1+A2) - (Area1*crat+Area2/crat) )/L**2.  !*x**2
-   a1= (Area2-Area1)/L -a2*L                       !*x                   
+   a0 = -99999 ! TODO: this is wrong
+   a2 = ( (Area1+A2) - (Area1*crat+Area2/crat) )/L**2. ! *x**2
+   a1 = (Area2-Area1)/L -a2*L                          ! *x
    
    !Now calculate the Lumped Forces
    F = 0
@@ -1052,9 +1007,9 @@ SUBROUTINE LumpForces(Area1,Area2,crat,L,rho, g, DirCos, F)
    !F(5) = TempCoeff*( DirCos(1, 3)*DirCos(2, 2) - DirCos(1, 2)*DirCos(2, 3) ) 
    
    !RRD attempt at new dircos which keeps x in the X-Y plane
-         F(4) = -TempCoeff * SQRT(1-DirCos(3,3)**2) * DirCos(1,1) !bjj: compare with ElemG() and verify this lumping is consistent
-         F(5) = -TempCoeff * SQRT(1-DirCos(3,3)**2) * DirCos(2,1) !bjj: compare with ElemG() and verify this lumping is consistent
-    !RRD ends
+   F(4) = -TempCoeff * SQRT(1-DirCos(3,3)**2) * DirCos(1,1) !bjj: compare with ElemG() and verify this lumping is consistent
+   F(5) = -TempCoeff * SQRT(1-DirCos(3,3)**2) * DirCos(2,1) !bjj: compare with ElemG() and verify this lumping is consistent
+   !RRD ends
    F(10) = -F(4)
    F(11) = -F(5)
    !F(12) is 0 for g along z alone
