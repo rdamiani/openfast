@@ -4236,7 +4236,10 @@ SUBROUTINE SDOut_MapOutputs( CurrentTime, u,p,x, y, m, AllOuts, ErrStat, ErrMsg 
    INTEGER(IntKi), DIMENSION(2)             ::K3    ! It stores Node IDs for element under consideration (may not be consecutive numbers)
    INTEGER(IntKi)                           :: maxOutModes  ! maximum modes to output, the minimum of 99 or p%Nmodes
    REAL(ReKi), DIMENSION (6)                :: FM_elm, FK_elm, junk  !output static and dynamic forces and moments
-   REAL(ReKi), DIMENSION (6)                :: FM_elm2, FK_elm2, Larray, Larray2 !output static and dynamic forces and moments, also temp array of indices 
+   
+   REAL(ReKi), DIMENSION (6)                :: FM_elm2, FK_elm2 !output static and dynamic forces and moments, 
+   INTEGER(IntKi),DIMENSION(6)              :: Larray, Larray2 !also temp array of indices 
+   
    Real(ReKi), DIMENSION (3,3)              :: DIRCOS    !direction cosice matrix (global to local) (3x3)
    Real(ReKi), ALLOCATABLE                  :: ReactNs(:)    !6*Nreact reactions
    REAL(ReKi)                               :: Tmp_Udotdot(12), Tmp_y2(12) !temporary storage for calls to CALC_LOCAL

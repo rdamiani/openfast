@@ -525,6 +525,7 @@ SUBROUTINE SD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg )
       REAL(ReKi)                                   :: rotations(3)
       REAL(ReKi)                                   :: ULS(p%DOFL),  UL0m(p%DOFL),  FLt(p%DOFL)  ! Temporary values in static improvement method
       REAL(ReKi)                                   :: Y1(6)
+      REAL(ReKi)                   :: Y1_ExtraMoment(3) ! Lever arm moment contributions due to interface displacement
       INTEGER(IntKi)                               :: startDOF
       REAL(ReKi)                                   :: DCM(3,3),junk(6,p%NNodes_L)  
       REAL(ReKi)                                   :: HydroForces(6*p%NNodes_I) !  !Forces from all interface nodes listed in one big array  ( those translated to TP ref point HydroTP(6) are implicitly calculated in the equations)
@@ -640,11 +641,13 @@ SUBROUTINE SD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg )
       y%Y2mesh%TranslationAcc (  :,L1:L2)   = 0.0
       y%Y2mesh%RotationAcc    (  :,L1:L2)   = 0.0
          
-      !Then Take care of those Nodes that might have SSI 'free cosntraints'
+      !Then Take care of those Nodes that might have SSI 'free constraints'
       IF (p%DOFCK>0) THEN
           L2=p%NNodes_L*6 !store this constant for later 
           j0=0 !initialize this counter
-          ndcnt=0 !initialize this counter
+          ! ndcnt=0 !initialize this counter  !!!Based on Emmanuel's rework, it looks like the ndcnt must be initialized as follows
+          ndcnt=p%nNodes_I+p%nNodes_L !initialize this counter
+          
           DO I = 1, p%DOFCK   !Only Reaction Nodes with Retained DOFs here  
                 ! starting index in UL for the current DOF  
                 startDOF=  I+ L2 !this DOF is stored at the bottom of the IDL list 
@@ -660,19 +663,19 @@ SUBROUTINE SD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg )
              ! Y2 = Interior node displacements and velocities  for use as inputs to HydroDyn
              SELECT CASE (L1) !L1 identifies the 1-6 DOF for that node
              CASE (1:3)
-                  y%Y2mesh%TranslationDisp (L1,J)     = m%UL     ( startDOF )             
-                  y%Y2mesh%TranslationVel  (L1,J)     = m%UL_dot ( startDOF )     
-                  y%Y2mesh%TranslationAcc  (L1,J)     = m%UL_dotdot ( startDOF )     
+                  y%Y2mesh%TranslationDisp (L1,ndcnt)     = m%UL     ( startDOF )             !based on Emmanuel's rework, here (L1,J) was replaced by (L1,ndcnt)
+                  y%Y2mesh%TranslationVel  (L1,ndcnt)     = m%UL_dot ( startDOF )             !based on Emmanuel's rework, here (L1,J) was replaced by (L1,ndcnt)     
+                  y%Y2mesh%TranslationAcc  (L1,ndcnt)     = m%UL_dotdot ( startDOF )          !based on Emmanuel's rework, here (L1,J) was replaced by (L1,ndcnt)
              CASE (0,4,5)   
                   L1= ABS(L1-3)  !shifts back to 1-3      
-                  y%Y2mesh%RotationVel     (L1,J)     = m%UL_dot ( startDOF  )
-                  y%Y2mesh%RotationAcc     (L1,J)     = m%UL_dotdot ( startDOF )
+                  y%Y2mesh%RotationVel     (L1,ndcnt)     = m%UL_dot ( startDOF  )    !based on Emmanuel's rework, here (L1,J) was replaced by (L1,ndcnt)
+                  y%Y2mesh%RotationAcc     (L1,ndcnt)     = m%UL_dotdot ( startDOF )   !based on Emmanuel's rework, here (L1,J) was replaced by (L1,ndcnt)
                   rotations(L1) = m%UL(startDOF) !Store the orientation for that direction (x,y, or z)
                   !For the orientation, we need to have knowledge of the 4-6th DOF; so this may be recalculated multiple times for the same node
                      ! Construct the direction cosine matrix given the output angles
                   CALL SmllRotTrans( 'UL input angles', rotations(1), rotations(2), rotations(3), DCM, '', ErrStat2, ErrMsg2 )
                       CALL SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, 'SD_CalcOutput')
-                  y%Y2mesh%Orientation     (:,:,J)   = DCM
+                  y%Y2mesh%Orientation     (:,:,ndcnt)   = DCM !based on Emmanuel's rework, here (:,:,J) was replaced by (:,:,ndcnt)
              END SELECT     
           ENDDO    
       ENDIF
@@ -704,9 +707,17 @@ SUBROUTINE SD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg )
                  - matmul( HydroForces, p%TI )  + p%FY )                                             !    + D1(1,5)*u(5) + Fy(1) )
       END IF
       
+      ! Computing extra moments due to lever arm introduced by interface displacement
+      !               Y1(:3) = -f_TP
+      !               MExtra = -u_TP x f_TP
+      ! Y1_MExtra = - MExtra = -u_TP x Y1(1:3) ! NOTE: double cancelling of signs 
+      Y1_ExtraMoment(1) = - m%u_TP(2) * Y1(3) + m%u_TP(3) * Y1(2)
+      Y1_ExtraMoment(2) = - m%u_TP(3) * Y1(1) + m%u_TP(1) * Y1(3)
+      Y1_ExtraMoment(3) = - m%u_TP(1) * Y1(2) + m%u_TP(2) * Y1(1)
+      
       ! values on the interface mesh are Y1 (SubDyn forces) + Hydrodynamic forces
       y%Y1Mesh%Force (:,1) = Y1(1:3) 
-      y%Y1Mesh%Moment(:,1) = Y1(4:6) 
+      y%Y1Mesh%Moment(:,1) = Y1(4:6) + Y1_ExtraMoment 
 
    !________________________________________
    ! CALCULATE OUTPUT TO BE WRITTEN TO FILE 
@@ -2908,7 +2919,10 @@ SUBROUTINE ConstructUFL( u, p, UFL )
    TYPE(SD_ParameterType),         INTENT(IN   )  :: p               ! Parameters
    REAL(ReKi)                                     :: UFL(p%DOFL)
    INTEGER                                        :: I, J, StartDOF  ! integers for indexing into mesh and UFL
+   INTEGER  :: L1, L2, ndcnt,j0
 
+   UFL(:)=0.0_ReKi !initialization missing that Emmanuel pointed out 
+   
       ! note that p%DOFL = p%NNodes_L*6
       DO I = 1, p%NNodes_L   !Only interior nodes here     
             ! starting index in the master arrays for the current node    
@@ -2919,7 +2933,34 @@ SUBROUTINE ConstructUFL( u, p, UFL )
          UFL ( startDOF   : startDOF + 2 ) = u%LMesh%Force (:,J)
          UFL ( startDOF+3 : startDOF + 5 ) = u%LMesh%Moment(:,J)
       END DO   
-            
+
+      !what follows is what Emmanuels pointed out as outputting UFL, unsure why it is needed but here it is
+     !Then Take care of those Nodes that might have SSI 'free cosntraints'
+      IF (p%DOFCK>0) THEN
+          L2=p%NNodes_L*6 !store this constant for later 
+          j0=0 !initialize this counter
+          ndcnt=p%nNodes_I+p%nNodes_L !initialize this counter
+          DO I = 1, p%DOFCK   !Only Reaction Nodes with Retained DOFs here  
+                ! starting index in UL for the current DOF  
+                startDOF=  I+ L2 !this DOF is stored at the bottom of the IDL list 
+                ! index into the Y2Mesh, this must be the node index
+                L1 = MOD(p%IDCK(I),6) 
+                J = p%IDCK(I)/6 + L1 / max(L1,1) !NODE INDEX
+                IF (J .NE. J0) THEN 
+                    J0=J
+                    ndcnt=ndcnt+1
+                ENDIF    
+             ! Y2 = Interior node displacements and velocities  for use as inputs to HydroDyn
+             SELECT CASE (L1) !L1 identifies the 1-6 DOF for that node
+             CASE (1:3)
+               UFL ( startDOF ) = u%LMesh%Force (L1,ndcnt)
+             CASE (0,4,5)   
+                  L1= ABS(L1-3)  !shifts back to 1-3      
+               UFL ( startDOF ) = u%LMesh%Moment (L1,ndcnt)
+             END SELECT     
+          ENDDO    
+      ENDIF            
+      
 END SUBROUTINE
 
 !------------------------------------------------------------------------------------------------------

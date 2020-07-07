@@ -830,17 +830,17 @@ SUBROUTINE AssembleKM(Init,p, ErrStat, ErrMsg)
               Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2) * (Init%CMass(I, 10)**2+Init%CMass(I, 11)**2)  !Account for mass offsets in Ixx,Iyy, Izz
               adder= (/Init%CMass(I, 6) +ixy ,Init%CMass(I, 7) +ixz/)
               Init%M(r, r+4-3:r+5-3)     =Init%M(r, r+4-3:r+5-3)     + adder 
-              Init%M(r+4-3:r+5-3, r)     =Init%M(r+4-3:r+5-3,r)      + adder
+             ! Init%M(r+4-3:r+5-3, r)     =Init%M(r+4-3:r+5-3,r)      + adder
           CASE (5)
               Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2) * (Init%CMass(I, 9)**2+Init%CMass(I, 11)**2)
               adder=  (/Init%CMass(I, 6) +ixy ,Init%CMass(I,8) +iyz/)
               Init%M(r, (/r-1,r+1/)) =Init%M(r, (/r-1,r+1/))  + adder
-              Init%M((/r-1,r+1/),r)  =Init%M((/r-1,r+1/),r)   + adder
+            !  Init%M((/r-1,r+1/),r)  =Init%M((/r-1,r+1/),r)   + adder
           CASE (6)
               Init%M(r, r) = Init%M(r, r) + Init%CMass(I, 2) * (Init%CMass(I, 9)**2+Init%CMass(I, 10)**2)
               adder=  (/Init%CMass(I, 7) +ixz, Init%CMass(I, 8) +iyz/)
               Init%M(r, (/r-2,r-1/)) =Init%M(r, (/r-2,r-1/))  + adder
-              Init%M((/r-2,r-1/),r)  =Init%M((/r-2,r-1/),r)   + adder
+            !  Init%M((/r-2,r-1/),r)  =Init%M((/r-2,r-1/),r)   + adder
           END SELECT
 
       ENDDO
