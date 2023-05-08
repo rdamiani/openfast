@@ -1911,6 +1911,15 @@ SUBROUTINE ED_CalcContStateDeriv( t, u, p, x, xd, z, OtherState, m, dxdt, ErrSta
    CALL Teeter  ( t, p, m%RtHS%TeetAng, m%RtHS%TeetAngVel, m%RtHS%TeetMom ) ! Compute moment from teeter     springs and dampers, TeetMom; NOTE: TeetMom will be zero for a 3-blader since TeetAng = TeetAngVel = 0
    CALL RFurling( t, p, x%QT(DOF_RFrl),          x%QDT(DOF_RFrl),            m%RtHS%RFrlMom ) ! Compute moment from rotor-furl springs and dampers, RFrlMom
    CALL TFurling( t, p, x%QT(DOF_TFrl),          x%QDT(DOF_TFrl),            m%RtHS%TFrlMom ) ! Compute moment from tail-furl  springs and dampers, TFrlMom
+      
+   ! Compute the yaw friction torque
+   Mz=DOT_PRODUCT( m%RtHS%MomBNcRtt, m%CoordSys%d2 )
+   CALL YawFriction( t, p, OtherState%Fz, Mz, x%QDT(DOF_Yaw ), OtherState%xdot ( OtherState%IC(1) )%qdt, m%RtHS%YawFricMom )  !Compute yaw Friction #RRD
+   !MomBNcRtt Portion of the moment at the base plate (body B) / yaw bearing (point O) due to the nacelle, generator, and rotor associated with everything but the QD2T()'s"
+   !FrcONcRtt Portion of the force at yaw bearing (point O) due to the nacelle, generator, and rotor associated with everything but the QD2T()'s
+   ! We need to add the inertial component to Fz (not to Mz, because acceleration is resolved by the time integrator), so how do we get that?
+   ! Fz= DOT_PRODUCT( FrcONcRt, m%CoordSys%d2 )
+   ! Mz=DOT_PRODUCT( MomBNcRtt, m%CoordSys%d2 )
    
    !bjj: note m%RtHS%GBoxEffFac needed in OtherState only to fix HSSBrTrq (and used in FillAugMat)
    m%RtHS%GBoxEffFac  = p%GBoxEff**OtherState%SgnPrvLSTQ      ! = GBoxEff if SgnPrvLSTQ = 1 OR 1/GBoxEff if SgnPrvLSTQ = -1
@@ -6501,6 +6510,66 @@ SUBROUTINE Teeter( t, p, TeetDef, TeetRate, TeetMom )
    RETURN
 END SUBROUTINE Teeter
 !----------------------------------------------------------------------------------------------------------------------------------
+!> This routine computes the Yaw Friction Torque due to yaw rate and acceleration.
+SUBROUTINE YawFriction( t, p, Fz, Mzz, omg, omgDot, Mf )
+!..................................................................................................................................
+
+      ! Passed Variables:
+   REAL(DbKi), INTENT(IN)             :: t                                       !< simulation time
+   TYPE(ED_ParameterType), INTENT(IN) :: p                                       !< parameters from the structural dynamics module
+   REAL(R8Ki), INTENT(IN )            :: Fz, Mzz                                 !< The teeter deflection, x%QT(DOF_Teet).
+   REAL(R8Ki), INTENT(IN )            :: Omg                                !< The yaw rate (rotational speed), x%QDT(DOF_Yaw).
+   REAL(R8Ki), INTENT(IN )            :: OmgDot                             !< The yaw acceleration (derivative of rotational speed), x%QD2T(DOF_Yaw).
+   
+   REAL(ReKi), INTENT(OUT)            :: Mf                                 !< The total friction torque (Coulomb + viscous).
+
+      ! Local variables:
+   REAL(ReKi)                         :: temp                                   ! It takes teh value of Fz or -1.
+
+
+   SELECT CASE ( p%YawFrctMod  ) ! Which friction model are we using? 0=None, 1=does not use Fz, 2=does use Fz
+
+   CASE ( 0_IntKi )              ! None!
+
+
+      Mf = 0.0_ReKi
+
+
+   CASE ( 1_IntKi, 2_IntKi, )              ! 1= no Fz use. 2=Fz used
+
+      temp = -1.0_ReKi  !In the case of YawFrctMod=1 
+      
+      IF  (p%YawFrctMod .EQ. 2) THEN   
+        temp = MIN(0.0_R8Ki, Fz)  !In the case of YawFrctMod=1 
+      ENDIF
+      
+      IF EqualRealNos( Omg, 0.0_R8Ki ) THEN
+
+            Mf = SIGN( p%M_CD * temp, OmgDot)
+        
+            IF EqualRealNos( OmgDot, 0.0_R8Ki ) THEN
+                SIGN( MIN(p%M_CSmax * ABS(temp), ABS(Mzz)) , -real(Mzz,ReKi)) 
+            ENDIF    
+        
+      ELSE
+  
+        Mf = SIGN(p%M_CD * temp - p%sig_v * Omg, real(Omg,ReKi)) 
+          
+      ENDIF
+
+
+   CASE ( 3_IntKi )              ! User-defined Mf  model. >>>> NOT IMPLEMENTED YET
+
+
+      CALL UserYawFriction ( t, Fz, Mzz, omg, omgDot, p%RootName, Mf )
+
+
+   END SELECT
+
+
+   RETURN
+END SUBROUTINE YawFriction
+!----------------------------------------------------------------------------------------------------------------------------------
 !> This routine computes the tail-furl moment due to tail-furl deflection and rate.
 SUBROUTINE TFurling( t, p, TFrlDef, TFrlRate, TFrlMom )
       ! Passed Variables:
@@ -8375,7 +8444,7 @@ SUBROUTINE FillAugMat( p, x, CoordSys, u, HSSBrTrq, RtHSdat, AugMat )
          AugMat(DOF_Yaw ,         p%NAug) =  DOT_PRODUCT( RtHSdat%PAngVelEN(DOF_Yaw ,0,:), RtHSdat%MomBNcRtt             ) &        ! {-f(qd,q,t)}N + {-f(qd,q,t)}GravN + {-f(qd,q,t)}R + {-f(qd,q,t)}GravR + {-f(qd,q,t)}G + {-f(qd,q,t)}H + {-f(qd,q,t)}GravH + {-f(qd,q,t)}B + {-f(qd,q,t)}GravB + {-f(qd,q,t)}AeroB + {-f(qd,q,t)}A + {-f(qd,q,t)}GravA + {-f(qd,q,t)}AeroA
                                                               + u%YawMom                                                            ! + {-f(qd,q,t)}SpringYaw  + {-f(qd,q,t)}DampYaw; NOTE: The neutral yaw rate, YawRateNeut, defaults to zero.  It is only used for yaw control.
    ENDIF
-   
+                                !RRD: TODO  to add + RtHSdat%YawFricMom in the above ^^^
    
    IF ( p%DOF_Flag (DOF_RFrl) )  THEN
       DO I = p%DOFs%Diag(DOF_RFrl),p%DOFs%NActvDOF   ! Loop through all active (enabled) DOFs on or below the diagonal
@@ -9734,7 +9803,8 @@ SUBROUTINE ED_ABM4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg
          CALL ED_Input_ExtrapInterp(u, utimes, u_interp, t + p%dt, ErrStat2, ErrMsg2)
             CALL CheckError(ErrStat2,ErrMsg2)
             IF ( ErrStat >= AbortErrLev ) RETURN
-            
+        
+            !RRD this is the hack for HSSBrake    
          u_interp%HSSBrTrqC = max(0.0_ReKi, min(u_interp%HSSBrTrqC, ABS( OtherState%HSSBrTrqC) )) ! hack for extrapolation of limits  (OtherState%HSSBrTrqC is HSSBrTrqC at t)     
          IF (EqualRealNos( x_pred%qdt(DOF_GeAz) ,0.0_R8Ki ) ) THEN
             OtherState%HSSBrTrqC = u_interp%HSSBrTrqC
@@ -9742,7 +9812,9 @@ SUBROUTINE ED_ABM4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg
             OtherState%HSSBrTrqC  = SIGN( u_interp%HSSBrTrqC, real(x_pred%qdt(DOF_GeAz),ReKi) ) ! hack for HSS brake (need correct sign)
          END IF
          OtherState%HSSBrTrq  = OtherState%HSSBrTrqC
+            
 
+         
          CALL ED_CalcContStateDeriv(t + p%dt, u_interp, p, x_pred, xd, z, OtherState, m, xdot_pred, ErrStat2, ErrMsg2 )
             CALL CheckError(ErrStat2,ErrMsg2)
             IF ( ErrStat >= AbortErrLev ) RETURN
@@ -10209,7 +10281,7 @@ SUBROUTINE FixHSSBrTq ( Integrator, p, x, OtherState, m, ErrStat, ErrMsg )
       ! bjj: use m%SolnVec(I) instead of m%QD2T(p%DOFs%SrtPS(I)) here; then update m%QD2T(p%DOFs%SrtPS(I))
       !      later if necessary
       !RqdFrcGeAz = RqdFrcGeAz + OgnlGeAzRo(SrtPS(I))*m%QD2T(p%DOFs%SrtPS(I))  ! {Fb}=[Cba]{Qa}+[Cbb]{Qb}
-      RqdFrcGeAz = RqdFrcGeAz + m%OgnlGeAzRo(p%DOFs%SrtPS(I))*m%SolnVec(I)  ! {Fb}=[Cba]{Qa}+[Cbb]{Qb}
+      RqdFrcGeAz = RqdFrcGeAz + m%OgnlGeAzRo(p%DOFs%SrtPS(I))*m%SolnVec(I)  ! {Fb}=[Cba]{Qa}+[Cbb]{Qb} 
    ENDDO             ! I - All active (enabled) DOFs
 
 
@@ -10282,6 +10354,205 @@ SUBROUTINE FixHSSBrTq ( Integrator, p, x, OtherState, m, ErrStat, ErrMsg )
    RETURN
 END SUBROUTINE FixHSSBrTq
 !----------------------------------------------------------------------------------------------------------------------------------
+!> This routine is used to adjust the YawFricMom value for unphysicalities.
+SUBROUTINE FixYawFric ( Integrator, p, x, OtherState, m, ErrStat, ErrMsg )
+
+   ! Passed variables:
+
+   TYPE(ED_ParameterType),      INTENT(IN   )  :: p                       !< Parameters of the structural dynamics module
+   TYPE(ED_OtherStateType),     INTENT(INOUT)  :: OtherState              !< Other states of the structural dynamics module 
+   TYPE(ED_MiscVarType),        INTENT(INOUT)  :: m                       !< misc (optimization) variables
+   TYPE(ED_ContinuousStateType),INTENT(INOUT)  :: x                       !< Continuous states of the structural dynamics module at n+1
+   CHARACTER(1),                INTENT(IN   )  :: Integrator              !< A string holding the current integrator being used.
+   INTEGER(IntKi),              INTENT(  OUT)  :: ErrStat                 !< Error status of the operation
+   CHARACTER(*),                INTENT(  OUT)  :: ErrMsg                  !< Error message if ErrStat /= ErrID_None
+
+
+   ! Local variables:
+
+   REAL(ReKi)                             :: RqdFrcGeAz                           ! The force term required to produce RqdQD2GeAz.
+   REAL(ReKi)                             :: RqdQD2Yaw                           ! The required QD2T(DOF_Yaw) to cause the yaw bearing to stop rotating.
+
+   INTEGER                                :: I                                    ! Loops through all DOFs.
+   INTEGER(IntKi)                         :: ErrStat2
+   CHARACTER(ErrMsgLen)                   :: ErrMsg2
+   CHARACTER(*), PARAMETER                :: RoutineName = 'FixYawFric'
+
+   
+
+   ErrStat = ErrID_None
+   ErrMsg  = ""
+
+   IF ( .NOT. p%DOF_Flag(DOF_Yaw) .OR. EqualRealNos(m%RtHS%YawFricMom, 0.0_ReKi ) )  RETURN
+
+
+      ! The absolute magnitude of the yaw friction must have been too great
+      !   that the yaw speed sign was reversed.  What should have happened
+      !   is that the yaw system should have stopped rotating.  In other words,
+      !   QD(DOF_Yaw,IC(NMX)) should equal zero!  Determining what
+      !   QD2T(DOF_Yaw) will make QD(DOF_Yaw,IC(NMX)) = 0, depends on
+      !   which integrator we are using.
+
+   
+   SELECT CASE (Integrator)
+
+   CASE ('C')   ! Corrector
+
+      ! Find the required QD2T(DOF_Yaw) to cause the yaw system to stop rotating (RqdQD2Yaw).
+      ! This is found by solving the corrector formula for QD2(DOF_Yaw,IC(NMX))
+      !   when QD(DOF_Yaw,IC(NMX)) equals zero.
+
+      RqdQD2Yaw = ( -      OtherState%xdot(OtherState%IC(1))%qt (DOF_Yaw)/ p%DT24 &
+                     - 19.0*OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)         &
+                     +  5.0*OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw)         &
+                     -      OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw)         ) / 9.0
+      
+   CASE ('P')   ! Predictor
+
+      ! Find the required QD2T(DOF_Yaw) to cause the yaw system to stop rotating (RqdQD2Yaw).
+      ! This is found by solving the predictor formula for QD2(DOF_Yaw,IC(1))
+      !   when QD(DOF_Yaw,IC(NMX)) equals zero.
+
+      RqdQD2Yaw = ( -      OtherState%xdot(OtherState%IC(1))%qt( DOF_Yaw)  / p%DT24 &
+                     + 59.0*OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw) &
+                     - 37.0*OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw) &
+                     +  9.0*OtherState%xdot(OtherState%IC(4))%qdt(DOF_Yaw)   )/55.0
+            
+   END SELECT
+
+
+   ! Rearrange the augmented matrix of equations of motion to account
+   !   for the known acceleration of the yaw DOF.  To
+   !   do this, make the known inertia like an applied force to the
+   !   system.  Then set force QD2T(DOF_Yaw) to equal the known
+   !   acceleration in the augmented matrix of equations of motion:
+   ! Here is how the new equations are derived.  First partition the
+   !   augmented matrix as follows, where Qa are the unknown
+   !   accelerations, Qb are the known accelerations, Fa are the
+   !   known forces, and Fb are the unknown forces:
+   !      [Caa Cab]{Qa}={Fa}
+   !      [Cba Cbb]{Qb}={Fb}
+   !   By rearranging, the equations for the unknown and known
+   !   accelerations are as follows:
+   !      [Caa]{Qa}={Fa}-[Cab]{Qb} and [I]{Qb}={Qb}
+   !   Combining these two sets of equations into one set yields:
+   !      [Caa 0]{Qa}={{Fa}-[Cab]{Qb}}
+   !      [  0 I]{Qb}={          {Qb}}
+   !   Once this equation is solved, the unknown force can be found from:
+   !      {Fb}=[Cba]{Qa}+[Cbb]{Qb}
+
+   m%OgnlYawRow    = m%AugMat(DOF_Yaw,:)  ! copy this row before modifying the old matrix
+   
+  
+   DO I = 1,p%DOFs%NActvDOF ! Loop through all active (enabled) DOFs
+
+      m%AugMat(p%DOFs%SrtPS(I),    p%NAUG) = m%AugMat(p%DOFs%SrtPS(I),p%NAUG) &
+                                                    - m%AugMat(p%DOFs%SrtPS(I),DOF_Yaw)*RqdQD2Yaw  ! {{Fa}-[Cab]{Qb}}
+      m%AugMat(p%DOFs%SrtPS(I),DOF_Yaw)   = 0.0                                                     ! [0]
+      m%AugMat(DOF_Yaw, p%DOFs%SrtPS(I))  = 0.0                                                     ! [0]
+
+   ENDDO             ! I - All active (enabled) DOFs
+
+   m%AugMat(DOF_Yaw,DOF_Yaw) = 1.0                                                           ! [I]{Qb}={Qb}
+   m%AugMat(DOF_Yaw,  p%NAUG) = RqdQD2Yaw                                                    !
+
+
+   ! Invert the matrix to solve for the new (updated) accelerations.  Like in
+   !   CalcContStateDeriv(), the accelerations are returned by Gauss() in the first NActvDOF
+   !   elements of the solution vector, SolnVec().  These are transfered to the
+   !   proper index locations of the acceleration vector QD2T() using the
+   !   vector subscript array SrtPS(), after Gauss() has been called:
+
+   ! Invert the matrix to solve for the accelerations. The accelerations are returned by Gauss() in the first NActvDOF elements
+   !   of the solution vector, SolnVec(). These are transfered to the proper index locations of the acceleration vector QD2T() 
+   !   using the vector subscript array SrtPS(), after Gauss() has been called:
+
+      m%AugMat_factor = m%AugMat( p%DOFs%SrtPS( 1:p%DOFs%NActvDOF ), p%DOFs%SrtPSNAUG(1:p%DOFs%NActvDOF) )
+      m%SolnVec       = m%AugMat( p%DOFs%SrtPS( 1:p%DOFs%NActvDOF ), p%DOFs%SrtPSNAUG(1+p%DOFs%NActvDOF) )
+   
+      CALL LAPACK_getrf( M=p%DOFs%NActvDOF, N=p%DOFs%NActvDOF, A=m%AugMat_factor, IPIV=m%AugMat_pivot, ErrStat=ErrStat2, ErrMsg=ErrMsg2 )
+         CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName)   
+         IF ( ErrStat >= AbortErrLev ) RETURN
+      
+      CALL LAPACK_getrs( TRANS='N',N=p%DOFs%NActvDOF, A=m%AugMat_factor,IPIV=m%AugMat_pivot, B=m%SolnVec, ErrStat=ErrStat2, ErrMsg=ErrMsg2)
+   
+         CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
+         IF ( ErrStat >= AbortErrLev ) RETURN
+   
+      !RRD: SolnVec is [Qa; Qb]; whereas [Qb]=RqdQD2Yaw were found with the integrator trick already; 
+         
+      ! Find the force required to produce RqdQD2Yaw from the equations of
+      !   motion using the new accelerations:
+
+   RqdFrcYaw = 0.0
+   DO I = 1,p%DOFs%NActvDOF ! Loop through all active (enabled) DOFs
+      ! bjj: use m%SolnVec(I) instead of m%QD2T(p%DOFs%SrtPS(I)) here; then update m%QD2T(p%DOFs%SrtPS(I))
+      !      later if necessary
+      RqdFrcYaw = RqdFrcYaw + m%OgnlYawRow(p%DOFs%SrtPS(I))*m%SolnVec(I)  ! {Fb}=[Cba]{Qa}+[Cbb]{Qb}  (note that [Cba , Cbb] is the old row, and [Qa;Qb] is a single vector SolVec; %Note this is supposedly= Mz+Mf+DeltaM
+   ENDDO             ! I - All active (enabled) DOFs
+
+      ! Find the Mfp necessary to bring about this force, i.e. to stop the yaw:
+
+   Mfp = m%RtHs%YawFricMom   -  ( m%OgnlYawRow(p%NAUG) - RqdFrcYaw )  !This should return Mf - (Mz + Mf - (Mz + Mf + deltaM)) = Mf+DeltaM =Mfp
+   
+!Now check if Mfp is unphysical (i.e., it turned out aligned with omega), and then pick the minimum between Mf and Mfp
+   
+   IF ( ABS( OtherState%Mfp ) > ABS( m%RtHs%YawFricMom  ) ) .OR. (OtherState%Mfp *w >0.0_ReKi) THEN
+
+      OtherState%HSSBrTrq = OtherState%HSSBrTrqC !OtherState%HSSBrTrqC = SIGN( u%HSSBrTrqC, x%QDT(DOF_GeAz) )
+      !m%QD2T     = QD2TC
+
+   ELSE
+
+      ! overwrite QD2T with the new values
+      m%QD2T = 0.0
+      DO I = 1,p%DOFs%NActvDOF ! Loop through all active (enabled) DOFs
+         m%QD2T(p%DOFs%SrtPS(I)) = m%SolnVec(I)
+      ENDDO             ! I - All active (enabled) DOFs
+      
+            
+      ! Use the new accelerations to update the DOF values.  Again, this
+      !   depends on the integrator type:
+
+      SELECT CASE (Integrator)
+
+      CASE ('C')  ! Corrector
+
+      ! Update QD and QD2 with the new accelerations using the corrector.
+      ! This will make QD(DOF_Yaw,IC(NMX)) equal to zero and adjust all
+      !    of the other QDs as necessary.
+      ! The Q's are unnaffected by this change.     
+      
+         x%qdt =                   OtherState%xdot(OtherState%IC(1))%qt &  ! qd at n
+                 + p%DT24 * ( 9. * m%QD2T &                                ! the value we just changed
+                           + 19. * OtherState%xdot(OtherState%IC(1))%qdt &
+                           -  5. * OtherState%xdot(OtherState%IC(2))%qdt &
+                           +  1. * OtherState%xdot(OtherState%IC(3))%qdt )
+            
+
+         
+      CASE ('P')  ! Predictor
+
+      ! Update QD and QD2 with the new accelerations using predictor.  
+         
+         x%qdt =                OtherState%xdot(OtherState%IC(1))%qt + &  ! qd at n
+                 p%DT24 * ( 55.*m%QD2T &                                  ! the value we just changed
+                          - 59.*OtherState%xdot(OtherState%IC(2))%qdt  &
+                          + 37.*OtherState%xdot(OtherState%IC(3))%qdt  &
+                           - 9.*OtherState%xdot(OtherState%IC(4))%qdt )
+         
+         OtherState%xdot ( OtherState%IC(1) )%qdt = m%QD2T        ! fix the history
+
+         
+      END SELECT
+      
+   ENDIF
+
+   RETURN
+END SUBROUTINE FixYawFric
+!----------------------------------------------------------------------------------------------------------------------------------
+
+    
 
 !++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 ! ###### The following four routines are Jacobian routines for linearization capabilities #######
