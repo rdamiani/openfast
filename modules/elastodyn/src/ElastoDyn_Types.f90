@@ -192,6 +192,10 @@ IMPLICIT NONE
     REAL(ReKi)  :: TeetHStP      !< Rotor-teeter hard-stop position [radians]
     REAL(ReKi)  :: TeetSSSp      !< Rotor-teeter soft-stop linear-spring constant [N-m/rad]
     REAL(ReKi)  :: TeetHSSp      !< Rotor-teeter hard-stop linear-spring constant [N-m/rad]
+    INTEGER(IntKi)  :: YawFrctMod      !< Identifier for YawFrctMod (0 [no friction], 1 [does not use Fz at bearing], or 2 [does use Fz at bearing] [-]
+    REAL(R8Ki)  :: M_CD      !< Dynamic friction moment at null yaw rate [N-m]
+    REAL(R8Ki)  :: M_CSMAX      !< Maximum Coulomb friction torque [N-m]
+    REAL(R8Ki)  :: sig_v      !< Viscous friction coefficient [-]
     REAL(ReKi)  :: GBoxEff      !< Gearbox efficiency [%]
     REAL(ReKi)  :: GBRatio      !< Gearbox ratio [-]
     REAL(ReKi)  :: DTTorSpr      !< Drivetrain torsional spring [N-m/rad]
@@ -504,6 +508,7 @@ IMPLICIT NONE
     REAL(ReKi)  :: RFrlMom      !< The total rotor-furl spring and damper moment [-]
     REAL(ReKi)  :: GBoxEffFac      !< The factor used to apply the gearbox efficiency effects to the equation associated with the generator DOF [-]
     REAL(ReKi) , DIMENSION(:,:,:), ALLOCATABLE  :: rSAerCen      !< aerodynamic pitching moment arm (i.e., the position vector from point S on the blade to the aerodynamic center of the element) [-]
+    REAL(ReKi)  :: YawFriMom      !< Yaw Friction Moment [kN-m]
   END TYPE ED_RtHndSide
 ! =======================
 ! =========  ED_ContinuousStateType  =======
@@ -531,6 +536,7 @@ IMPLICIT NONE
     REAL(ReKi)  :: HSSBrTrqC      !< Commanded HSS brake torque (adjusted for sign) [N-m]
     INTEGER(IntKi)  :: SgnPrvLSTQ      !< The sign of the low-speed shaft torque from the previous call to RtHS().  This is calculated at the end of RtHS().  NOTE: The low-speed shaft torque is assumed to be positive at the beginning of the run! [-]
     INTEGER(IntKi) , DIMENSION(ED_NMX)  :: SgnLSTQ      !< history of sign of LSTQ [-]
+    REAL(ReKi)  :: Mfhat      !< Final Yaw Friction Torque [-]
   END TYPE ED_OtherStateType
 ! =======================
 ! =========  ED_MiscVarType  =======
@@ -545,6 +551,7 @@ IMPLICIT NONE
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: OgnlGeAzRo      !< Original DOF_GeAz row in AugMat [-]
     REAL(R8Ki) , DIMENSION(:), ALLOCATABLE  :: QD2T      !< Solution (acceleration) vector; the first time derivative of QDT [-]
     LOGICAL  :: IgnoreMod      !< whether to ignore the modulo in ED outputs (necessary for linearization perturbations) [-]
+    REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: OgnlYawRow      !< Original DOF_Yaw row in AugMat [-]
   END TYPE ED_MiscVarType
 ! =======================
 ! =========  ED_ParameterType  =======
@@ -775,6 +782,10 @@ IMPLICIT NONE
     REAL(ReKi)  :: PtfmCMyt      !< Lateral distance from the ground [onshore], MSL [offshore], or seabed [MHK] to the platform CM [meters]
     LOGICAL  :: BD4Blades      !< flag to determine if BeamDyn is computing blade loads (true) or ElastoDyn is (false) [-]
     LOGICAL  :: UseAD14      !< flag to determine if AeroDyn14 is being used. Will remove this later when we've replaced AD14. [-]
+    INTEGER(IntKi)  :: YawFrctMod      !< Identifier for YawFrctMod (0 [no friction], 1 [does not use Fz at bearing], or 2 [does use Fz at bearing] [-]
+    REAL(R8Ki)  :: M_CD      !< Dynamic friction moment at null yaw rate [N-m]
+    REAL(R8Ki)  :: M_CSMAX      !< Maximum Coulomb friction torque [N-m]
+    REAL(R8Ki)  :: sig_v      !< Viscous friction coefficient [-]
     INTEGER(IntKi)  :: BldNd_NumOuts      !< Number of requested output channels per blade node (ED_AllBldNdOuts) [-]
     INTEGER(IntKi)  :: BldNd_TotNumOuts      !< Total number of requested output channels of blade node information (BldNd_NumOuts * BldNd_BlOutNd * BldNd_BladesOut -- ED_AllBldNdOuts) [-]
     TYPE(OutParmType) , DIMENSION(:), ALLOCATABLE  :: BldNd_OutParam      !< Names and units (and other characteristics) of all requested output parameters [-]
@@ -3779,6 +3790,10 @@ ENDIF
     DstInputFileData%TeetHStP = SrcInputFileData%TeetHStP
     DstInputFileData%TeetSSSp = SrcInputFileData%TeetSSSp
     DstInputFileData%TeetHSSp = SrcInputFileData%TeetHSSp
+    DstInputFileData%YawFrctMod = SrcInputFileData%YawFrctMod
+    DstInputFileData%M_CD = SrcInputFileData%M_CD
+    DstInputFileData%M_CSMAX = SrcInputFileData%M_CSMAX
+    DstInputFileData%sig_v = SrcInputFileData%sig_v
     DstInputFileData%GBoxEff = SrcInputFileData%GBoxEff
     DstInputFileData%GBRatio = SrcInputFileData%GBRatio
     DstInputFileData%DTTorSpr = SrcInputFileData%DTTorSpr
@@ -4306,6 +4321,10 @@ ENDIF
       Re_BufSz   = Re_BufSz   + 1  ! TeetHStP
       Re_BufSz   = Re_BufSz   + 1  ! TeetSSSp
       Re_BufSz   = Re_BufSz   + 1  ! TeetHSSp
+      Int_BufSz  = Int_BufSz  + 1  ! YawFrctMod
+      Db_BufSz   = Db_BufSz   + 1  ! M_CD
+      Db_BufSz   = Db_BufSz   + 1  ! M_CSMAX
+      Db_BufSz   = Db_BufSz   + 1  ! sig_v
       Re_BufSz   = Re_BufSz   + 1  ! GBoxEff
       Re_BufSz   = Re_BufSz   + 1  ! GBRatio
       Re_BufSz   = Re_BufSz   + 1  ! DTTorSpr
@@ -4756,6 +4775,14 @@ ENDIF
     Re_Xferred = Re_Xferred + 1
     ReKiBuf(Re_Xferred) = InData%TeetHSSp
     Re_Xferred = Re_Xferred + 1
+    IntKiBuf(Int_Xferred) = InData%YawFrctMod
+    Int_Xferred = Int_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%M_CD
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%M_CSMAX
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%sig_v
+    Db_Xferred = Db_Xferred + 1
     ReKiBuf(Re_Xferred) = InData%GBoxEff
     Re_Xferred = Re_Xferred + 1
     ReKiBuf(Re_Xferred) = InData%GBRatio
@@ -5505,6 +5532,14 @@ ENDIF
     Re_Xferred = Re_Xferred + 1
     OutData%TeetHSSp = ReKiBuf(Re_Xferred)
     Re_Xferred = Re_Xferred + 1
+    OutData%YawFrctMod = IntKiBuf(Int_Xferred)
+    Int_Xferred = Int_Xferred + 1
+    OutData%M_CD = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%M_CSMAX = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%sig_v = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
     OutData%GBoxEff = ReKiBuf(Re_Xferred)
     Re_Xferred = Re_Xferred + 1
     OutData%GBRatio = ReKiBuf(Re_Xferred)
@@ -9935,6 +9970,7 @@ IF (ALLOCATED(SrcRtHndSideData%rSAerCen)) THEN
   END IF
     DstRtHndSideData%rSAerCen = SrcRtHndSideData%rSAerCen
 ENDIF
+    DstRtHndSideData%YawFriMom = SrcRtHndSideData%YawFriMom
  END SUBROUTINE ED_CopyRtHndSide
 
  SUBROUTINE ED_DestroyRtHndSide( RtHndSideData, ErrStat, ErrMsg, DEALLOCATEpointers )
@@ -10621,6 +10657,7 @@ ENDIF
     Int_BufSz   = Int_BufSz   + 2*3  ! rSAerCen upper/lower bounds for each dimension
       Re_BufSz   = Re_BufSz   + SIZE(InData%rSAerCen)  ! rSAerCen
   END IF
+      Re_BufSz   = Re_BufSz   + 1  ! YawFriMom
   IF ( Re_BufSz  .GT. 0 ) THEN 
      ALLOCATE( ReKiBuf(  Re_BufSz  ), STAT=ErrStat2 )
      IF (ErrStat2 /= 0) THEN 
@@ -12546,6 +12583,8 @@ ENDIF
         END DO
       END DO
   END IF
+    ReKiBuf(Re_Xferred) = InData%YawFriMom
+    Re_Xferred = Re_Xferred + 1
  END SUBROUTINE ED_PackRtHndSide
 
  SUBROUTINE ED_UnPackRtHndSide( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
@@ -14824,6 +14863,8 @@ ENDIF
         END DO
       END DO
   END IF
+    OutData%YawFriMom = ReKiBuf(Re_Xferred)
+    Re_Xferred = Re_Xferred + 1
  END SUBROUTINE ED_UnPackRtHndSide
 
  SUBROUTINE ED_CopyContState( SrcContStateData, DstContStateData, CtrlCode, ErrStat, ErrMsg )
@@ -15376,6 +15417,7 @@ ENDIF
     DstOtherStateData%HSSBrTrqC = SrcOtherStateData%HSSBrTrqC
     DstOtherStateData%SgnPrvLSTQ = SrcOtherStateData%SgnPrvLSTQ
     DstOtherStateData%SgnLSTQ = SrcOtherStateData%SgnLSTQ
+    DstOtherStateData%Mfhat = SrcOtherStateData%Mfhat
  END SUBROUTINE ED_CopyOtherState
 
  SUBROUTINE ED_DestroyOtherState( OtherStateData, ErrStat, ErrMsg, DEALLOCATEpointers )
@@ -15473,6 +15515,7 @@ ENDIF
       Re_BufSz   = Re_BufSz   + 1  ! HSSBrTrqC
       Int_BufSz  = Int_BufSz  + 1  ! SgnPrvLSTQ
       Int_BufSz  = Int_BufSz  + SIZE(InData%SgnLSTQ)  ! SgnLSTQ
+      Re_BufSz   = Re_BufSz   + 1  ! Mfhat
   IF ( Re_BufSz  .GT. 0 ) THEN 
      ALLOCATE( ReKiBuf(  Re_BufSz  ), STAT=ErrStat2 )
      IF (ErrStat2 /= 0) THEN 
@@ -15557,6 +15600,8 @@ ENDIF
       IntKiBuf(Int_Xferred) = InData%SgnLSTQ(i1)
       Int_Xferred = Int_Xferred + 1
     END DO
+    ReKiBuf(Re_Xferred) = InData%Mfhat
+    Re_Xferred = Re_Xferred + 1
  END SUBROUTINE ED_PackOtherState
 
  SUBROUTINE ED_UnPackOtherState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
@@ -15662,6 +15707,8 @@ ENDIF
       OutData%SgnLSTQ(i1) = IntKiBuf(Int_Xferred)
       Int_Xferred = Int_Xferred + 1
     END DO
+    OutData%Mfhat = ReKiBuf(Re_Xferred)
+    Re_Xferred = Re_Xferred + 1
  END SUBROUTINE ED_UnPackOtherState
 
  SUBROUTINE ED_CopyMisc( SrcMiscData, DstMiscData, CtrlCode, ErrStat, ErrMsg )
@@ -15775,6 +15822,18 @@ IF (ALLOCATED(SrcMiscData%QD2T)) THEN
     DstMiscData%QD2T = SrcMiscData%QD2T
 ENDIF
     DstMiscData%IgnoreMod = SrcMiscData%IgnoreMod
+IF (ALLOCATED(SrcMiscData%OgnlYawRow)) THEN
+  i1_l = LBOUND(SrcMiscData%OgnlYawRow,1)
+  i1_u = UBOUND(SrcMiscData%OgnlYawRow,1)
+  IF (.NOT. ALLOCATED(DstMiscData%OgnlYawRow)) THEN 
+    ALLOCATE(DstMiscData%OgnlYawRow(i1_l:i1_u),STAT=ErrStat2)
+    IF (ErrStat2 /= 0) THEN 
+      CALL SetErrStat(ErrID_Fatal, 'Error allocating DstMiscData%OgnlYawRow.', ErrStat, ErrMsg,RoutineName)
+      RETURN
+    END IF
+  END IF
+    DstMiscData%OgnlYawRow = SrcMiscData%OgnlYawRow
+ENDIF
  END SUBROUTINE ED_CopyMisc
 
  SUBROUTINE ED_DestroyMisc( MiscData, ErrStat, ErrMsg, DEALLOCATEpointers )
@@ -15822,6 +15881,9 @@ IF (ALLOCATED(MiscData%OgnlGeAzRo)) THEN
 ENDIF
 IF (ALLOCATED(MiscData%QD2T)) THEN
   DEALLOCATE(MiscData%QD2T)
+ENDIF
+IF (ALLOCATED(MiscData%OgnlYawRow)) THEN
+  DEALLOCATE(MiscData%OgnlYawRow)
 ENDIF
  END SUBROUTINE ED_DestroyMisc
 
@@ -15931,6 +15993,11 @@ ENDIF
       Db_BufSz   = Db_BufSz   + SIZE(InData%QD2T)  ! QD2T
   END IF
       Int_BufSz  = Int_BufSz  + 1  ! IgnoreMod
+  Int_BufSz   = Int_BufSz   + 1     ! OgnlYawRow allocated yes/no
+  IF ( ALLOCATED(InData%OgnlYawRow) ) THEN
+    Int_BufSz   = Int_BufSz   + 2*1  ! OgnlYawRow upper/lower bounds for each dimension
+      Re_BufSz   = Re_BufSz   + SIZE(InData%OgnlYawRow)  ! OgnlYawRow
+  END IF
   IF ( Re_BufSz  .GT. 0 ) THEN 
      ALLOCATE( ReKiBuf(  Re_BufSz  ), STAT=ErrStat2 )
      IF (ErrStat2 /= 0) THEN 
@@ -16131,6 +16198,21 @@ ENDIF
   END IF
     IntKiBuf(Int_Xferred) = TRANSFER(InData%IgnoreMod, IntKiBuf(1))
     Int_Xferred = Int_Xferred + 1
+  IF ( .NOT. ALLOCATED(InData%OgnlYawRow) ) THEN
+    IntKiBuf( Int_Xferred ) = 0
+    Int_Xferred = Int_Xferred + 1
+  ELSE
+    IntKiBuf( Int_Xferred ) = 1
+    Int_Xferred = Int_Xferred + 1
+    IntKiBuf( Int_Xferred    ) = LBOUND(InData%OgnlYawRow,1)
+    IntKiBuf( Int_Xferred + 1) = UBOUND(InData%OgnlYawRow,1)
+    Int_Xferred = Int_Xferred + 2
+
+      DO i1 = LBOUND(InData%OgnlYawRow,1), UBOUND(InData%OgnlYawRow,1)
+        ReKiBuf(Re_Xferred) = InData%OgnlYawRow(i1)
+        Re_Xferred = Re_Xferred + 1
+      END DO
+  END IF
  END SUBROUTINE ED_PackMisc
 
  SUBROUTINE ED_UnPackMisc( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
@@ -16379,6 +16461,24 @@ ENDIF
   END IF
     OutData%IgnoreMod = TRANSFER(IntKiBuf(Int_Xferred), OutData%IgnoreMod)
     Int_Xferred = Int_Xferred + 1
+  IF ( IntKiBuf( Int_Xferred ) == 0 ) THEN  ! OgnlYawRow not allocated
+    Int_Xferred = Int_Xferred + 1
+  ELSE
+    Int_Xferred = Int_Xferred + 1
+    i1_l = IntKiBuf( Int_Xferred    )
+    i1_u = IntKiBuf( Int_Xferred + 1)
+    Int_Xferred = Int_Xferred + 2
+    IF (ALLOCATED(OutData%OgnlYawRow)) DEALLOCATE(OutData%OgnlYawRow)
+    ALLOCATE(OutData%OgnlYawRow(i1_l:i1_u),STAT=ErrStat2)
+    IF (ErrStat2 /= 0) THEN 
+       CALL SetErrStat(ErrID_Fatal, 'Error allocating OutData%OgnlYawRow.', ErrStat, ErrMsg,RoutineName)
+       RETURN
+    END IF
+      DO i1 = LBOUND(OutData%OgnlYawRow,1), UBOUND(OutData%OgnlYawRow,1)
+        OutData%OgnlYawRow(i1) = ReKiBuf(Re_Xferred)
+        Re_Xferred = Re_Xferred + 1
+      END DO
+  END IF
  END SUBROUTINE ED_UnPackMisc
 
  SUBROUTINE ED_CopyParam( SrcParamData, DstParamData, CtrlCode, ErrStat, ErrMsg )
@@ -17523,6 +17623,10 @@ ENDIF
     DstParamData%PtfmCMyt = SrcParamData%PtfmCMyt
     DstParamData%BD4Blades = SrcParamData%BD4Blades
     DstParamData%UseAD14 = SrcParamData%UseAD14
+    DstParamData%YawFrctMod = SrcParamData%YawFrctMod
+    DstParamData%M_CD = SrcParamData%M_CD
+    DstParamData%M_CSMAX = SrcParamData%M_CSMAX
+    DstParamData%sig_v = SrcParamData%sig_v
     DstParamData%BldNd_NumOuts = SrcParamData%BldNd_NumOuts
     DstParamData%BldNd_TotNumOuts = SrcParamData%BldNd_TotNumOuts
 IF (ALLOCATED(SrcParamData%BldNd_OutParam)) THEN
@@ -18421,6 +18525,10 @@ ENDIF
       Re_BufSz   = Re_BufSz   + 1  ! PtfmCMyt
       Int_BufSz  = Int_BufSz  + 1  ! BD4Blades
       Int_BufSz  = Int_BufSz  + 1  ! UseAD14
+      Int_BufSz  = Int_BufSz  + 1  ! YawFrctMod
+      Db_BufSz   = Db_BufSz   + 1  ! M_CD
+      Db_BufSz   = Db_BufSz   + 1  ! M_CSMAX
+      Db_BufSz   = Db_BufSz   + 1  ! sig_v
       Int_BufSz  = Int_BufSz  + 1  ! BldNd_NumOuts
       Int_BufSz  = Int_BufSz  + 1  ! BldNd_TotNumOuts
   Int_BufSz   = Int_BufSz   + 1     ! BldNd_OutParam allocated yes/no
@@ -20232,6 +20340,14 @@ ENDIF
     Int_Xferred = Int_Xferred + 1
     IntKiBuf(Int_Xferred) = TRANSFER(InData%UseAD14, IntKiBuf(1))
     Int_Xferred = Int_Xferred + 1
+    IntKiBuf(Int_Xferred) = InData%YawFrctMod
+    Int_Xferred = Int_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%M_CD
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%M_CSMAX
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%sig_v
+    Db_Xferred = Db_Xferred + 1
     IntKiBuf(Int_Xferred) = InData%BldNd_NumOuts
     Int_Xferred = Int_Xferred + 1
     IntKiBuf(Int_Xferred) = InData%BldNd_TotNumOuts
@@ -22375,6 +22491,14 @@ ENDIF
     Int_Xferred = Int_Xferred + 1
     OutData%UseAD14 = TRANSFER(IntKiBuf(Int_Xferred), OutData%UseAD14)
     Int_Xferred = Int_Xferred + 1
+    OutData%YawFrctMod = IntKiBuf(Int_Xferred)
+    Int_Xferred = Int_Xferred + 1
+    OutData%M_CD = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%M_CSMAX = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%sig_v = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
     OutData%BldNd_NumOuts = IntKiBuf(Int_Xferred)
     Int_Xferred = Int_Xferred + 1
     OutData%BldNd_TotNumOuts = IntKiBuf(Int_Xferred)

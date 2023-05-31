@@ -954,157 +954,162 @@ MODULE ElastoDyn_Parameters
    INTEGER(IntKi), PARAMETER      :: YawBrMyp  = 728
 
 
+     ! Yaw Friction:
+
+   INTEGER(IntKi), PARAMETER      :: YawFriMom = 729
+
+
      ! Tower Base Loads:
 
-   INTEGER(IntKi), PARAMETER      :: TwrBsFxt  = 729
-   INTEGER(IntKi), PARAMETER      :: TwrBsFyt  = 730
-   INTEGER(IntKi), PARAMETER      :: TwrBsFzt  = 731
-   INTEGER(IntKi), PARAMETER      :: TwrBsMxt  = 732
-   INTEGER(IntKi), PARAMETER      :: TwrBsMyt  = 733
-   INTEGER(IntKi), PARAMETER      :: TwrBsMzt  = 734
+   INTEGER(IntKi), PARAMETER      :: TwrBsFxt  = 730
+   INTEGER(IntKi), PARAMETER      :: TwrBsFyt  = 731
+   INTEGER(IntKi), PARAMETER      :: TwrBsFzt  = 732
+   INTEGER(IntKi), PARAMETER      :: TwrBsMxt  = 733
+   INTEGER(IntKi), PARAMETER      :: TwrBsMyt  = 734
+   INTEGER(IntKi), PARAMETER      :: TwrBsMzt  = 735
 
 
      ! Local Tower Loads:
 
-   INTEGER(IntKi), PARAMETER      :: TwHt1MLxt = 735
-   INTEGER(IntKi), PARAMETER      :: TwHt1MLyt = 736
-   INTEGER(IntKi), PARAMETER      :: TwHt1MLzt = 737
-   INTEGER(IntKi), PARAMETER      :: TwHt2MLxt = 738
-   INTEGER(IntKi), PARAMETER      :: TwHt2MLyt = 739
-   INTEGER(IntKi), PARAMETER      :: TwHt2MLzt = 740
-   INTEGER(IntKi), PARAMETER      :: TwHt3MLxt = 741
-   INTEGER(IntKi), PARAMETER      :: TwHt3MLyt = 742
-   INTEGER(IntKi), PARAMETER      :: TwHt3MLzt = 743
-   INTEGER(IntKi), PARAMETER      :: TwHt4MLxt = 744
-   INTEGER(IntKi), PARAMETER      :: TwHt4MLyt = 745
-   INTEGER(IntKi), PARAMETER      :: TwHt4MLzt = 746
-   INTEGER(IntKi), PARAMETER      :: TwHt5MLxt = 747
-   INTEGER(IntKi), PARAMETER      :: TwHt5MLyt = 748
-   INTEGER(IntKi), PARAMETER      :: TwHt5MLzt = 749
-   INTEGER(IntKi), PARAMETER      :: TwHt6MLxt = 750
-   INTEGER(IntKi), PARAMETER      :: TwHt6MLyt = 751
-   INTEGER(IntKi), PARAMETER      :: TwHt6MLzt = 752
-   INTEGER(IntKi), PARAMETER      :: TwHt7MLxt = 753
-   INTEGER(IntKi), PARAMETER      :: TwHt7MLyt = 754
-   INTEGER(IntKi), PARAMETER      :: TwHt7MLzt = 755
-   INTEGER(IntKi), PARAMETER      :: TwHt8MLxt = 756
-   INTEGER(IntKi), PARAMETER      :: TwHt8MLyt = 757
-   INTEGER(IntKi), PARAMETER      :: TwHt8MLzt = 758
-   INTEGER(IntKi), PARAMETER      :: TwHt9MLxt = 759
-   INTEGER(IntKi), PARAMETER      :: TwHt9MLyt = 760
-   INTEGER(IntKi), PARAMETER      :: TwHt9MLzt = 761
-   INTEGER(IntKi), PARAMETER      :: TwHt1FLxt = 762
-   INTEGER(IntKi), PARAMETER      :: TwHt1FLyt = 763
-   INTEGER(IntKi), PARAMETER      :: TwHt1FLzt = 764
-   INTEGER(IntKi), PARAMETER      :: TwHt2FLxt = 765
-   INTEGER(IntKi), PARAMETER      :: TwHt2FLyt = 766
-   INTEGER(IntKi), PARAMETER      :: TwHt2FLzt = 767
-   INTEGER(IntKi), PARAMETER      :: TwHt3FLxt = 768
-   INTEGER(IntKi), PARAMETER      :: TwHt3FLyt = 769
-   INTEGER(IntKi), PARAMETER      :: TwHt3FLzt = 770
-   INTEGER(IntKi), PARAMETER      :: TwHt4FLxt = 771
-   INTEGER(IntKi), PARAMETER      :: TwHt4FLyt = 772
-   INTEGER(IntKi), PARAMETER      :: TwHt4FLzt = 773
-   INTEGER(IntKi), PARAMETER      :: TwHt5FLxt = 774
-   INTEGER(IntKi), PARAMETER      :: TwHt5FLyt = 775
-   INTEGER(IntKi), PARAMETER      :: TwHt5FLzt = 776
-   INTEGER(IntKi), PARAMETER      :: TwHt6FLxt = 777
-   INTEGER(IntKi), PARAMETER      :: TwHt6FLyt = 778
-   INTEGER(IntKi), PARAMETER      :: TwHt6FLzt = 779
-   INTEGER(IntKi), PARAMETER      :: TwHt7FLxt = 780
-   INTEGER(IntKi), PARAMETER      :: TwHt7FLyt = 781
-   INTEGER(IntKi), PARAMETER      :: TwHt7FLzt = 782
-   INTEGER(IntKi), PARAMETER      :: TwHt8FLxt = 783
-   INTEGER(IntKi), PARAMETER      :: TwHt8FLyt = 784
-   INTEGER(IntKi), PARAMETER      :: TwHt8FLzt = 785
-   INTEGER(IntKi), PARAMETER      :: TwHt9FLxt = 786
-   INTEGER(IntKi), PARAMETER      :: TwHt9FLyt = 787
-   INTEGER(IntKi), PARAMETER      :: TwHt9FLzt = 788
+   INTEGER(IntKi), PARAMETER      :: TwHt1MLxt = 736
+   INTEGER(IntKi), PARAMETER      :: TwHt1MLyt = 737
+   INTEGER(IntKi), PARAMETER      :: TwHt1MLzt = 738
+   INTEGER(IntKi), PARAMETER      :: TwHt2MLxt = 739
+   INTEGER(IntKi), PARAMETER      :: TwHt2MLyt = 740
+   INTEGER(IntKi), PARAMETER      :: TwHt2MLzt = 741
+   INTEGER(IntKi), PARAMETER      :: TwHt3MLxt = 742
+   INTEGER(IntKi), PARAMETER      :: TwHt3MLyt = 743
+   INTEGER(IntKi), PARAMETER      :: TwHt3MLzt = 744
+   INTEGER(IntKi), PARAMETER      :: TwHt4MLxt = 745
+   INTEGER(IntKi), PARAMETER      :: TwHt4MLyt = 746
+   INTEGER(IntKi), PARAMETER      :: TwHt4MLzt = 747
+   INTEGER(IntKi), PARAMETER      :: TwHt5MLxt = 748
+   INTEGER(IntKi), PARAMETER      :: TwHt5MLyt = 749
+   INTEGER(IntKi), PARAMETER      :: TwHt5MLzt = 750
+   INTEGER(IntKi), PARAMETER      :: TwHt6MLxt = 751
+   INTEGER(IntKi), PARAMETER      :: TwHt6MLyt = 752
+   INTEGER(IntKi), PARAMETER      :: TwHt6MLzt = 753
+   INTEGER(IntKi), PARAMETER      :: TwHt7MLxt = 754
+   INTEGER(IntKi), PARAMETER      :: TwHt7MLyt = 755
+   INTEGER(IntKi), PARAMETER      :: TwHt7MLzt = 756
+   INTEGER(IntKi), PARAMETER      :: TwHt8MLxt = 757
+   INTEGER(IntKi), PARAMETER      :: TwHt8MLyt = 758
+   INTEGER(IntKi), PARAMETER      :: TwHt8MLzt = 759
+   INTEGER(IntKi), PARAMETER      :: TwHt9MLxt = 760
+   INTEGER(IntKi), PARAMETER      :: TwHt9MLyt = 761
+   INTEGER(IntKi), PARAMETER      :: TwHt9MLzt = 762
+   INTEGER(IntKi), PARAMETER      :: TwHt1FLxt = 763
+   INTEGER(IntKi), PARAMETER      :: TwHt1FLyt = 764
+   INTEGER(IntKi), PARAMETER      :: TwHt1FLzt = 765
+   INTEGER(IntKi), PARAMETER      :: TwHt2FLxt = 766
+   INTEGER(IntKi), PARAMETER      :: TwHt2FLyt = 767
+   INTEGER(IntKi), PARAMETER      :: TwHt2FLzt = 768
+   INTEGER(IntKi), PARAMETER      :: TwHt3FLxt = 769
+   INTEGER(IntKi), PARAMETER      :: TwHt3FLyt = 770
+   INTEGER(IntKi), PARAMETER      :: TwHt3FLzt = 771
+   INTEGER(IntKi), PARAMETER      :: TwHt4FLxt = 772
+   INTEGER(IntKi), PARAMETER      :: TwHt4FLyt = 773
+   INTEGER(IntKi), PARAMETER      :: TwHt4FLzt = 774
+   INTEGER(IntKi), PARAMETER      :: TwHt5FLxt = 775
+   INTEGER(IntKi), PARAMETER      :: TwHt5FLyt = 776
+   INTEGER(IntKi), PARAMETER      :: TwHt5FLzt = 777
+   INTEGER(IntKi), PARAMETER      :: TwHt6FLxt = 778
+   INTEGER(IntKi), PARAMETER      :: TwHt6FLyt = 779
+   INTEGER(IntKi), PARAMETER      :: TwHt6FLzt = 780
+   INTEGER(IntKi), PARAMETER      :: TwHt7FLxt = 781
+   INTEGER(IntKi), PARAMETER      :: TwHt7FLyt = 782
+   INTEGER(IntKi), PARAMETER      :: TwHt7FLzt = 783
+   INTEGER(IntKi), PARAMETER      :: TwHt8FLxt = 784
+   INTEGER(IntKi), PARAMETER      :: TwHt8FLyt = 785
+   INTEGER(IntKi), PARAMETER      :: TwHt8FLzt = 786
+   INTEGER(IntKi), PARAMETER      :: TwHt9FLxt = 787
+   INTEGER(IntKi), PARAMETER      :: TwHt9FLyt = 788
+   INTEGER(IntKi), PARAMETER      :: TwHt9FLzt = 789
 
 
      ! Internal Degrees of Freedom:
 
-   INTEGER(IntKi), PARAMETER      :: Q_B1E1    = 789
-   INTEGER(IntKi), PARAMETER      :: Q_B2E1    = 790
-   INTEGER(IntKi), PARAMETER      :: Q_B3E1    = 791
-   INTEGER(IntKi), PARAMETER      :: Q_B1F1    = 792
-   INTEGER(IntKi), PARAMETER      :: Q_B2F1    = 793
-   INTEGER(IntKi), PARAMETER      :: Q_B3F1    = 794
-   INTEGER(IntKi), PARAMETER      :: Q_B1F2    = 795
-   INTEGER(IntKi), PARAMETER      :: Q_B2F2    = 796
-   INTEGER(IntKi), PARAMETER      :: Q_B3F2    = 797
-   INTEGER(IntKi), PARAMETER      :: Q_Teet    = 798
-   INTEGER(IntKi), PARAMETER      :: Q_DrTr    = 799
-   INTEGER(IntKi), PARAMETER      :: Q_GeAz    = 800
-   INTEGER(IntKi), PARAMETER      :: Q_RFrl    = 801
-   INTEGER(IntKi), PARAMETER      :: Q_TFrl    = 802
-   INTEGER(IntKi), PARAMETER      :: Q_Yaw     = 803
-   INTEGER(IntKi), PARAMETER      :: Q_TFA1    = 804
-   INTEGER(IntKi), PARAMETER      :: Q_TSS1    = 805
-   INTEGER(IntKi), PARAMETER      :: Q_TFA2    = 806
-   INTEGER(IntKi), PARAMETER      :: Q_TSS2    = 807
-   INTEGER(IntKi), PARAMETER      :: Q_Sg      = 808
-   INTEGER(IntKi), PARAMETER      :: Q_Sw      = 809
-   INTEGER(IntKi), PARAMETER      :: Q_Hv      = 810
-   INTEGER(IntKi), PARAMETER      :: Q_R       = 811
-   INTEGER(IntKi), PARAMETER      :: Q_P       = 812
-   INTEGER(IntKi), PARAMETER      :: Q_Y       = 813
-   INTEGER(IntKi), PARAMETER      :: QD_B1E1   = 814
-   INTEGER(IntKi), PARAMETER      :: QD_B2E1   = 815
-   INTEGER(IntKi), PARAMETER      :: QD_B3E1   = 816
-   INTEGER(IntKi), PARAMETER      :: QD_B1F1   = 817
-   INTEGER(IntKi), PARAMETER      :: QD_B2F1   = 818
-   INTEGER(IntKi), PARAMETER      :: QD_B3F1   = 819
-   INTEGER(IntKi), PARAMETER      :: QD_B1F2   = 820
-   INTEGER(IntKi), PARAMETER      :: QD_B2F2   = 821
-   INTEGER(IntKi), PARAMETER      :: QD_B3F2   = 822
-   INTEGER(IntKi), PARAMETER      :: QD_Teet   = 823
-   INTEGER(IntKi), PARAMETER      :: QD_DrTr   = 824
-   INTEGER(IntKi), PARAMETER      :: QD_GeAz   = 825
-   INTEGER(IntKi), PARAMETER      :: QD_RFrl   = 826
-   INTEGER(IntKi), PARAMETER      :: QD_TFrl   = 827
-   INTEGER(IntKi), PARAMETER      :: QD_Yaw    = 828
-   INTEGER(IntKi), PARAMETER      :: QD_TFA1   = 829
-   INTEGER(IntKi), PARAMETER      :: QD_TSS1   = 830
-   INTEGER(IntKi), PARAMETER      :: QD_TFA2   = 831
-   INTEGER(IntKi), PARAMETER      :: QD_TSS2   = 832
-   INTEGER(IntKi), PARAMETER      :: QD_Sg     = 833
-   INTEGER(IntKi), PARAMETER      :: QD_Sw     = 834
-   INTEGER(IntKi), PARAMETER      :: QD_Hv     = 835
-   INTEGER(IntKi), PARAMETER      :: QD_R      = 836
-   INTEGER(IntKi), PARAMETER      :: QD_P      = 837
-   INTEGER(IntKi), PARAMETER      :: QD_Y      = 838
-   INTEGER(IntKi), PARAMETER      :: QD2_B1E1  = 839
-   INTEGER(IntKi), PARAMETER      :: QD2_B2E1  = 840
-   INTEGER(IntKi), PARAMETER      :: QD2_B3E1  = 841
-   INTEGER(IntKi), PARAMETER      :: QD2_B1F1  = 842
-   INTEGER(IntKi), PARAMETER      :: QD2_B2F1  = 843
-   INTEGER(IntKi), PARAMETER      :: QD2_B3F1  = 844
-   INTEGER(IntKi), PARAMETER      :: QD2_B1F2  = 845
-   INTEGER(IntKi), PARAMETER      :: QD2_B2F2  = 846
-   INTEGER(IntKi), PARAMETER      :: QD2_B3F2  = 847
-   INTEGER(IntKi), PARAMETER      :: QD2_Teet  = 848
-   INTEGER(IntKi), PARAMETER      :: QD2_DrTr  = 849
-   INTEGER(IntKi), PARAMETER      :: QD2_GeAz  = 850
-   INTEGER(IntKi), PARAMETER      :: QD2_RFrl  = 851
-   INTEGER(IntKi), PARAMETER      :: QD2_TFrl  = 852
-   INTEGER(IntKi), PARAMETER      :: QD2_Yaw   = 853
-   INTEGER(IntKi), PARAMETER      :: QD2_TFA1  = 854
-   INTEGER(IntKi), PARAMETER      :: QD2_TSS1  = 855
-   INTEGER(IntKi), PARAMETER      :: QD2_TFA2  = 856
-   INTEGER(IntKi), PARAMETER      :: QD2_TSS2  = 857
-   INTEGER(IntKi), PARAMETER      :: QD2_Sg    = 858
-   INTEGER(IntKi), PARAMETER      :: QD2_Sw    = 859
-   INTEGER(IntKi), PARAMETER      :: QD2_Hv    = 860
-   INTEGER(IntKi), PARAMETER      :: QD2_R     = 861
-   INTEGER(IntKi), PARAMETER      :: QD2_P     = 862
-   INTEGER(IntKi), PARAMETER      :: QD2_Y     = 863
+   INTEGER(IntKi), PARAMETER      :: Q_B1E1    = 790
+   INTEGER(IntKi), PARAMETER      :: Q_B2E1    = 791
+   INTEGER(IntKi), PARAMETER      :: Q_B3E1    = 792
+   INTEGER(IntKi), PARAMETER      :: Q_B1F1    = 793
+   INTEGER(IntKi), PARAMETER      :: Q_B2F1    = 794
+   INTEGER(IntKi), PARAMETER      :: Q_B3F1    = 795
+   INTEGER(IntKi), PARAMETER      :: Q_B1F2    = 796
+   INTEGER(IntKi), PARAMETER      :: Q_B2F2    = 797
+   INTEGER(IntKi), PARAMETER      :: Q_B3F2    = 798
+   INTEGER(IntKi), PARAMETER      :: Q_Teet    = 799
+   INTEGER(IntKi), PARAMETER      :: Q_DrTr    = 800
+   INTEGER(IntKi), PARAMETER      :: Q_GeAz    = 801
+   INTEGER(IntKi), PARAMETER      :: Q_RFrl    = 802
+   INTEGER(IntKi), PARAMETER      :: Q_TFrl    = 803
+   INTEGER(IntKi), PARAMETER      :: Q_Yaw     = 804
+   INTEGER(IntKi), PARAMETER      :: Q_TFA1    = 805
+   INTEGER(IntKi), PARAMETER      :: Q_TSS1    = 806
+   INTEGER(IntKi), PARAMETER      :: Q_TFA2    = 807
+   INTEGER(IntKi), PARAMETER      :: Q_TSS2    = 808
+   INTEGER(IntKi), PARAMETER      :: Q_Sg      = 809
+   INTEGER(IntKi), PARAMETER      :: Q_Sw      = 810
+   INTEGER(IntKi), PARAMETER      :: Q_Hv      = 811
+   INTEGER(IntKi), PARAMETER      :: Q_R       = 812
+   INTEGER(IntKi), PARAMETER      :: Q_P       = 813
+   INTEGER(IntKi), PARAMETER      :: Q_Y       = 814
+   INTEGER(IntKi), PARAMETER      :: QD_B1E1   = 815
+   INTEGER(IntKi), PARAMETER      :: QD_B2E1   = 816
+   INTEGER(IntKi), PARAMETER      :: QD_B3E1   = 817
+   INTEGER(IntKi), PARAMETER      :: QD_B1F1   = 818
+   INTEGER(IntKi), PARAMETER      :: QD_B2F1   = 819
+   INTEGER(IntKi), PARAMETER      :: QD_B3F1   = 820
+   INTEGER(IntKi), PARAMETER      :: QD_B1F2   = 821
+   INTEGER(IntKi), PARAMETER      :: QD_B2F2   = 822
+   INTEGER(IntKi), PARAMETER      :: QD_B3F2   = 823
+   INTEGER(IntKi), PARAMETER      :: QD_Teet   = 824
+   INTEGER(IntKi), PARAMETER      :: QD_DrTr   = 825
+   INTEGER(IntKi), PARAMETER      :: QD_GeAz   = 826
+   INTEGER(IntKi), PARAMETER      :: QD_RFrl   = 827
+   INTEGER(IntKi), PARAMETER      :: QD_TFrl   = 828
+   INTEGER(IntKi), PARAMETER      :: QD_Yaw    = 829
+   INTEGER(IntKi), PARAMETER      :: QD_TFA1   = 830
+   INTEGER(IntKi), PARAMETER      :: QD_TSS1   = 831
+   INTEGER(IntKi), PARAMETER      :: QD_TFA2   = 832
+   INTEGER(IntKi), PARAMETER      :: QD_TSS2   = 833
+   INTEGER(IntKi), PARAMETER      :: QD_Sg     = 834
+   INTEGER(IntKi), PARAMETER      :: QD_Sw     = 835
+   INTEGER(IntKi), PARAMETER      :: QD_Hv     = 836
+   INTEGER(IntKi), PARAMETER      :: QD_R      = 837
+   INTEGER(IntKi), PARAMETER      :: QD_P      = 838
+   INTEGER(IntKi), PARAMETER      :: QD_Y      = 839
+   INTEGER(IntKi), PARAMETER      :: QD2_B1E1  = 840
+   INTEGER(IntKi), PARAMETER      :: QD2_B2E1  = 841
+   INTEGER(IntKi), PARAMETER      :: QD2_B3E1  = 842
+   INTEGER(IntKi), PARAMETER      :: QD2_B1F1  = 843
+   INTEGER(IntKi), PARAMETER      :: QD2_B2F1  = 844
+   INTEGER(IntKi), PARAMETER      :: QD2_B3F1  = 845
+   INTEGER(IntKi), PARAMETER      :: QD2_B1F2  = 846
+   INTEGER(IntKi), PARAMETER      :: QD2_B2F2  = 847
+   INTEGER(IntKi), PARAMETER      :: QD2_B3F2  = 848
+   INTEGER(IntKi), PARAMETER      :: QD2_Teet  = 849
+   INTEGER(IntKi), PARAMETER      :: QD2_DrTr  = 850
+   INTEGER(IntKi), PARAMETER      :: QD2_GeAz  = 851
+   INTEGER(IntKi), PARAMETER      :: QD2_RFrl  = 852
+   INTEGER(IntKi), PARAMETER      :: QD2_TFrl  = 853
+   INTEGER(IntKi), PARAMETER      :: QD2_Yaw   = 854
+   INTEGER(IntKi), PARAMETER      :: QD2_TFA1  = 855
+   INTEGER(IntKi), PARAMETER      :: QD2_TSS1  = 856
+   INTEGER(IntKi), PARAMETER      :: QD2_TFA2  = 857
+   INTEGER(IntKi), PARAMETER      :: QD2_TSS2  = 858
+   INTEGER(IntKi), PARAMETER      :: QD2_Sg    = 859
+   INTEGER(IntKi), PARAMETER      :: QD2_Sw    = 860
+   INTEGER(IntKi), PARAMETER      :: QD2_Hv    = 861
+   INTEGER(IntKi), PARAMETER      :: QD2_R     = 862
+   INTEGER(IntKi), PARAMETER      :: QD2_P     = 863
+   INTEGER(IntKi), PARAMETER      :: QD2_Y     = 864
 
 
      ! The maximum number of output channels which can be output by the code.
-   INTEGER(IntKi), PARAMETER      :: MaxOutPts = 863
+   INTEGER(IntKi), PARAMETER      :: MaxOutPts = 864
 
-!End of code generated by Matlab script
+!End of code generated by Matlab script Write_ChckOutLst
 ! ===================================================================================================
 
 INTEGER,  PARAMETER          :: TipDxc( 3)  = (/TipDxc1,  TipDxc2,  TipDxc3/)
@@ -3382,6 +3387,46 @@ SUBROUTINE ReadPrimaryFile( InputFile, InputFileData, BldFile, FurlFile, TwrFile
          CALL Cleanup()
          RETURN
       END IF
+      
+       !---------------------- YAW-FRICTION --------------------------------------------
+   CALL ReadCom( UnIn, InputFile, 'Section Header: Yaw-Friction', ErrStat2, ErrMsg2, UnEc )
+      CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
+      IF ( ErrStat >= AbortErrLev ) THEN
+         CALL Cleanup()
+         RETURN
+      END IF
+
+      ! YawFrctMod - Yaw-friction model switch (-):
+   CALL ReadVar( UnIn, InputFile, InputFileData%YawFrctMod, "YawFrctMod", "Yaw-friction model switch (-)", ErrStat2, ErrMsg2, UnEc)
+      CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
+      IF ( ErrStat >= AbortErrLev ) THEN
+         CALL Cleanup()
+         RETURN
+      END IF
+
+      ! M_CSmax - Maximum Coulomb friction torque (N-m):
+   CALL ReadVar( UnIn, InputFile, InputFileData%M_CSmax, "M_CSmax", "Maximum Coulomb friction torque (N-m)", ErrStat2, ErrMsg2, UnEc)
+      CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
+      IF ( ErrStat >= AbortErrLev ) THEN
+         CALL Cleanup()
+         RETURN
+      END IF
+      
+      ! M_CD - Dynamic friction moment at null yaw rate (N-m):
+   CALL ReadVar( UnIn, InputFile, InputFileData%M_CD, "M_CD", "Dynamic friction moment at null yaw rate (N-m)", ErrStat2, ErrMsg2, UnEc)
+      CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
+      IF ( ErrStat >= AbortErrLev ) THEN
+         CALL Cleanup()
+         RETURN
+      END IF
+      
+      ! sig_v - Viscous friction coefficiant (-):
+   CALL ReadVar( UnIn, InputFile, InputFileData%sig_v, "sig_v", "Viscous friction coefficient (-))", ErrStat2, ErrMsg2, UnEc)
+      CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
+      IF ( ErrStat >= AbortErrLev ) THEN
+         CALL Cleanup()
+         RETURN
+      END IF
 
    !---------------------- DRIVETRAIN ----------------------------------------------
    CALL ReadCom( UnIn, InputFile, 'Section Header: Drivetrain', ErrStat2, ErrMsg2, UnEc )
@@ -4511,7 +4556,16 @@ SUBROUTINE ValidatePrimaryData( InputFileData, BD4Blades, Linearize, ErrStat, Er
       END DO
       
    END IF
-
+   
+   !KBF Yaw-Friction User input checks, Still in progress
+   IF ( ( InputFileData%YawFrctMod /= 0_IntKi ) .AND. ( InputFileData%YawFrctMod /= 1_IntKi ) .AND. &
+           ( InputFileData%YawFrctMod /= 2_IntKi )  .AND. ( InputFileData%YawFrctMod /= 3_IntKi )) &
+         CALL SetErrStat( ErrID_Fatal, 'YawFrctMod must be 0, 1, 2, or 3',ErrStat,ErrMsg,RoutineName)
+   IF ( InputFileData%M_CD < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'M_CD must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
+   IF ( InputFileData%M_CSmax < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'M_CSmax must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
+   IF ( InputFileData%sig_v < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'sig_v must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
+   
+   
    !bjj: since ED doesn't actually use OutFmt at this point, I'm going to remove this check and warning message
    !!!!   ! Check that InputFileData%OutFmt is a valid format specifier and will fit over the column headings
    !!!!CALL ChkRealFmtStr( InputFileData%OutFmt, 'OutFmt', FmtWidth, ErrStat2, ErrMsg2 )
