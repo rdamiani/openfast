@@ -536,7 +536,9 @@ IMPLICIT NONE
     REAL(ReKi)  :: HSSBrTrqC      !< Commanded HSS brake torque (adjusted for sign) [N-m]
     INTEGER(IntKi)  :: SgnPrvLSTQ      !< The sign of the low-speed shaft torque from the previous call to RtHS().  This is calculated at the end of RtHS().  NOTE: The low-speed shaft torque is assumed to be positive at the beginning of the run! [-]
     INTEGER(IntKi) , DIMENSION(ED_NMX)  :: SgnLSTQ      !< history of sign of LSTQ [-]
-    REAL(ReKi)  :: Mfhat      !< Final Yaw Friction Torque [-]
+    REAL(ReKi)  :: Mfhat      !< Final Yaw Friction Torque [N-m]
+    REAL(R8Ki)  :: OmegaTn      !< Yaw rate at t_n used to calculate friction torque and yaw rate at t_n+1 [rad/s]
+    REAL(R8Ki)  :: OmegaDotTn      !< Yaw acceleration at t_n used to calculate friction torque and yaw rate at t_n+1 [rad/s^2]
   END TYPE ED_OtherStateType
 ! =======================
 ! =========  ED_MiscVarType  =======
@@ -785,7 +787,7 @@ IMPLICIT NONE
     INTEGER(IntKi)  :: YawFrctMod      !< Identifier for YawFrctMod (0 [no friction], 1 [does not use Fz at bearing], or 2 [does use Fz at bearing] [-]
     REAL(R8Ki)  :: M_CD      !< Dynamic friction moment at null yaw rate [N-m]
     REAL(R8Ki)  :: M_CSMAX      !< Maximum Coulomb friction torque [N-m]
-    REAL(R8Ki)  :: sig_v      !< Viscous friction coefficient [-]
+    REAL(R8Ki)  :: sig_v      !< Viscous friction coefficient [N-m]
     INTEGER(IntKi)  :: BldNd_NumOuts      !< Number of requested output channels per blade node (ED_AllBldNdOuts) [-]
     INTEGER(IntKi)  :: BldNd_TotNumOuts      !< Total number of requested output channels of blade node information (BldNd_NumOuts * BldNd_BlOutNd * BldNd_BladesOut -- ED_AllBldNdOuts) [-]
     TYPE(OutParmType) , DIMENSION(:), ALLOCATABLE  :: BldNd_OutParam      !< Names and units (and other characteristics) of all requested output parameters [-]
@@ -15418,6 +15420,8 @@ ENDIF
     DstOtherStateData%SgnPrvLSTQ = SrcOtherStateData%SgnPrvLSTQ
     DstOtherStateData%SgnLSTQ = SrcOtherStateData%SgnLSTQ
     DstOtherStateData%Mfhat = SrcOtherStateData%Mfhat
+    DstOtherStateData%OmegaTn = SrcOtherStateData%OmegaTn
+    DstOtherStateData%OmegaDotTn = SrcOtherStateData%OmegaDotTn
  END SUBROUTINE ED_CopyOtherState
 
  SUBROUTINE ED_DestroyOtherState( OtherStateData, ErrStat, ErrMsg, DEALLOCATEpointers )
@@ -15516,6 +15520,8 @@ ENDIF
       Int_BufSz  = Int_BufSz  + 1  ! SgnPrvLSTQ
       Int_BufSz  = Int_BufSz  + SIZE(InData%SgnLSTQ)  ! SgnLSTQ
       Re_BufSz   = Re_BufSz   + 1  ! Mfhat
+      Db_BufSz   = Db_BufSz   + 1  ! OmegaTn
+      Db_BufSz   = Db_BufSz   + 1  ! OmegaDotTn
   IF ( Re_BufSz  .GT. 0 ) THEN 
      ALLOCATE( ReKiBuf(  Re_BufSz  ), STAT=ErrStat2 )
      IF (ErrStat2 /= 0) THEN 
@@ -15602,6 +15608,10 @@ ENDIF
     END DO
     ReKiBuf(Re_Xferred) = InData%Mfhat
     Re_Xferred = Re_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%OmegaTn
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%OmegaDotTn
+    Db_Xferred = Db_Xferred + 1
  END SUBROUTINE ED_PackOtherState
 
  SUBROUTINE ED_UnPackOtherState( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
@@ -15709,6 +15719,10 @@ ENDIF
     END DO
     OutData%Mfhat = ReKiBuf(Re_Xferred)
     Re_Xferred = Re_Xferred + 1
+    OutData%OmegaTn = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%OmegaDotTn = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
  END SUBROUTINE ED_UnPackOtherState
 
  SUBROUTINE ED_CopyMisc( SrcMiscData, DstMiscData, CtrlCode, ErrStat, ErrMsg )

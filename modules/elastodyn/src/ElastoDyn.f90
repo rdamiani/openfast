@@ -441,6 +441,13 @@ SUBROUTINE ED_UpdateStates( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat
       ErrStat = ErrID_None
       ErrMsg  = ""            
       
+      !WRITE(*,*)" "
+      !WRITE(*,*)"Time Before Integrator (Update States):", t
+      !WRITE(*,*)"OtherState Omg in Update States:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+      !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
+      !WRITE(*,*)"OtherState OmgDot in Update States:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+      !WRITE(*,*)"qd2t:", m%QD2T(DOF_Yaw)
+
 
       SELECT CASE ( p%method )
          
@@ -451,9 +458,9 @@ SUBROUTINE ED_UpdateStates( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat
       CASE (Method_AB4)
       
          CALL ED_AB4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg )
-      
+         
       CASE (Method_ABM4)
-      
+         
          CALL ED_ABM4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg )
          
       CASE DEFAULT  !bjj: we already checked this at initialization, but for completeness:
@@ -464,6 +471,13 @@ SUBROUTINE ED_UpdateStates( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat
          
       END SELECT
       
+     !WRITE(*,*)" "
+     ! WRITE(*,*)"Time After Integrator (Update States):", t
+     ! WRITE(*,*)"OtherState Omg in Update States:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+     ! WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
+     ! WRITE(*,*)"OtherState OmgDot in Update States:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+     ! WRITE(*,*)"qd2t:", m%QD2T(DOF_Yaw)
+
          ! Make sure the rotor azimuth is not greater or equal to 360 degrees: 
          
       ! bjj: per jmj, the subtraction of TwoPi here is so that we don't run into numerical issues with large GeAz (in large simulations)
@@ -874,8 +888,22 @@ END IF
    m%AllOuts(   YawPzn) = x%QT  (DOF_Yaw )*R2D
    m%AllOuts(   YawVzn) = x%QDT (DOF_Yaw )*R2D
    m%AllOuts(   YawAzn) = m%QD2T(DOF_Yaw )*R2D
-
-
+   !WRITE(*,*)" "
+   !WRITE(*,*)"VALUES ARE OUTPUT------------------------------------------"
+   !WRITE(*,*)"Time:", t
+   !WRITE(*,*)"YawVzn output by OpenFAST:", x%QDT (DOF_Yaw )
+   !WRITE(*,*)"YawAzn output by OpenFAST:", m%QD2T (DOF_Yaw )
+   !WRITE(*,*)"Otherstate%IC(1) Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+   !WRITE(*,*)"Otherstate%IC(2) Omg:", OtherState%xdot(OtherState%IC(2))%qt(DOF_Yaw)
+   !WRITE(*,*)"Otherstate%IC(3) Omg:", OtherState%xdot(OtherState%IC(3))%qt(DOF_Yaw)
+   !WRITE(*,*)"Otherstate%IC(4) Omg:", OtherState%xdot(OtherState%IC(4))%qt(DOF_Yaw)
+   !WRITE(*,*)"Otherstate%IC(1) OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+   !WRITE(*,*)"Otherstate%IC(2) OmgDot:", OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw)
+   !WRITE(*,*)"Otherstate%IC(3) OmgDot:", OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw)
+   !WRITE(*,*)"Otherstate%IC(4) OmgDot:", OtherState%xdot(OtherState%IC(4))%qdt(DOF_Yaw)
+   !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
+   !WRITE(*,*)"qd2t:",m%QD2T(DOF_Yaw)
+   
    ! Tower-Top / Yaw Bearing Motions:
 
    rOPO     = m%RtHS%rT0O - p%TwrFlexL*m%CoordSys%a2 ! Position vector from the undeflected tower top (point O prime) to the deflected tower top (point O).
@@ -1807,6 +1835,8 @@ END IF
    y%HSS_Spd  = ABS(p%GBRatio)*x%QDT(DOF_GeAz)
    y%RotSpeed = x%QDT(DOF_GeAz) + x%QDT(DOF_DrTr)
    
+
+   
    IF ( t > 0.0_DbKi  )  THEN
 
       ! Calculate tower-top acceleration (fore-aft mode only) in the tower-top system:
@@ -1844,7 +1874,6 @@ END IF
    y%LSShftFxa = m%AllOuts(LSShftFxa)*1000.                ! Rotating low-speed shaft force x (GL co-ords) (N)
    y%LSShftFys = m%AllOuts(LSShftFys)*1000.                ! Nonrotating low-speed shaft force y (GL co-ords) (N)
    y%LSShftFzs = m%AllOuts(LSShftFzs)*1000.                ! Nonrotating low-speed shaft force z (GL co-ords) (N)
-
                
    RETURN
    
@@ -1917,12 +1946,21 @@ SUBROUTINE ED_CalcContStateDeriv( t, u, p, x, xd, z, OtherState, m, dxdt, ErrSta
    ! Compute the yaw friction torque
    Fz= DOT_PRODUCT( m%RtHS%FrcONcRtt, m%CoordSys%d2 ) !KBF  double check if this is correct syntax/placement
    Mz=DOT_PRODUCT( m%RtHS%MomBNcRtt, m%CoordSys%d2 )
-   CALL YawFriction( t, p, Fz, Mz, x%QDT(DOF_Yaw ), OtherState%xdot ( OtherState%IC(1) )%qdt(DOF_Yaw ), m%RtHS%YawFriMom )  !Compute yaw Friction #RRD
+   CALL YawFriction( t, p, Fz, Mz, OtherState%OmegaTn, OtherState%OmegaDotTn, m%RtHS%YawFriMom )  !Compute yaw Friction #RRD
    !MomBNcRtt Portion of the moment at the base plate (body B) / yaw bearing (point O) due to the nacelle, generator, and rotor associated with everything but the QD2T()'s"
    !FrcONcRtt Portion of the force at yaw bearing (point O) due to the nacelle, generator, and rotor associated with everything but the QD2T()'s
    ! We need to add the inertial component to Fz (not to Mz, because acceleration is resolved by the time integrator), so how do we get that?
    ! Fz= DOT_PRODUCT( FrcONcRt, m%CoordSys%d2 )
    ! Mz=DOT_PRODUCT( MomBNcRtt, m%CoordSys%d2 )
+   
+   !WRITE(*,*)" "
+   !WRITE(*,*)"Time in YawFriction:", t
+   !WRITE(*,*)"Omg in YawFriction (OmegaTn):",OtherState%OmegaTn
+   !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
+   !WRITE(*,*)"Otherstate Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+   !WRITE(*,*)"OmgDot in YawFriction (OmegaDotTn):", OtherState%OmegaDotTn
+   !WRITE(*,*)"qd2t:", m%QD2T(DOF_Yaw)
+   !WRITE(*,*)"Otherstate OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
    
    !bjj: note m%RtHS%GBoxEffFac needed in OtherState only to fix HSSBrTrq (and used in FillAugMat)
    m%RtHS%GBoxEffFac  = p%GBoxEff**OtherState%SgnPrvLSTQ      ! = GBoxEff if SgnPrvLSTQ = 1 OR 1/GBoxEff if SgnPrvLSTQ = -1
@@ -1975,8 +2013,10 @@ END IF
       dxdt%QDT(p%DOFs%SrtPS(I)) = m%SolnVec(I)    ! dxdt%QDT = m%QD2T
    ENDDO             ! I - All active (enabled) DOFs
 
+   !WRITE(*,*)" "
+   !WRITE(*,*)"Before qd2t:", m%QD2T(DOF_Yaw)
    m%QD2T = dxdt%QDT
-      
+   !WRITE(*,*)"After qd2t:", m%QD2T(DOF_Yaw)   
    
       ! Let's calculate the sign (+/-1) of the low-speed shaft torque for this time step and store it in SgnPrvLSTQ.
       !  This will be used during the next call to RtHS (bjj: currently violates framework, but DOE wants a hack for HSS brake).
@@ -3928,7 +3968,9 @@ SUBROUTINE Init_MiscOtherStates( m, OtherState, p, x, InputFileData, ErrStat, Er
    OtherState%HSSBrTrqC  = 0.0_ReKi
    OtherState%SgnPrvLSTQ = 1
    OtherState%SgnLSTQ    = 1
-   
+   OtherState%OmegaTn = 0.0_R8Ki
+   OtherState%OmegaDotTn = 0.0_R8Ki
+   OtherState%Mfhat = 0.0_ReKi
    
 END SUBROUTINE Init_MiscOtherStates
 
@@ -6534,7 +6576,7 @@ SUBROUTINE YawFriction( t, p, Fz, Mzz, Omg, OmgDot, Mf )
       ! Local variables:
    REAL(ReKi)                         :: temp                                   ! It takes teh value of Fz or -1.
 
-
+   
    SELECT CASE ( p%YawFrctMod  ) ! Which friction model are we using? 0=None, 1=does not use Fz, 2=does use Fz
 
    CASE ( 0_IntKi )              ! None!
@@ -6553,15 +6595,15 @@ SUBROUTINE YawFriction( t, p, Fz, Mzz, Omg, OmgDot, Mf )
       
       IF (EqualRealNos( Omg, 0.0_R8Ki )) THEN
 
-            Mf = SIGN( real(p%M_CD, ReKi) * temp, real(OmgDot,ReKi))  !KBF parameters were changed to ReKi to match Mf 
+            Mf = real(p%M_CD, ReKi) * temp * SIGN(1.0_ReKi,real(OmgDot,ReKi))  !KBF parameters were changed to ReKi to match Mf 
         
             IF (EqualRealNos( OmgDot, 0.0_R8Ki )) THEN
-                Mf = SIGN( MIN(real(p%M_CSmax,ReKi) * ABS(temp), ABS(real(Mzz,ReKi))) , -real(Mzz,ReKi)) 
+                Mf =  -MIN(real(p%M_CSmax,ReKi) * ABS(temp), ABS(real(Mzz,ReKi))) * SIGN(1.0_ReKi, real(Mzz,ReKi)) 
             ENDIF    
         
       ELSE
   
-        Mf = SIGN(real(p%M_CD,ReKi) * temp - real(p%sig_v,ReKi) * real(Omg,ReKi), real(Omg,ReKi)) 
+        Mf = real(p%M_CD,ReKi) * temp * sign(1.0_ReKi, real(Omg,ReKi)) - real(p%sig_v,ReKi) * real(Omg,ReKi)
           
       ENDIF
 
@@ -9627,8 +9669,15 @@ SUBROUTINE ED_AB4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg 
          CALL CheckError( ErrID_Fatal, ' Backing up in time is not supported with a multistep method.')
          RETURN
 
-      endif        
+      endif    
       
+      !WRITE(*,*)" "
+      !   WRITE(*,*)"OtherState%IC has been shifted"
+      !   WRITE(*,*)"Time (ABM4):", t
+      !   WRITE(*,*)"Otherstate Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+      !   WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
+      !   WRITE(*,*)"Otherstate OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+      !   WRITE(*,*)"qd2t:",m%QD2T(DOF_Yaw)
       
       ! Allocate the input arrays
       CALL ED_CopyInput( u(1), u_interp, MESH_NEWCOPY, ErrStat2, ErrMsg2 )
@@ -9647,15 +9696,31 @@ SUBROUTINE ED_AB4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg 
       END IF
       OtherState%HSSBrTrq   = OtherState%HSSBrTrqC
       OtherState%SgnPrvLSTQ = OtherState%SgnLSTQ(OtherState%IC(2))
+!     OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw) = x%QDT(DOF_Yaw)
+      OtherState%OmegaTn = x%QDT(DOF_Yaw) !this is equal to x%QDT(DOF_Yaw)
+      OtherState%OmegaDotTn = m%QD2T(DOF_Yaw) !this is equal to m%QD2T(DOF_Yaw) 
+      !WRITE(*,*)"Omg in YawFriction is OmegaTn:", OtherState%OmegaTn
+      !WRITE(*,*)"OmgDot in YawFriction is OmegaDotTn:", OtherState%OmegaDotTn
       
       CALL ED_CalcContStateDeriv( t, u_interp, p, x, xd, z, OtherState, m, xdot, ErrStat2, ErrMsg2 )
          CALL CheckError(ErrStat2,ErrMsg2)
-         
+        
+         !WRITE(*,*)" "
+         !WRITE(*,*)"Time (AB4):", t
+         !WRITE(*,*)"Otherstate Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw),"qdt:",x%QDT(DOF_Yaw) 
+         !WRITE(*,*)"OmegaTn:", OtherState%OmegaTn
+         !WRITE(*,*)"OtherState OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw),"qd2t:",m%QD2T(DOF_Yaw)
+         !WRITE(*,*)"OmegaDotTn:", OtherState%OmegaDotTn
          CALL ED_CopyContState(xdot, OtherState%xdot ( OtherState%IC(1) ), MESH_NEWCOPY, ErrStat2, ErrMsg2)
             CALL CheckError(ErrStat2,ErrMsg2)
             IF ( ErrStat >= AbortErrLev ) RETURN
-
-                                                    
+         !WRITE(*,*)" "
+         !WRITE(*,*)"OtherState%xdot(OtherState%IC(1) has been updated"
+         !WRITE(*,*)"Time (AB4):", t
+         !WRITE(*,*)"Otherstate Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+         !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)  
+         !WRITE(*,*)"Otherstate OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+         !WRITE(*,*)"qd2t:",m%QD2T(DOF_Yaw)
       if (n .le. 2) then
                                                
          CALL ED_RK4(t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat2, ErrMsg2 )
@@ -9682,7 +9747,7 @@ SUBROUTINE ED_AB4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg 
             CALL CheckError(ErrStat2,ErrMsg2)
             IF ( ErrStat >= AbortErrLev ) RETURN
             
-        CALL FixYawFric ( 'P', p, x, OtherState, m, x%QDT(DOF_Yaw ), ErrStat2, ErrMsg2 ) !KBF Make sure YawFric will not reverse nacelle direction
+        CALL FixYawFric ( 'P', p, x, OtherState, m, ErrStat2, ErrMsg2 ) !KBF Make sure YawFric will not reverse nacelle direction X%qdt(dof_yaw) = OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw )
             CALL CheckError(ErrStat2,ErrMsg2)
             IF ( ErrStat >= AbortErrLev ) RETURN
             
@@ -9690,7 +9755,7 @@ SUBROUTINE ED_AB4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg 
             
       OtherState%SgnPrvLSTQ = SignLSSTrq(p, m)   
       OtherState%SgnLSTQ(OtherState%IC(1)) = OtherState%SgnPrvLSTQ 
-      
+  
       
          ! clean up local variables:
       CALL ExitThisRoutine()
@@ -9798,7 +9863,7 @@ SUBROUTINE ED_ABM4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg
       CALL ED_CopyContState(x, x_pred, MESH_NEWCOPY, ErrStat2, ErrMsg2)
          CALL CheckError(ErrStat2,ErrMsg2)
          IF ( ErrStat >= AbortErrLev ) RETURN
-
+         
       CALL ED_AB4( t, n, u, utimes, p, x_pred, xd, z, OtherState, m, ErrStat2, ErrMsg2 )
          CALL CheckError(ErrStat2,ErrMsg2)
          IF ( ErrStat >= AbortErrLev ) RETURN
@@ -9848,7 +9913,7 @@ SUBROUTINE ED_ABM4( t, n, u, utimes, p, x, xd, z, OtherState, m, ErrStat, ErrMsg
             CALL CheckError(ErrStat2,ErrMsg2)
             IF ( ErrStat >= AbortErrLev ) RETURN
             
-         CALL FixYawFric ( 'C', p, x, OtherState, m, x%QDT(DOF_Yaw ), ErrStat2, ErrMsg2 )  !KBF Make sure YawFric will not reverse nacelle direction    
+         CALL FixYawFric ( 'C', p, x, OtherState, m, ErrStat2, ErrMsg2 )  !KBF Make sure YawFric will not reverse nacelle direction    x%qdt(dof_yaw) = OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw )
             CALL CheckError(ErrStat2,ErrMsg2)
             IF ( ErrStat >= AbortErrLev ) RETURN
             
@@ -10373,7 +10438,7 @@ SUBROUTINE FixHSSBrTq ( Integrator, p, x, OtherState, m, ErrStat, ErrMsg )
 END SUBROUTINE FixHSSBrTq
 !----------------------------------------------------------------------------------------------------------------------------------
 !> This routine is used to adjust the YawFricMom value for unphysicalities.
-SUBROUTINE FixYawFric ( Integrator, p, x, OtherState, m, w, ErrStat, ErrMsg )
+SUBROUTINE FixYawFric ( Integrator, p, x, OtherState, m, ErrStat, ErrMsg )
 
    ! Passed variables:
 
@@ -10381,7 +10446,6 @@ SUBROUTINE FixYawFric ( Integrator, p, x, OtherState, m, w, ErrStat, ErrMsg )
    TYPE(ED_OtherStateType),     INTENT(INOUT)  :: OtherState              !< Other states of the structural dynamics module 
    TYPE(ED_MiscVarType),        INTENT(INOUT)  :: m                       !< misc (optimization) variables
    TYPE(ED_ContinuousStateType),INTENT(INOUT)  :: x                       !< Continuous states of the structural dynamics module at n+1
-   REAL(R8Ki),                  INTENT(IN )    :: w                       !< The yaw rate (rotational speed), x%QDT(DOF_Yaw).
    CHARACTER(1),                INTENT(IN   )  :: Integrator              !< A string holding the current integrator being used.
    INTEGER(IntKi),              INTENT(  OUT)  :: ErrStat                 !< Error status of the operation
    CHARACTER(*),                INTENT(  OUT)  :: ErrMsg                  !< Error message if ErrStat /= ErrID_None
@@ -10421,23 +10485,37 @@ SUBROUTINE FixYawFric ( Integrator, p, x, OtherState, m, w, ErrStat, ErrMsg )
       ! Find the required QD2T(DOF_Yaw) to cause the yaw system to stop rotating (RqdQD2Yaw).
       ! This is found by solving the corrector formula for QD2(DOF_Yaw,IC(NMX))
       !   when QD(DOF_Yaw,IC(NMX)) equals zero.
-
-      RqdQD2Yaw = ( -      OtherState%xdot(OtherState%IC(1))%qt (DOF_Yaw)/ p%DT24 &
+      !WRITE(*,*)" "
+      !WRITE(*,*)"We are in FixYawFric Corrector Integrator"
+      !WRITE(*,*)"Otherstate%IC(1) Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(1) OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(2) OmgDot:", OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(3) OmgDot:", OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw)
+      !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
+      
+      RqdQD2Yaw = ( -      OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)/ p%DT24 &
                      - 19.0*OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)         &
                      +  5.0*OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw)         &
                      -      OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw)         ) / 9.0
-      
+       
    CASE ('P')   ! Predictor
 
       ! Find the required QD2T(DOF_Yaw) to cause the yaw system to stop rotating (RqdQD2Yaw).
       ! This is found by solving the predictor formula for QD2(DOF_Yaw,IC(1))
       !   when QD(DOF_Yaw,IC(NMX)) equals zero.
-
+      !WRITE(*,*)" "
+      !WRITE(*,*)"We are in FixYawFric Predictor Integrator"
+      !WRITE(*,*)"Otherstate%IC(1) Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(1) OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(2) OmgDot:", OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(3) OmgDot:", OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw)
+      !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
+      
       RqdQD2Yaw = ( -      OtherState%xdot(OtherState%IC(1))%qt( DOF_Yaw)  / p%DT24 &
                      + 59.0*OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw) &
                      - 37.0*OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw) &
                      +  9.0*OtherState%xdot(OtherState%IC(4))%qdt(DOF_Yaw)   )/55.0
-            
+          
    END SELECT
 
 
@@ -10518,12 +10596,15 @@ SUBROUTINE FixYawFric ( Integrator, p, x, OtherState, m, w, ErrStat, ErrMsg )
    OtherState%Mfhat = Mfp
    
 !Now check if Mfp is unphysical (i.e., it turned out aligned with omega), and then pick the minimum between Mf and Mfp
-   
-   IF (( ABS( Mfp ) > ABS( m%RtHs%YawFriMom  ) ) .OR. (Mfp *w >0.0_ReKi)) THEN
+   !WRITE(*,*)" "
+   !WRITE(*,*)"OtherState Omg in FixYawFric for Mfhat:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+   !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
+  
+   IF (( ABS( Mfp ) > ABS( m%RtHs%YawFriMom  ) ) .OR. (Mfp * OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw ) >0.0_ReKi)) THEN
 
       OtherState%Mfhat = m%RtHs%YawFriMom !OtherState%HSSBrTrqC = SIGN( u%HSSBrTrqC, x%QDT(DOF_GeAz) ) KBF CHECK THIS, does Mfp need to be OtherState?
       !m%QD2T     = QD2TC
-
+   
    ELSE
 
       ! overwrite QD2T with the new values
@@ -10544,18 +10625,30 @@ SUBROUTINE FixYawFric ( Integrator, p, x, OtherState, m, w, ErrStat, ErrMsg )
       ! This will make QD(DOF_Yaw,IC(NMX)) equal to zero and adjust all
       !    of the other QDs as necessary.
       ! The Q's are unnaffected by this change.     
+      !WRITE(*,*)" "
+      !WRITE(*,*)"We are in FixYawFric Corrector Integrator for setting yaw accel = 0"
+      !WRITE(*,*)"Otherstate%IC(1) Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(1) OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(2) OmgDot:", OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw)
+      !WRITE(*,*)"Otherstate%IC(3) OmgDot:", OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw)
+      !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
       
          x%qdt =                   OtherState%xdot(OtherState%IC(1))%qt &  ! qd at n
                  + p%DT24 * ( 9. * m%QD2T &                                ! the value we just changed
                            + 19. * OtherState%xdot(OtherState%IC(1))%qdt &
                            -  5. * OtherState%xdot(OtherState%IC(2))%qdt &
                            +  1. * OtherState%xdot(OtherState%IC(3))%qdt )
-            
-
-         
+      
       CASE ('P')  ! Predictor
 
       ! Update QD and QD2 with the new accelerations using predictor.  
+         !WRITE(*,*)" "
+         !WRITE(*,*)"We are in FixYawFric Predictor Integrator for setting yaw accel = 0"
+         !WRITE(*,*)"Otherstate%IC(1) Omg:", OtherState%xdot(OtherState%IC(1))%qt(DOF_Yaw)
+         !WRITE(*,*)"Otherstate%IC(1) OmgDot:", OtherState%xdot(OtherState%IC(1))%qdt(DOF_Yaw)
+         !WRITE(*,*)"Otherstate%IC(2) OmgDot:", OtherState%xdot(OtherState%IC(2))%qdt(DOF_Yaw)
+         !WRITE(*,*)"Otherstate%IC(3) OmgDot:", OtherState%xdot(OtherState%IC(3))%qdt(DOF_Yaw)
+         !WRITE(*,*)"qdt:",x%QDT(DOF_Yaw)
          
          x%qdt =                OtherState%xdot(OtherState%IC(1))%qt + &  ! qd at n
                  p%DT24 * ( 55.*m%QD2T &                                  ! the value we just changed
@@ -10564,8 +10657,7 @@ SUBROUTINE FixYawFric ( Integrator, p, x, OtherState, m, w, ErrStat, ErrMsg )
                            - 9.*OtherState%xdot(OtherState%IC(4))%qdt )
          
          OtherState%xdot ( OtherState%IC(1) )%qdt = m%QD2T        ! fix the history
-
-         
+      
       END SELECT
       
    ENDIF
