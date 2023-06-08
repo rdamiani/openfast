@@ -4564,7 +4564,7 @@ SUBROUTINE ValidatePrimaryData( InputFileData, BD4Blades, Linearize, ErrStat, Er
    IF ( InputFileData%M_CD < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'M_CD must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
    IF ( InputFileData%M_CSmax < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'M_CSmax must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
    IF ( InputFileData%sig_v < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'sig_v must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
-   IF ( InputFileData%M_CSmax .le. InputFileData%M_CD ) CALL SetErrStat( ErrID_Fatal, 'M_CSmax must be greater than M_CD.',ErrStat,ErrMsg,RoutineName )
+   IF ( InputFileData%M_CSmax .lt. InputFileData%M_CD ) CALL SetErrStat( ErrID_Fatal, 'M_CSmax must be greater than M_CD.',ErrStat,ErrMsg,RoutineName )
    
    
    !bjj: since ED doesn't actually use OutFmt at this point, I'm going to remove this check and warning message
