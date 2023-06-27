@@ -192,10 +192,12 @@ IMPLICIT NONE
     REAL(ReKi)  :: TeetHStP      !< Rotor-teeter hard-stop position [radians]
     REAL(ReKi)  :: TeetSSSp      !< Rotor-teeter soft-stop linear-spring constant [N-m/rad]
     REAL(ReKi)  :: TeetHSSp      !< Rotor-teeter hard-stop linear-spring constant [N-m/rad]
-    INTEGER(IntKi)  :: YawFrctMod      !< Identifier for YawFrctMod (0 [no friction], 1 [does not use Fz at bearing], or 2 [does use Fz at bearing] [-]
+    INTEGER(IntKi)  :: YawFrctMod      !< Identifier for YawFrctMod (0 [no friction], 1 [does not use Fz at bearing], 2 [does use Fz at bearing], or 3 [user defined model] [-]
     REAL(R8Ki)  :: M_CD      !< Dynamic friction moment at null yaw rate [N-m]
     REAL(R8Ki)  :: M_CSMAX      !< Maximum Coulomb friction torque [N-m]
-    REAL(R8Ki)  :: sig_v      !< Viscous friction coefficient [-]
+    REAL(R8Ki)  :: sig_v      !< Viscous friction coefficient [N-m/(rad/s)]
+    REAL(R8Ki)  :: thr_omg      !< Yaw rate stiction threshold [rad/s]
+    REAL(R8Ki)  :: thr_omgdot      !< Yaw acceleration stiction threshold [rad/s^2]
     REAL(ReKi)  :: GBoxEff      !< Gearbox efficiency [%]
     REAL(ReKi)  :: GBRatio      !< Gearbox ratio [-]
     REAL(ReKi)  :: DTTorSpr      !< Drivetrain torsional spring [N-m/rad]
@@ -537,6 +539,7 @@ IMPLICIT NONE
     INTEGER(IntKi)  :: SgnPrvLSTQ      !< The sign of the low-speed shaft torque from the previous call to RtHS().  This is calculated at the end of RtHS().  NOTE: The low-speed shaft torque is assumed to be positive at the beginning of the run! [-]
     INTEGER(IntKi) , DIMENSION(ED_NMX)  :: SgnLSTQ      !< history of sign of LSTQ [-]
     REAL(ReKi)  :: Mfhat      !< Final Yaw Friction Torque [N-m]
+    REAL(ReKi)  :: Mfp      !< Yaw Friction Torque to bring yaw system to a stop at current time step [N-m]
     REAL(R8Ki)  :: OmegaTn      !< Yaw rate at t_n used to calculate friction torque and yaw rate at t_n+1 [rad/s]
     REAL(R8Ki)  :: OmegaDotTn      !< Yaw acceleration at t_n used to calculate friction torque and yaw rate at t_n+1 [rad/s^2]
   END TYPE ED_OtherStateType
@@ -787,7 +790,9 @@ IMPLICIT NONE
     INTEGER(IntKi)  :: YawFrctMod      !< Identifier for YawFrctMod (0 [no friction], 1 [does not use Fz at bearing], or 2 [does use Fz at bearing] [-]
     REAL(R8Ki)  :: M_CD      !< Dynamic friction moment at null yaw rate [N-m]
     REAL(R8Ki)  :: M_CSMAX      !< Maximum Coulomb friction torque [N-m]
-    REAL(R8Ki)  :: sig_v      !< Viscous friction coefficient [N-m]
+    REAL(R8Ki)  :: sig_v      !< Viscous friction coefficient [N-m/(rad/s)]
+    REAL(R8Ki)  :: thr_omg      !< Yaw rate stiction threshold [rad/s]
+    REAL(R8Ki)  :: thr_omgdot      !< Yaw acceleration stiction threshold [rad/s^2]
     INTEGER(IntKi)  :: BldNd_NumOuts      !< Number of requested output channels per blade node (ED_AllBldNdOuts) [-]
     INTEGER(IntKi)  :: BldNd_TotNumOuts      !< Total number of requested output channels of blade node information (BldNd_NumOuts * BldNd_BlOutNd * BldNd_BladesOut -- ED_AllBldNdOuts) [-]
     TYPE(OutParmType) , DIMENSION(:), ALLOCATABLE  :: BldNd_OutParam      !< Names and units (and other characteristics) of all requested output parameters [-]
@@ -3796,6 +3801,8 @@ ENDIF
     DstInputFileData%M_CD = SrcInputFileData%M_CD
     DstInputFileData%M_CSMAX = SrcInputFileData%M_CSMAX
     DstInputFileData%sig_v = SrcInputFileData%sig_v
+    DstInputFileData%thr_omg = SrcInputFileData%thr_omg
+    DstInputFileData%thr_omgdot = SrcInputFileData%thr_omgdot
     DstInputFileData%GBoxEff = SrcInputFileData%GBoxEff
     DstInputFileData%GBRatio = SrcInputFileData%GBRatio
     DstInputFileData%DTTorSpr = SrcInputFileData%DTTorSpr
@@ -4327,6 +4334,8 @@ ENDIF
       Db_BufSz   = Db_BufSz   + 1  ! M_CD
       Db_BufSz   = Db_BufSz   + 1  ! M_CSMAX
       Db_BufSz   = Db_BufSz   + 1  ! sig_v
+      Db_BufSz   = Db_BufSz   + 1  ! thr_omg
+      Db_BufSz   = Db_BufSz   + 1  ! thr_omgdot
       Re_BufSz   = Re_BufSz   + 1  ! GBoxEff
       Re_BufSz   = Re_BufSz   + 1  ! GBRatio
       Re_BufSz   = Re_BufSz   + 1  ! DTTorSpr
@@ -4784,6 +4793,10 @@ ENDIF
     DbKiBuf(Db_Xferred) = InData%M_CSMAX
     Db_Xferred = Db_Xferred + 1
     DbKiBuf(Db_Xferred) = InData%sig_v
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%thr_omg
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%thr_omgdot
     Db_Xferred = Db_Xferred + 1
     ReKiBuf(Re_Xferred) = InData%GBoxEff
     Re_Xferred = Re_Xferred + 1
@@ -5541,6 +5554,10 @@ ENDIF
     OutData%M_CSMAX = REAL(DbKiBuf(Db_Xferred), R8Ki)
     Db_Xferred = Db_Xferred + 1
     OutData%sig_v = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%thr_omg = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%thr_omgdot = REAL(DbKiBuf(Db_Xferred), R8Ki)
     Db_Xferred = Db_Xferred + 1
     OutData%GBoxEff = ReKiBuf(Re_Xferred)
     Re_Xferred = Re_Xferred + 1
@@ -15420,6 +15437,7 @@ ENDIF
     DstOtherStateData%SgnPrvLSTQ = SrcOtherStateData%SgnPrvLSTQ
     DstOtherStateData%SgnLSTQ = SrcOtherStateData%SgnLSTQ
     DstOtherStateData%Mfhat = SrcOtherStateData%Mfhat
+    DstOtherStateData%Mfp = SrcOtherStateData%Mfp
     DstOtherStateData%OmegaTn = SrcOtherStateData%OmegaTn
     DstOtherStateData%OmegaDotTn = SrcOtherStateData%OmegaDotTn
  END SUBROUTINE ED_CopyOtherState
@@ -15520,6 +15538,7 @@ ENDIF
       Int_BufSz  = Int_BufSz  + 1  ! SgnPrvLSTQ
       Int_BufSz  = Int_BufSz  + SIZE(InData%SgnLSTQ)  ! SgnLSTQ
       Re_BufSz   = Re_BufSz   + 1  ! Mfhat
+      Re_BufSz   = Re_BufSz   + 1  ! Mfp
       Db_BufSz   = Db_BufSz   + 1  ! OmegaTn
       Db_BufSz   = Db_BufSz   + 1  ! OmegaDotTn
   IF ( Re_BufSz  .GT. 0 ) THEN 
@@ -15607,6 +15626,8 @@ ENDIF
       Int_Xferred = Int_Xferred + 1
     END DO
     ReKiBuf(Re_Xferred) = InData%Mfhat
+    Re_Xferred = Re_Xferred + 1
+    ReKiBuf(Re_Xferred) = InData%Mfp
     Re_Xferred = Re_Xferred + 1
     DbKiBuf(Db_Xferred) = InData%OmegaTn
     Db_Xferred = Db_Xferred + 1
@@ -15718,6 +15739,8 @@ ENDIF
       Int_Xferred = Int_Xferred + 1
     END DO
     OutData%Mfhat = ReKiBuf(Re_Xferred)
+    Re_Xferred = Re_Xferred + 1
+    OutData%Mfp = ReKiBuf(Re_Xferred)
     Re_Xferred = Re_Xferred + 1
     OutData%OmegaTn = REAL(DbKiBuf(Db_Xferred), R8Ki)
     Db_Xferred = Db_Xferred + 1
@@ -17641,6 +17664,8 @@ ENDIF
     DstParamData%M_CD = SrcParamData%M_CD
     DstParamData%M_CSMAX = SrcParamData%M_CSMAX
     DstParamData%sig_v = SrcParamData%sig_v
+    DstParamData%thr_omg = SrcParamData%thr_omg
+    DstParamData%thr_omgdot = SrcParamData%thr_omgdot
     DstParamData%BldNd_NumOuts = SrcParamData%BldNd_NumOuts
     DstParamData%BldNd_TotNumOuts = SrcParamData%BldNd_TotNumOuts
 IF (ALLOCATED(SrcParamData%BldNd_OutParam)) THEN
@@ -18543,6 +18568,8 @@ ENDIF
       Db_BufSz   = Db_BufSz   + 1  ! M_CD
       Db_BufSz   = Db_BufSz   + 1  ! M_CSMAX
       Db_BufSz   = Db_BufSz   + 1  ! sig_v
+      Db_BufSz   = Db_BufSz   + 1  ! thr_omg
+      Db_BufSz   = Db_BufSz   + 1  ! thr_omgdot
       Int_BufSz  = Int_BufSz  + 1  ! BldNd_NumOuts
       Int_BufSz  = Int_BufSz  + 1  ! BldNd_TotNumOuts
   Int_BufSz   = Int_BufSz   + 1     ! BldNd_OutParam allocated yes/no
@@ -20361,6 +20388,10 @@ ENDIF
     DbKiBuf(Db_Xferred) = InData%M_CSMAX
     Db_Xferred = Db_Xferred + 1
     DbKiBuf(Db_Xferred) = InData%sig_v
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%thr_omg
+    Db_Xferred = Db_Xferred + 1
+    DbKiBuf(Db_Xferred) = InData%thr_omgdot
     Db_Xferred = Db_Xferred + 1
     IntKiBuf(Int_Xferred) = InData%BldNd_NumOuts
     Int_Xferred = Int_Xferred + 1
@@ -22512,6 +22543,10 @@ ENDIF
     OutData%M_CSMAX = REAL(DbKiBuf(Db_Xferred), R8Ki)
     Db_Xferred = Db_Xferred + 1
     OutData%sig_v = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%thr_omg = REAL(DbKiBuf(Db_Xferred), R8Ki)
+    Db_Xferred = Db_Xferred + 1
+    OutData%thr_omgdot = REAL(DbKiBuf(Db_Xferred), R8Ki)
     Db_Xferred = Db_Xferred + 1
     OutData%BldNd_NumOuts = IntKiBuf(Int_Xferred)
     Int_Xferred = Int_Xferred + 1
