@@ -557,6 +557,8 @@ IMPLICIT NONE
     REAL(R8Ki) , DIMENSION(:), ALLOCATABLE  :: QD2T      !< Solution (acceleration) vector; the first time derivative of QDT [-]
     LOGICAL  :: IgnoreMod      !< whether to ignore the modulo in ED outputs (necessary for linearization perturbations) [-]
     REAL(ReKi) , DIMENSION(:), ALLOCATABLE  :: OgnlYawRow      !< Original DOF_Yaw row in AugMat [-]
+    REAL(ReKi)  :: FrcONcRt      !< Fz acting on yaw bearing including inertial contributions [N]
+    REAL(ReKi)  :: Mz      !< External loading on yaw bearing not including inertial contributions [N-m]
   END TYPE ED_MiscVarType
 ! =======================
 ! =========  ED_ParameterType  =======
@@ -15871,6 +15873,8 @@ IF (ALLOCATED(SrcMiscData%OgnlYawRow)) THEN
   END IF
     DstMiscData%OgnlYawRow = SrcMiscData%OgnlYawRow
 ENDIF
+    DstMiscData%FrcONcRt = SrcMiscData%FrcONcRt
+    DstMiscData%Mz = SrcMiscData%Mz
  END SUBROUTINE ED_CopyMisc
 
  SUBROUTINE ED_DestroyMisc( MiscData, ErrStat, ErrMsg, DEALLOCATEpointers )
@@ -16035,6 +16039,8 @@ ENDIF
     Int_BufSz   = Int_BufSz   + 2*1  ! OgnlYawRow upper/lower bounds for each dimension
       Re_BufSz   = Re_BufSz   + SIZE(InData%OgnlYawRow)  ! OgnlYawRow
   END IF
+      Re_BufSz   = Re_BufSz   + 1  ! FrcONcRt
+      Re_BufSz   = Re_BufSz   + 1  ! Mz
   IF ( Re_BufSz  .GT. 0 ) THEN 
      ALLOCATE( ReKiBuf(  Re_BufSz  ), STAT=ErrStat2 )
      IF (ErrStat2 /= 0) THEN 
@@ -16250,6 +16256,10 @@ ENDIF
         Re_Xferred = Re_Xferred + 1
       END DO
   END IF
+    ReKiBuf(Re_Xferred) = InData%FrcONcRt
+    Re_Xferred = Re_Xferred + 1
+    ReKiBuf(Re_Xferred) = InData%Mz
+    Re_Xferred = Re_Xferred + 1
  END SUBROUTINE ED_PackMisc
 
  SUBROUTINE ED_UnPackMisc( ReKiBuf, DbKiBuf, IntKiBuf, Outdata, ErrStat, ErrMsg )
@@ -16516,6 +16526,10 @@ ENDIF
         Re_Xferred = Re_Xferred + 1
       END DO
   END IF
+    OutData%FrcONcRt = ReKiBuf(Re_Xferred)
+    Re_Xferred = Re_Xferred + 1
+    OutData%Mz = ReKiBuf(Re_Xferred)
+    Re_Xferred = Re_Xferred + 1
  END SUBROUTINE ED_UnPackMisc
 
  SUBROUTINE ED_CopyParam( SrcParamData, DstParamData, CtrlCode, ErrStat, ErrMsg )
