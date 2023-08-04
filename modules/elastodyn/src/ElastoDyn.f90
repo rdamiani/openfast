@@ -3616,8 +3616,8 @@ SUBROUTINE SetPrimaryParameters( p, InputFileData, ErrStat, ErrMsg  )
    p%M_CD  = InputFileData%M_CD
    p%M_CSmax  = InputFileData%M_CSmax
    p%sig_v  = InputFileData%sig_v
-   p%thr_omg = InputFileData%thr_omg
-   p%thr_omgdot = InputFileData%thr_omgdot
+   !p%thr_omg = InputFileData%thr_omg
+   !p%thr_omgdot = InputFileData%thr_omgdot
 
    
    CALL AllocAry( p%TipMass, p%NumBl, 'TipMass', ErrStat, ErrMsg )
@@ -6607,12 +6607,14 @@ SUBROUTINE YawFriction( t, p, Fz, Mzz, Omg, OmgDot, Mf )
         temp = MIN(0.0_R8Ki, Fz)  !In the case of YawFrctMod=1 
       ENDIF
       
-      IF ((ABS(Omg) .lt. p%thr_omg) .or. (EqualRealNos( Omg, 0.0_R8Ki )) )THEN
+      !IF ((ABS(Omg) .lt. p%thr_omg) .or. (EqualRealNos( Omg, 0.0_R8Ki )) )THEN
+      IF  (EqualRealNos( Omg, 0.0_R8Ki ) )THEN
 
            !Mf = real(p%M_CD, ReKi) * temp * SIGN(1.0_ReKi,real(OmgDot,ReKi))  !KBF parameters were changed to ReKi to match Mf 
            Mf =  -MIN(real(p%M_CD,ReKi) * ABS(temp), ABS(real(Mzz,ReKi))) * SIGN(1.0_ReKi, real(Mzz,ReKi))
         
-           IF ((ABS(OmgDot) .lt. p%thr_omgdot) .or. (EqualRealNos( OmgDot, 0.0_R8Ki ))) THEN
+           !IF ((ABS(OmgDot) .lt. p%thr_omgdot) .or. (EqualRealNos( OmgDot, 0.0_R8Ki ))) THEN
+           IF (EqualRealNos( OmgDot, 0.0_R8Ki )) THEN
                 Mf =  -MIN(real(p%M_CSmax,ReKi) * ABS(temp), ABS(real(Mzz,ReKi))) * SIGN(1.0_ReKi, real(Mzz,ReKi)) 
            ENDIF    
         

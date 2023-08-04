@@ -174,8 +174,8 @@ typedef	^	ED_InputFile	IntKi	YawFrctMod	-	-	-	"Identifier for YawFrctMod (0 [no 
 typedef	^	ED_InputFile	R8Ki	M_CD	-	-	-	"Dynamic friction moment at null yaw rate"	N-m
 typedef	^	ED_InputFile	R8Ki	M_CSMAX	-	-	-	"Maximum Coulomb friction torque" N-m
 typedef	^	ED_InputFile	R8Ki	sig_v	-	-	-	"Viscous friction coefficient"	N-m/(rad/s)
-typedef	^	ED_InputFile	R8Ki	thr_omg	-	-	-	"Yaw rate stiction threshold"	rad/s
-typedef	^	ED_InputFile	R8Ki	thr_omgdot	-	-	-	"Yaw acceleration stiction threshold"	rad/s^2
+#typedef	^	ED_InputFile	R8Ki	thr_omg	-	-	-	"Yaw rate stiction threshold"	rad/s
+#typedef	^	ED_InputFile	R8Ki	thr_omgdot	-	-	-	"Yaw acceleration stiction threshold"	rad/s^2
 typedef	^	ED_InputFile	ReKi	GBoxEff	-	-	-	"Gearbox efficiency"	%
 typedef	^	ED_InputFile	ReKi	GBRatio	-	-	-	"Gearbox ratio"	-
 typedef	^	ED_InputFile	ReKi	DTTorSpr	-	-	-	"Drivetrain torsional spring"	N-m/rad
@@ -785,8 +785,8 @@ typedef	^	ParameterType	IntKi	YawFrctMod	-	-	-	"Identifier for YawFrctMod (0 [no
 typedef	^	ParameterType	R8Ki	M_CD	-	-	-	"Dynamic friction moment at null yaw rate"	N-m
 typedef	^	ParameterType	R8Ki	M_CSMAX	-	-	-	"Maximum Coulomb friction torque"	N-m
 typedef	^	ParameterType	R8Ki	sig_v	-	-	-	"Viscous friction coefficient"	N-m/(rad/s)
-typedef	^	ParameterType	R8Ki	thr_omg	-	-	-	"Yaw rate stiction threshold"	rad/s
-typedef	^	ParameterType	R8Ki	thr_omgdot	-	-	-	"Yaw acceleration stiction threshold"	rad/s^2
+#typedef	^	ParameterType	R8Ki	thr_omg	-	-	-	"Yaw rate stiction threshold"	rad/s
+#typedef	^	ParameterType	R8Ki	thr_omgdot	-	-	-	"Yaw acceleration stiction threshold"	rad/s^2
 
 # .... ED_AllBlNds option ........................................................................................................
 typedef  ^  ParameterType  IntKi   BldNd_NumOuts        -  -  -  "Number of requested output channels per blade node (ED_AllBldNdOuts)"  -

@@ -3434,20 +3434,20 @@ SUBROUTINE ReadPrimaryFile( InputFile, InputFileData, BldFile, FurlFile, TwrFile
       END IF
       
       ! thr_omg - Yaw rate stiction threshold (rad/s):
-   CALL ReadVar( UnIn, InputFile, InputFileData%thr_omg, "thr_omg", "Yaw rate stiction threshold (rad/s)", ErrStat2, ErrMsg2, UnEc)
-      CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
-      IF ( ErrStat >= AbortErrLev ) THEN
-         CALL Cleanup()
-         RETURN
-      END IF
-      
-      ! thr_omgdot - Yaw acceleration stiction threshold (rad/s^2):
-   CALL ReadVar( UnIn, InputFile, InputFileData%thr_omgdot, "thr_omgdot", "Yaw acceleration stiction threshold (rad/s^2)", ErrStat2, ErrMsg2, UnEc)
-      CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
-      IF ( ErrStat >= AbortErrLev ) THEN
-         CALL Cleanup()
-         RETURN
-      END IF
+   !CALL ReadVar( UnIn, InputFile, InputFileData%thr_omg, "thr_omg", "Yaw rate stiction threshold (rad/s)", ErrStat2, ErrMsg2, UnEc)
+   !   CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
+   !   IF ( ErrStat >= AbortErrLev ) THEN
+   !      CALL Cleanup()
+   !      RETURN
+   !   END IF
+   !   
+   !   ! thr_omgdot - Yaw acceleration stiction threshold (rad/s^2):
+   !CALL ReadVar( UnIn, InputFile, InputFileData%thr_omgdot, "thr_omgdot", "Yaw acceleration stiction threshold (rad/s^2)", ErrStat2, ErrMsg2, UnEc)
+   !   CALL SetErrStat( ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName )
+   !   IF ( ErrStat >= AbortErrLev ) THEN
+   !      CALL Cleanup()
+   !      RETURN
+   !   END IF
 
    !---------------------- DRIVETRAIN ----------------------------------------------
    CALL ReadCom( UnIn, InputFile, 'Section Header: Drivetrain', ErrStat2, ErrMsg2, UnEc )
@@ -4585,8 +4585,8 @@ SUBROUTINE ValidatePrimaryData( InputFileData, BD4Blades, Linearize, ErrStat, Er
    IF ( InputFileData%M_CD < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'M_CD must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
    IF ( InputFileData%M_CSmax < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'M_CSmax must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
    IF ( InputFileData%sig_v < 0_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'sig_v must be greater than or equal to 0.',ErrStat,ErrMsg,RoutineName )
-   IF ( InputFileData%thr_omg > 0.1_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'thr_omg must be less than or equal to 0.1.',ErrStat,ErrMsg,RoutineName ) 
-   IF ( InputFileData%thr_omgdot > 0.1_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'thr_omgdot must be less than or equal to 0.1.',ErrStat,ErrMsg,RoutineName )
+   !IF ( InputFileData%thr_omg > 0.1_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'thr_omg must be less than or equal to 0.1.',ErrStat,ErrMsg,RoutineName ) 
+   !IF ( InputFileData%thr_omgdot > 0.1_R8Ki ) CALL SetErrStat( ErrID_Fatal, 'thr_omgdot must be less than or equal to 0.1.',ErrStat,ErrMsg,RoutineName )
    
    
    
