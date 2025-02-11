@@ -860,8 +860,11 @@ END IF
    m%AllOuts(NcIMURAxs) =      DOT_PRODUCT(                 AngAccER  , m%CoordSys%c1 )*R2D
    m%AllOuts(NcIMURAys) = -1.0*DOT_PRODUCT(                 AngAccER  , m%CoordSys%c3 )*R2D
    m%AllOuts(NcIMURAzs) =      DOT_PRODUCT(                 AngAccER  , m%CoordSys%c2 )*R2D
-
-
+    !RRD added the following, acceleration including gravity to mimick an accelerometer
+   m%AllOuts(NcIMUTGxs) = m%AllOuts(NcIMUTAxs)  + p%gravity * DOT_PRODUCT( m%CoordSys%z2, m%CoordSys%c1 )
+   m%AllOuts(NcIMUTGys) = m%AllOuts(NcIMUTAys)  - p%gravity * DOT_PRODUCT( m%CoordSys%z2, m%CoordSys%c3 )
+   m%AllOuts(NcIMUTGzs) = m%AllOuts(NcIMUTAzs)  + p%gravity * DOT_PRODUCT( m%CoordSys%z2, m%CoordSys%c2 )
+ 
       ! Rotor-Furl Motions:
 
    m%AllOuts( RotFurlP) = x%QT  (DOF_RFrl)*R2D
@@ -3876,7 +3879,7 @@ SUBROUTINE SetOutParam(OutList, p, ErrStat, ErrMsg )
    CHARACTER(ChanLen)           :: OutListTmp                                      ! A string to temporarily hold OutList(I)
    CHARACTER(*), PARAMETER      :: RoutineName = "SetOutParam"
 
-      CHARACTER(OutStrLenM1), PARAMETER  :: ValidParamAry(981) =  (/  &   ! This lists the names of the allowed parameters, which must be sorted alphabetically
+      CHARACTER(OutStrLenM1), PARAMETER  :: ValidParamAry(984) =  (/  &   ! This lists the names of the allowed parameters, which must be sorted alphabetically
                                   "AZIMUTH  ","BLDPITCH1","BLDPITCH2","BLDPITCH3","BLPITCH1 ","BLPITCH2 ","BLPITCH3 ","GENACCEL ", &
                                   "GENSPEED ","HSSBRTQ  ","HSSHFTA  ","HSSHFTPWR","HSSHFTTQ ","HSSHFTV  ","IPDEFL1  ","IPDEFL2  ", &
                                   "IPDEFL3  ","LSSGAGA  ","LSSGAGAXA","LSSGAGAXS","LSSGAGFXA","LSSGAGFXS","LSSGAGFYA","LSSGAGFYS", &
@@ -3886,7 +3889,8 @@ SUBROUTINE SetOutParam(OutList, p, ErrStat, ErrMsg )
                                   "LSSTIPA  ","LSSTIPAXA","LSSTIPAXS","LSSTIPMYA","LSSTIPMYS","LSSTIPMZA","LSSTIPMZS","LSSTIPP  ", &
                                   "LSSTIPPXA","LSSTIPPXS","LSSTIPV  ","LSSTIPVXA","LSSTIPVXS","NACYAW   ","NACYAWA  ","NACYAWP  ", &
                                   "NACYAWV  ","NCIMURAXS","NCIMURAYS","NCIMURAZS","NCIMURVXS","NCIMURVYS","NCIMURVZS","NCIMUTAXS", &
-                                  "NCIMUTAYS","NCIMUTAZS","NCIMUTVXS","NCIMUTVYS","NCIMUTVZS","OOPDEFL1 ","OOPDEFL2 ","OOPDEFL3 ", &
+                                  "NCIMUTAYS","NCIMUTAZS","NCIMUTGXS","NCIMUTGYS","NCIMUTGZS", &       !RRD added IMUTG accelerations
+                                  "NCIMUTVXS","NCIMUTVYS","NCIMUTVZS","OOPDEFL1 ","OOPDEFL2 ","OOPDEFL3 ", &
                                   "PTCHDEFL1","PTCHDEFL2","PTCHDEFL3","PTCHPMZB1","PTCHPMZB2","PTCHPMZB3","PTCHPMZC1","PTCHPMZC2", &
                                   "PTCHPMZC3","PTFMHEAVE","PTFMPITCH","PTFMRAXI ","PTFMRAXT ","PTFMRAYI ","PTFMRAYT ","PTFMRAZI ", &
                                   "PTFMRAZT ","PTFMRDXI ","PTFMRDYI ","PTFMRDZI ","PTFMROLL ","PTFMRVXI ","PTFMRVXT ","PTFMRVYI ", &
@@ -4000,7 +4004,7 @@ SUBROUTINE SetOutParam(OutList, p, ErrStat, ErrMsg )
                                   "YAWBRTAXP","YAWBRTAYP","YAWBRTAZP","YAWBRTDXI","YAWBRTDXP","YAWBRTDXT","YAWBRTDYI","YAWBRTDYP", &
                                   "YAWBRTDYT","YAWBRTDZI","YAWBRTDZP","YAWBRTDZT","YAWBRTVXP","YAWBRTVYP","YAWBRTVZP","YAWPOS   ", &
                                "YAWPZN   ","YAWPZP   ","YAWRATE  ","YAWVZN   ","YAWVZP   "/)
-      INTEGER(IntKi), PARAMETER :: ParamIndxAry(981) =  (/ &                            ! This lists the index into AllOuts(:) of the allowed parameters ValidParamAry(:)
+      INTEGER(IntKi), PARAMETER :: ParamIndxAry(984) =  (/ &                            ! This lists the index into AllOuts(:) of the allowed parameters ValidParamAry(:)
                                    LSSTipPxa , PtchPMzc1 , PtchPMzc2 , PtchPMzc3 , PtchPMzc1 , PtchPMzc2 , PtchPMzc3 ,   HSShftA , &
                                      HSShftV ,   HSSBrTq ,   HSShftA , HSShftPwr ,  HSShftTq ,   HSShftV ,   TipDyc1 ,   TipDyc2 , &
                                      TipDyc3 , LSSGagAxa , LSSGagAxa , LSSGagAxa , LSShftFxa , LSShftFxa , LSShftFya , LSShftFys , &
@@ -4010,7 +4014,8 @@ SUBROUTINE SetOutParam(OutList, p, ErrStat, ErrMsg )
                                    LSSTipAxa , LSSTipAxa , LSSTipAxa , LSSTipMya , LSSTipMys , LSSTipMza , LSSTipMzs , LSSTipPxa , &
                                    LSSTipPxa , LSSTipPxa , LSSTipVxa , LSSTipVxa , LSSTipVxa ,    YawPzn ,    YawAzn ,    YawPzn , &
                                       YawVzn , NcIMURAxs , NcIMURAys , NcIMURAzs , NcIMURVxs , NcIMURVys , NcIMURVzs , NcIMUTAxs , &
-                                   NcIMUTAys , NcIMUTAzs , NcIMUTVxs , NcIMUTVys , NcIMUTVzs ,   TipDxc1 ,   TipDxc2 ,   TipDxc3 , &
+                                   NcIMUTAys , NcIMUTAzs , NcIMUTGxs , NcIMUTGys , NcIMUTGzs , & !RRD added the IMUTG accelerations
+                                   NcIMUTVxs , NcIMUTVys , NcIMUTVzs ,   TipDxc1 ,   TipDxc2 ,   TipDxc3 , &
                                     TipRDyb1 ,  TipRDyb2 ,  TipRDyb3 , PtchPMzc1 , PtchPMzc2 , PtchPMzc3 , PtchPMzc1 , PtchPMzc2 , &
                                    PtchPMzc3 ,  PtfmTDzi ,  PtfmRDyi ,  PtfmRAxi ,  PtfmRAxt ,  PtfmRAyi ,  PtfmRAyt ,  PtfmRAzi , &
                                     PtfmRAzt ,  PtfmRDxi ,  PtfmRDyi ,  PtfmRDzi ,  PtfmRDxi ,  PtfmRVxi ,  PtfmRVxt ,  PtfmRVyi , &
@@ -4124,7 +4129,7 @@ SUBROUTINE SetOutParam(OutList, p, ErrStat, ErrMsg )
                                    YawBrTAxp , YawBrTAyp , YawBrTAzp , TwrTpTDxi , YawBrTDxp , YawBrTDxt , TwrTpTDyi , YawBrTDyp , &
                                    YawBrTDyt , TwrTpTDzi , YawBrTDzp , YawBrTDzt , YawBrTVxp , YawBrTVyp , YawBrTVzp ,    YawPzn , &
                                    YawPzn ,    YawPzn ,    YawVzn ,    YawVzn ,    YawVzn /)
-      CHARACTER(ChanLen), PARAMETER :: ParamUnitsAry(981) =  (/  &  ! This lists the units corresponding to the allowed parameters
+      CHARACTER(ChanLen), PARAMETER :: ParamUnitsAry(984) =  (/  &  ! This lists the units corresponding to the allowed parameters
                                   "(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg/s^2)", &
                                   "(rpm)    ","(kN-m)   ","(deg/s^2)","(kW)     ","(kN-m)   ","(rpm)    ","(m)      ","(m)      ", &
                                   "(m)      ","(deg/s^2)","(deg/s^2)","(deg/s^2)","(kN)     ","(kN)     ","(kN)     ","(kN)     ", &
@@ -4134,7 +4139,8 @@ SUBROUTINE SetOutParam(OutList, p, ErrStat, ErrMsg )
                                   "(deg/s^2)","(deg/s^2)","(deg/s^2)","(kN-m)   ","(kN-m)   ","(kN-m)   ","(kN-m)   ","(deg)    ", &
                                   "(deg)    ","(deg)    ","(rpm)    ","(rpm)    ","(rpm)    ","(deg)    ","(deg/s^2)","(deg)    ", &
                                   "(deg/s)  ","(deg/s^2)","(deg/s^2)","(deg/s^2)","(deg/s)  ","(deg/s)  ","(deg/s)  ","(m/s^2)  ", &
-                                  "(m/s^2)  ","(m/s^2)  ","(m/s)    ","(m/s)    ","(m/s)    ","(m)      ","(m)      ","(m)      ", &
+                                  "(m/s^2)  ","(m/s^2)  ","(m/s^2)  ","(m/s^2)  ","(m/s^2)  ", & !RRD added the IMUTG accelerations
+                                  "(m/s)    ","(m/s)    ","(m/s)    ","(m)      ","(m)      ","(m)      ", &
                                   "(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg)    ", &
                                   "(deg)    ","(m)      ","(deg)    ","(deg/s^2)","(deg/s^2)","(deg/s^2)","(deg/s^2)","(deg/s^2)", &
                                   "(deg/s^2)","(deg)    ","(deg)    ","(deg)    ","(deg)    ","(deg/s)  ","(deg/s)  ","(deg/s)  ", &
