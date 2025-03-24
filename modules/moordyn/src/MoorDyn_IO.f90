@@ -118,6 +118,7 @@ MODULE MoorDyn_IO
    PUBLIC :: MDIO_CloseOutput
    PUBLIC :: MDIO_ProcessOutList
    PUBLIC :: MDIO_WriteOutputs
+   PUBLIC :: Line_GetNodeTen
 
 
 CONTAINS
@@ -226,7 +227,7 @@ CONTAINS
       INTEGER(IntKi),   INTENT( OUT)   :: ErrStat3 ! Error status of the operation
       CHARACTER(*),     INTENT( OUT)   :: ErrMsg3  ! Error message if ErrStat /= ErrID_None
 
-      INTEGER(IntKi)                   :: nC, I
+      INTEGER(IntKi)                   :: I
       INTEGER(IntKi)                   :: UnCoef   ! unit number for coefficient input file
            
            
@@ -242,8 +243,7 @@ CONTAINS
          LineProp_npoints = 0;
       
       else ! otherwise interpet the input as a file name to load stress-strain lookup data from
-      
-         CALL WrScr("found A letter in the line coefficient value so will try to load the filename.")
+         CALL WrScr1(" Found a letter in the line EA coefficient value so will try to load the filename.")
          
          LineProp_c = 0.0
          
@@ -251,8 +251,13 @@ CONTAINS
         
          CALL GetNewUnit( UnCoef )
          CALL OpenFInpFile( UnCoef, TRIM(inputString), ErrStat4, ErrMsg4 )   ! add error handling?
+         IF (ErrStat4 == ErrID_Fatal) then
+            ErrStat3 = ErrStat4
+            ErrMsg3 = ErrMsg4
+            RETURN
+         ENDIF   
          
-         READ(UnCoef,'(A)',IOSTAT=ErrStat4) Line2   ! skip the first two lines (title, names, and units) then parse
+         READ(UnCoef,'(A)',IOSTAT=ErrStat4) Line2   ! skip the first three lines (title, names, and units) then parse
          READ(UnCoef,'(A)',IOSTAT=ErrStat4) Line2
          READ(UnCoef,'(A)',IOSTAT=ErrStat4) Line2
             
@@ -294,7 +299,7 @@ CONTAINS
       INTEGER(IntKi),        INTENT(  OUT)  :: n
       CHARACTER(40),         INTENT(INOUT)  :: outstrings(6)  ! array of output strings. Up to 6 strings can be read
       
-      INTEGER :: pos1, pos2, i
+      INTEGER :: pos1, pos2
  
       n = 0
       pos1=1
@@ -329,13 +334,13 @@ CONTAINS
 !      INTEGER(IntKi),        INTENT(  OUT)  :: num2
       CHARACTER(25),         INTENT(  OUT)  :: let3
    
-      INTEGER(IntKi)               :: I                                        ! Generic loop-counting index
+!      INTEGER(IntKi)               :: I                                        ! Generic loop-counting index
       
-      CHARACTER(ChanLen)           :: OutListTmp                               ! A string to temporarily hold OutList(I), the name of each output channel
-      CHARACTER(ChanLen)           :: qVal                                     ! quantity type string to match to list of valid options
+!      CHARACTER(ChanLen)           :: OutListTmp                               ! A string to temporarily hold OutList(I), the name of each output channel
+!      CHARACTER(ChanLen)           :: qVal                                     ! quantity type string to match to list of valid options
       
-      INTEGER                      :: oID                                      ! ID number of point or line object
-      INTEGER                      :: nID                                      ! ID number of node object
+!      INTEGER                      :: oID                                      ! ID number of connect or line object
+!      INTEGER                      :: nID                                      ! ID number of node object
       INTEGER                      :: i1 = 0                                   ! indices of start of numbers or letters in OutListTmp string, for parsing
       INTEGER                      :: i2 = 0
       INTEGER                      :: i3 = 0
@@ -428,7 +433,7 @@ CONTAINS
 
     INTEGER                      :: oID                                      ! ID number of point or line object
     INTEGER                      :: nID                                      ! ID number of node object
-    INTEGER                      :: i1,i2,i3,i4                              ! indices of start of numbers or letters in OutListTmp string, for parsing
+!    INTEGER                      :: i1,i2,i3,i4                              ! indices of start of numbers or letters in OutListTmp string, for parsing
     
       CHARACTER(25)                 :: let1                ! strings used for splitting and parsing identifiers
       CHARACTER(25)                 :: num1
@@ -780,8 +785,8 @@ CONTAINS
       
       
          ! calculate number of output entries (excluding time) to write for this line
-         LineNumOuts = 3*(m%LineList(I)%N + 1)*SUM(m%LineList(I)%OutFlagList(2:6)) &
-                       + (m%LineList(I)%N + 1)*SUM(m%LineList(I)%OutFlagList(7:9)) &
+         LineNumOuts = 3*(m%LineList(I)%N + 1)*SUM(m%LineList(I)%OutFlagList(2:7)) &
+                       + (m%LineList(I)%N + 1)*SUM(m%LineList(I)%OutFlagList(8:9)) &
                              + m%LineList(I)%N*SUM(m%LineList(I)%OutFlagList(10:18))
    
          ALLOCATE(m%LineList(I)%LineWrOutput( 1 + LineNumOuts), STAT = ErrStat)  
@@ -852,7 +857,7 @@ CONTAINS
       INTEGER                                        :: I                    ! Generic loop counter
       INTEGER                                        :: J                    ! Generic loop counter
       CHARACTER(1024)                                :: OutFileName          ! The name of the output file  including the full path.
-      INTEGER                                        :: L                    ! counter for index in LineWrOutput
+!      INTEGER                                        :: L                    ! counter for index in LineWrOutput
       INTEGER                                        :: LineNumOuts          ! number of entries in LineWrOutput for each line
       INTEGER                                        :: RodNumOuts           ! for Rods ... redundant <<<
       CHARACTER(200)                                 :: Frmt                 ! a string to hold a format statement
@@ -868,7 +873,7 @@ CONTAINS
       ! Open the output file, if necessary, and write the header
       !-------------------------------------------------------------------------------------------------
 
-      IF ( ALLOCATED( p%OutParam ) .AND. p%NumOuts > 0 ) THEN           ! Output has been requested so let's open an output file
+      IF ( ALLOCATED( p%OutParam ) .AND. p%NumOuts > 0  .AND. p%OutSwitch > 0) THEN           ! Output has been requested so let's open an output file
 
          ! Open the file for output
          OutFileName = TRIM(p%RootName)//'.out'
@@ -929,8 +934,8 @@ CONTAINS
 
                         
             ! calculate number of output entries (excluding time) to write for this line
-            LineNumOuts = 3*(m%LineList(I)%N + 1)*SUM(m%LineList(I)%OutFlagList(2:6)) &
-                          + (m%LineList(I)%N + 1)*SUM(m%LineList(I)%OutFlagList(7:9)) &
+            LineNumOuts = 3*(m%LineList(I)%N + 1)*SUM(m%LineList(I)%OutFlagList(2:7)) &
+                          + (m%LineList(I)%N + 1)*SUM(m%LineList(I)%OutFlagList(8:9)) &
                                 + m%LineList(I)%N*SUM(m%LineList(I)%OutFlagList(10:18))
                                   
             if (wordy > 2) PRINT *, LineNumOuts, " output channels"
@@ -961,12 +966,17 @@ CONTAINS
                WRITE(m%LineList(I)%LineUnOut,'('//TRIM(Int2LStr((3+3*m%LineList(I)%N)))//'(A1,A15))', advance='no', IOSTAT=ErrStat2) &
                   ( p%Delim, 'Node'//TRIM(Int2Lstr(J))//'bx', p%Delim, 'Node'//TRIM(Int2Lstr(J))//'by', p%Delim, 'Node'//TRIM(Int2Lstr(J))//'bz', J=0,(m%LineList(I)%N) )
             END IF
-            
+
             IF (m%LineList(I)%OutFlagList(7) == 1) THEN
+               WRITE(m%LineList(I)%LineUnOut,'('//TRIM(Int2LStr((3+3*m%LineList(I)%N)))//'(A1,A15))', advance='no', IOSTAT=ErrStat2) &
+                  ( p%Delim, 'Node'//TRIM(Int2Lstr(J))//'Vx', p%Delim, 'Node'//TRIM(Int2Lstr(J))//'Vy', p%Delim, 'Node'//TRIM(Int2Lstr(J))//'Vz', J=0,(m%LineList(I)%N) ) ! TODO adjust these when force to internal nodes
+            END IF
+            
+            IF (m%LineList(I)%OutFlagList(8) == 1) THEN
                WRITE(m%LineList(I)%LineUnOut,'('//TRIM(Int2LStr((m%LineList(I)%N)))//'(A1,A15))', advance='no', IOSTAT=ErrStat2) &
                   ( p%Delim, 'Node'//TRIM(Int2Lstr(J))//'Wz', J=0,(m%LineList(I)%N) )
             END IF
-            IF (m%LineList(I)%OutFlagList(8) == 1) THEN
+            IF (m%LineList(I)%OutFlagList(9) == 1) THEN
                WRITE(m%LineList(I)%LineUnOut,'('//TRIM(Int2LStr((m%LineList(I)%N)))//'(A1,A15))', advance='no', IOSTAT=ErrStat2) &
                   ( p%Delim, 'Node'//TRIM(Int2Lstr(J))//'Kurv', J=0,(m%LineList(I)%N) )
             END IF
@@ -1018,12 +1028,16 @@ CONTAINS
                WRITE(m%LineList(I)%LineUnOut,'('//TRIM(Int2LStr((3+3*m%LineList(I)%N)))//'(A1,A15))', advance='no', IOSTAT=ErrStat2) &
                   ( p%Delim, '(N)', p%Delim, '(N)', p%Delim, '(N)', J=0,(m%LineList(I)%N) )
             END IF
-            
             IF (m%LineList(I)%OutFlagList(7) == 1) THEN
+               WRITE(m%LineList(I)%LineUnOut,'('//TRIM(Int2LStr((3+3*m%LineList(I)%N)))//'(A1,A15))', advance='no', IOSTAT=ErrStat2) &
+                  ( p%Delim, '(N)', p%Delim, '(N)', p%Delim, '(N)', J=0,(m%LineList(I)%N) )
+            END IF
+            
+            IF (m%LineList(I)%OutFlagList(8) == 1) THEN
                WRITE(m%LineList(I)%LineUnOut,'('//TRIM(Int2LStr((m%LineList(I)%N)))//'(A1,A15))', advance='no', IOSTAT=ErrStat2) &
                   ( p%Delim, '(Nup)', J=0,(m%LineList(I)%N) )
             END IF
-            IF (m%LineList(I)%OutFlagList(8) == 1) THEN
+            IF (m%LineList(I)%OutFlagList(9) == 1) THEN
                WRITE(m%LineList(I)%LineUnOut,'('//TRIM(Int2LStr((m%LineList(I)%N)))//'(A1,A15))', advance='no', IOSTAT=ErrStat2) &
                   ( p%Delim, '(1/m)', J=0,(m%LineList(I)%N) )
             END IF
@@ -1361,11 +1375,11 @@ CONTAINS
                   CASE (FZ)
                      y%WriteOutput(I) = m%LineList(p%OutParam(I)%ObjID)%Fnet(3,p%OutParam(I)%NodeID)  ! node force in z
                   CASE (Ten)
-                    y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), p%OutParam(I)%NodeID, p)  ! this is actually the segment tension ( 1 < NodeID < N )  Should deal with properly!
+                    y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), p%OutParam(I)%NodeID)  ! this is actually the segment tension ( 1 < NodeID < N )  Should deal with properly!
                   CASE (TenA)
-                     y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), 0, p) 
+                     y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), 0) 
                   CASE (TenB)
-                     y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), m%LineList(p%OutParam(I)%ObjID)%N, p)  
+                     y%WriteOutput(I) = Line_GetNodeTen(m%LineList(p%OutParam(I)%ObjID), m%LineList(p%OutParam(I)%ObjID)%N)  
                   CASE DEFAULT
                     y%WriteOutput(I) = 0.0_ReKi
                     ErrStat = ErrID_Warn
@@ -1575,10 +1589,10 @@ CONTAINS
          end if
          ! What the above does is say if ((dtOut==0) || (t >= (floor((t-dtC)/dtOut) + 1.0)*dtOut)), continue to writing files
 
-      if ( p%NumOuts > 0_IntKi ) then  
+      if ( p%NumOuts > 0_IntKi .and. p%MDUnOut > 0 ) then  
       
          ! Write the output parameters to the file
-         Frmt = '(F10.4,'//TRIM(Int2LStr(p%NumOuts))//'(A1,ES15.7E2))'   ! should evenutally use user specified format?
+         Frmt = '(F10.4,'//TRIM(Int2LStr(p%NumOuts))//'(A1,ES15.7))'   ! should evenutally use user specified format?
          
          WRITE(p%MDUnOut,Frmt)  Time, ( p%Delim, y%WriteOutput(I), I=1,p%NumOuts )
       END IF
@@ -1600,9 +1614,9 @@ CONTAINS
                                + m%LineList(I)%N*SUM(m%LineList(I)%OutFlagList(10:18))
            
            if (m%LineList(I)%OutFlagList(2) == 1) THEN   ! if node positions are included, make them using a float format for higher precision
-            Frmt = '(F10.4,'//TRIM(Int2LStr(3*(m%LineList(I)%N + 1)))//'(A1,ES15.7E2),'//TRIM(Int2LStr(LineNumOuts - 3*(m%LineList(I)%N - 1)))//'(A1,ES15.7E2))'  
+            Frmt = '(F10.4,'//TRIM(Int2LStr(3*(m%LineList(I)%N + 1)))//'(A1,ES15.7),'//TRIM(Int2LStr(LineNumOuts - 3*(m%LineList(I)%N - 1)))//'(A1,ES15.7))'  
            else
-            Frmt = '(F10.4,'//TRIM(Int2LStr(LineNumOuts))//'(A1,ES15.7E2))'   ! should evenutally use user specified format?
+            Frmt = '(F10.4,'//TRIM(Int2LStr(LineNumOuts))//'(A1,ES15.7))'   ! should evenutally use user specified format?
            end if
            
            L = 1 ! start of index of line output file at first entry   12345.7890
@@ -1664,22 +1678,31 @@ CONTAINS
               END DO
            END IF
            
+           ! Node VIV force
+           IF (m%LineList(I)%OutFlagList(7) == 1) THEN
+            DO J = 0,m%LineList(I)%N  
+              DO K = 1,3
+                m%LineList(I)%LineWrOutput(L) = m%LineList(I)%Lf(K,J)
+                L = L+1
+              END DO
+            END DO
+         END IF
            
            ! Node weights
-           IF (m%LineList(I)%OutFlagList(7) == 1) THEN
+           IF (m%LineList(I)%OutFlagList(8) == 1) THEN
               DO J = 0,m%LineList(I)%N
                   m%LineList(I)%LineWrOutput(L) = m%LineList(I)%W(3,J)
                   L = L+1
               END DO
            END IF
            
-        !   ! Node curvatures
-        !   IF (m%LineList(I)%OutFlagList(8) == 1) THEN
-        !      DO J = 0,m%LineList(I)%N
-        !          m%LineList(I)%LineWrOutput(L) = m%LineList(I)%W(3,J)
-        !          L = L+1
-        !      END DO
-        !   END IF
+          ! Node curvatures
+          IF (m%LineList(I)%OutFlagList(9) == 1) THEN
+             DO J = 0,m%LineList(I)%N
+                 m%LineList(I)%LineWrOutput(L) = m%LineList(I)%Kurv(J)
+                 L = L+1
+             END DO
+          END IF
            
            
            ! Segment tension force (excludes damping term, just EA)
@@ -1750,7 +1773,7 @@ CONTAINS
                                + m%RodList(I)%N*SUM(m%RodList(I)%OutFlagList(12:18))
            
            
-           Frmt = '(F10.4,'//TRIM(Int2LStr(RodNumOuts))//'(A1,ES15.7E2))'   ! should evenutally use user specified format?
+           Frmt = '(F10.4,'//TRIM(Int2LStr(RodNumOuts))//'(A1,ES15.7))'   ! should evenutally use user specified format?
 
            L = 1 ! start of index of line output file at first entry
            
@@ -1882,11 +1905,10 @@ CONTAINS
 
    ! get tension at any node including fairlead or anchor (accounting for weight in these latter cases)
    !--------------------------------------------------------------
-   FUNCTION Line_GetNodeTen(Line, i, p) result(NodeTen)
+   FUNCTION Line_GetNodeTen(Line, i) result(NodeTen)
 
       TYPE(MD_Line),          INTENT(IN   )  :: Line           ! label for the current line, for convenience
       INTEGER(IntKi),         INTENT(IN   )  :: i              ! node index to get tension at
-      TYPE(MD_ParameterType), INTENT(IN   )  :: p              ! Parameters
       REAL(DbKi)                             :: NodeTen        ! returned calculation of tension at node   
       
       INTEGER(IntKi)                   :: J      

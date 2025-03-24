@@ -1486,7 +1486,7 @@ subroutine StC_Blade_Setup(SrvD_InitInp,SrvD_p,InputFileData,SrvD_u,SrvD_y,SrvD_
          ! A little bit of information about the StC location
          if (unsum >0) then
             write(UnSum, '(A24,i2)')                  '    Blade StC instance: ',j
-            write(UnSum, '(10x,A)')                   'Input file: '//trim(InputFileData%NStCfiles(j))
+            write(UnSum, '(10x,A)')                   'Input file: '//trim(InputFileData%BStCfiles(j))
             do k=1,StC_InitInp%NumMeshPts
                write(UnSum, '(10x,A6,I1,A29)')        'Blade ',k,' location (global/inertial): '
                write(UnSum, '(20x,3(2x,ES10.3e2))')   u(1,j)%Mesh(k)%Position(1:3,1)
@@ -3324,7 +3324,7 @@ subroutine SrvD_Perturb_u( p, n, perturb_sign, u, du )
       case (13) ! TranslationDisp = 1;
          u%TStCMotionMesh(instance)%TranslationDisp(fieldIndx,1) = u%TStCMotionMesh(instance)%TranslationDisp(fieldIndx,1) + du * perturb_sign
       case (14) ! Orientation     = 2;
-         CALL PerturbOrientationMatrix( u%TStCMotionMesh(instance)%Orientation(:,:,1), du * perturb_sign, fieldIndx, UseSmlAngle=.true. )
+         CALL PerturbOrientationMatrix( u%TStCMotionMesh(instance)%Orientation(:,:,1), du * perturb_sign, fieldIndx, UseSmlAngle=.false. )
       case (15) ! TranslationVel  = 3;
          u%TStCMotionMesh(instance)%TranslationVel( fieldIndx,1) = u%TStCMotionMesh(instance)%TranslationVel( fieldIndx,1) + du * perturb_sign
       case (16) ! RotationVel     = 4;
@@ -3338,7 +3338,7 @@ subroutine SrvD_Perturb_u( p, n, perturb_sign, u, du )
       case (19) ! TranslationDisp = 1;
          u%SStCMotionMesh(instance)%TranslationDisp(fieldIndx,1) = u%SStCMotionMesh(instance)%TranslationDisp(fieldIndx,1) + du * perturb_sign
       case (20) ! Orientation     = 2;
-         CALL PerturbOrientationMatrix( u%SStCMotionMesh(instance)%Orientation(:,:,1), du * perturb_sign, fieldIndx, UseSmlAngle=.true. )
+         CALL PerturbOrientationMatrix( u%SStCMotionMesh(instance)%Orientation(:,:,1), du * perturb_sign, fieldIndx, UseSmlAngle=.false. )
       case (21) ! TranslationVel  = 3;
          u%SStCMotionMesh(instance)%TranslationVel( fieldIndx,1) = u%SStCMotionMesh(instance)%TranslationVel( fieldIndx,1) + du * perturb_sign
       case (22) ! RotationVel     = 4;
@@ -5200,6 +5200,10 @@ SUBROUTINE Yaw_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg 
    y%YawMom = - p%YawSpr *( u%Yaw     - YawPosCom  )     &          ! {-f(qd,q,t)}SpringYaw
               - p%YawDamp*( u%YawRate - YawRateCom )                ! {-f(qd,q,t)}DampYaw;
 
+
+   ! Return the commands directly from the controller (used by SED module)
+   y%YawPosCom  = YawPosCom
+   y%YawRateCom = YawRateCom
 
    !...................................................................
    ! Apply trim case for linearization:

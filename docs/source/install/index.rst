@@ -11,9 +11,12 @@ maintained paths for obtaining an OpenFAST executable.
 
 Most users of OpenFAST will not require modifying or compiling the source
 code. **For the simplest installation of OpenFAST without changing the source
-code,** refer to the table in the :ref:`download_binaries` section and read
-the corresponding documentation for specific instructions.
+code,** refer to the table in the :ref:`download_binaries` or :ref:`use_docker`
+sections and read the corresponding documentation for specific instructions.
 For instructions on compiling, see :ref:`compile_from_source`.
+
+To manipulate OpenFAST files using python, see :ref:`python_wrapper`.
+
 
 .. _download_binaries:
 
@@ -153,6 +156,93 @@ containing the executables, and running a simple test command:
 
     cd C:\your\path\Desktop\openfast_binaries\
     openfast_x64.exe /h
+
+
+.. _use_docker:
+
+Running OpenFAST with docker
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OpenFAST is available to be run on docker starting with version 3.5.3. Three approaches are shared below.
+
+Using a docker image from Docker hub
+------------------------------------
+Multiple versions of OpenFAST are also available as docker images from our `docker registry <https://hub.docker.com/r/nrel/openfast>`_.
+To pull and run one with files from your local machine available, run:
+
+.. code-block:: shell
+
+    docker run --rm -it --volume=/path/to/files:/files nrel/openfast:latest openfast /files/main.fst
+
+This command deletes the container (but not the image) when the analysis is finished and leaves the outputs in the same
+local directory as the input files. 
+
+You can also run commands interactively inside the container with:
+
+.. code-block:: shell
+
+    docker run --rm -it --volume=/path/to/files:/files nrel/openfast:latest /bin/bash
+
+To pull a specific release, substitute the version number in place of `latest` in the above commands (i.e. `nrel/openfast:3.5.3`).
+
+
+Using a docker image from GitHub container registry
+---------------------------------------------------
+In addition to images hosted on Docker hub, we also host docker images on our
+`GitHub container registry <https://github.com/orgs/OpenFAST/packages?repo_name=openfast>`_.
+The commands for pulling an image from the GitHub container repository are
+similar to those for pulling and running from Docker hub.  
+
+To pull and run with local files:
+
+.. code-block:: shell
+
+    docker run --rm -it --volume=/path/to/files:/files ghcr.io/openfast/openfast:latest openfast /files/main.fst
+
+For running the container interactively:
+
+.. code-block:: shell
+
+    docker run --rm -it --volume=/path/to/files:/files ghcr.io/openfast/openfast:latest /bin/bash
+
+To pull a specific release, substitute the version number in place of `latest` in the above commands (i.e. `ghcr.io/openfast/openfast:3.5.3`).
+
+Build your own images
+---------------------
+You can also build your own custom images using our `Dockerfile` or base your images on ours. See the
+`Docker readme <https://github.com/OpenFAST/openfast/blob/main/share/docker/README.md>`_ for more information on this.
+
+
+.. _python_wrapper:
+
+Install the ``openfast_io`` python wrapper
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The ``openfast_io`` python package is a wrapper comprising readers and writers for converting OpenFAST files to/from
+python objects.
+
+To use `openfast_io` as a library for incorporation into other scripts or tools, it is available via (assuming that you have already setup your python environment):
+
+.. code-block:: bash
+
+    pip install openfast_io
+
+These instructions are for interaction directly with the `openfast_io` source code.
+
+1. Follow this step only if you have not cloned the OpenFAST repo:
+
+.. code-block:: bash
+
+    git clone https://github.com/OpenFAST/OpenFAST.git
+    cd OpenFAST
+
+2. Assuming you are within the OpenFAST directory:
+
+.. code-block:: bash
+
+    cd openfast_io
+    pip install -e .
+
+For more information and installation options, see the `OpenFAST Python readme <https://github.com/OpenFAST/openfast/blob/main/openfast_python/README.md>`_.
+
 
 .. _compile_from_source:
 
@@ -370,19 +460,26 @@ The CMake options specific to OpenFAST and their default settings are:
     BUILD_DOCUMENTATION            - Build documentation (Default: OFF)
     BUILD_FASTFARM                 - Enable FAST.Farm capabilities (Default: OFF)
     BUILD_OPENFAST_CPP_API         - Enable building OpenFAST - C++ API (Default: OFF)
+    BUILD_OPENFAST_CPP_DRIVER      - Enable building OpenFAST C++ driver using C++ CFD API (Default: OFF)
+    BUILD_OPENFAST_LIB_DRIVER      - Enable building OpenFAST driver using C++ Library API (Default: OFF)
     BUILD_OPENFAST_SIMULINK_API    - Enable building OpenFAST for use with Simulink (Default: OFF)
     BUILD_SHARED_LIBS              - Enable building shared libraries (Default: OFF)
     BUILD_TESTING                  - Build the testing tree (Default: OFF)
+    BUILD_UNIT_TESTING             - Enable unit testing (Default: ON)
     CMAKE_BUILD_TYPE               - Choose the build type: Debug Release (Default: Release)
     CMAKE_Fortran_MODULE_DIRECTORY - Set the Fortran Modules directory
     CMAKE_INSTALL_PREFIX           - Install path prefix, prepended onto install directories.
-    CODECOV                        - Enable infrastructure for measuring code coverage (Default: OFF)
+    CMAKE_MACOSX_RPATH             - Use RPATH runtime linking (Default: ON)
+    CODECOVERAGE                   - Enable infrastructure for measuring code coverage (Default: OFF)
     DOUBLE_PRECISION               - Treat REAL as double precision (Default: ON)
     FPE_TRAP_ENABLED               - Enable Floating Point Exception (FPE) trap in compiler options (Default: OFF)
     GENERATE_TYPES                 - Use the openfast-registry to autogenerate types modules (Default: OFF)
     OPENMP                         - Enable OpenMP support (Default: OFF)
-    ORCA_DLL_LOAD                  - Enable OrcaFlex library load (Default: OFF)
+    ORCA_DLL_LOAD                  - Enable OrcaFlex library load (Default: ON)
     USE_DLL_INTERFACE              - Enable runtime loading of dynamic libraries (Default: ON)
+    USE_LOCAL_STATIC_LAPACK        - Enable downloading and building static LAPACK and BLAS libs (Default: OFF)
+    VARIABLE_TRACKING              - Enables variable tracking for better runtime debugging output. May increase compile time. Valid only for GNU. (Defualt: ON)
+
 
 Additional system-specific options may exist for a given system, but those
 should not impact the OpenFAST configuration. As mentioned above, the
@@ -663,6 +760,27 @@ can be installed with any package manager for macOS and Linux or
 through the Intel oneAPI distributions.
 
 .. _installation_appendix:
+
+Simulink
+~~~~~~~~
+To build the MEX function for coupling OpenFAST into Simulink, there are two
+options depending on platform.
+
+Windows with Visual Studio
+--------------------------
+For Windows, build with the `Release_Matlab` option from the Visual Studio
+project in `vs-build/FAST/FAST.sln`.  Then run
+`glue-codes/simulink/src/create_FAST_SFunc.m` from MATLAB (instructions at the
+top of this file).
+
+CMake
+-----
+For CMake builds on all platforms, enable the `-DBUILD_OPENFAST_SIMULINK_API=On`
+option in CMake and build the `FAST_SFunc` target.  This will place the
+resulting `FAST_SFunc.mexXXXX` in
+`<build-dir>/glue-codes/simulink/FAST_SFunc.mexXXXX` (and in the install
+directory at `install/bin/FAST_SFunc.mexXXXX` if `make install` was called).
+
 
 Appendix
 ~~~~~~~~

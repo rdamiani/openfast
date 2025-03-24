@@ -32,41 +32,49 @@ if (${_compiler_id} STREQUAL "GNU" AND NOT ${VARIABLE_TRACKING})
     PROPERTIES
       COMPILE_FLAGS "-fno-var-tracking -fno-var-tracking-assignments"
   )
-elseif (${_compiler_id} MATCHES "^INTEL" AND ${_build_type} STREQUAL "RELEASE" AND NOT WIN32)
+endif()
+if (${_build_type} STREQUAL "RELEASE" AND NOT WIN32)
   # Compilation hangs on FAST_Farm_Types.f90 with -O3 on linux (on some hardware)
   set_source_files_properties(src/FAST_Types.f90 PROPERTIES COMPILE_FLAGS "-O2")
 endif()
 
-add_library(openfast_prelib src/FAST_Types.f90)
+add_library(openfast_prelib STATIC
+  src/FAST_Types.f90
+)
 target_link_libraries(openfast_prelib 
   nwtclibs
   versioninfolib
-  aerodyn14lib
+  aerodisklib
   aerodynlib
+  extloadslib
   beamdynlib
   elastodynlib
   extptfm_mckflib
   feamlib
-  foamtypeslib
+  extinflowtypeslib
   hydrodynlib
   icedynlib
   icefloelib
   ifwlib
-  maplib
+  mappplib
   moordynlib
   orcaflexlib
   sctypeslib
+  seastlib
+  sedlib
   servodynlib
   subdynlib
 )
 
-add_library(openfast_postlib
+add_library(openfast_postlib STATIC
   src/FAST_Lin.f90
   src/FAST_Mods.f90
   src/FAST_Subs.f90
   src/FAST_Solver.f90
+  src/FAST_SS_Subs.f90
+  src/FAST_SS_Solver.f90
 )
-target_link_libraries(openfast_postlib openfast_prelib foamfastlib scfastlib)
+target_link_libraries(openfast_postlib openfast_prelib extinflowlib scfastlib)
 target_include_directories(openfast_postlib PUBLIC 
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/src>  
 )
@@ -77,7 +85,9 @@ add_library(openfastlib_static INTERFACE)
 target_link_libraries(openfastlib_static INTERFACE openfast_postlib)
 
 # OpenFAST Library shared (Python, openfast_cpp, openfastcpplib)
-add_library(openfastlib SHARED src/FAST_Library.f90)
+add_library(openfastlib SHARED 
+  src/FAST_Library.f90
+)
 target_link_libraries(openfastlib openfast_postlib)
 if(APPLE OR UNIX)
   target_compile_definitions(openfastlib PRIVATE IMPLICIT_DLLEXPORT)
