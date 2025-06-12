@@ -1490,7 +1490,7 @@ CONTAINS
 !! Use DCM_SetLogMapForInterp (nwtc_num::dcm_setlogmapforinterp) instead of directly calling a specific routine in the generic interface. 
    SUBROUTINE DCM_SetLogMapForInterpD( tensor )
          
-   REAL(DbKi),     INTENT(INOUT) :: tensor(:,:)       !< a 3xn matrix, whose columns represent individual skew-symmmetric matrices. On exit,
+   REAL(DbKi),     INTENT(INOUT) :: tensor(:,:)       !< a 3xn matrix, whose columns represent individual skew-symmetric matrices. On exit,
                                                       !! each column will be within \f$2\pi\f$ of the previous column, allowing for interpolation 
                                                       !! of the quantities.
 
@@ -2814,7 +2814,7 @@ END FUNCTION FindValidChannelIndx
 
    END FUNCTION GetSmllRotAngsR
 !=======================================================================
-!> This funtion returns the non-dimensional (-1:+1) location of the given Gauss-Legendre Quadrature point and its weight.
+!> This function returns the non-dimensional (-1:+1) location of the given Gauss-Legendre Quadrature point and its weight.
 !! It works for NPts \f$\in \left[{1,6\right]\f$.
 !! The values came from Carnahan, Brice; Luther, H.A.; Wilkes, James O.  (1969)  "Applied Numerical Methods."
    SUBROUTINE GL_Pts ( IPt, NPts, Loc, Wt, ErrStat, ErrMsg )
@@ -2937,7 +2937,7 @@ END FUNCTION FindValidChannelIndx
    RETURN
    END SUBROUTINE GL_Pts ! ( IPt, NPts, Loc, Wt [, ErrStat] )
 !=======================================================================
-!> This funtion returns an integer index such that CAry(IndexCharAry) = CVal. If
+!> This function returns an integer index such that CAry(IndexCharAry) = CVal. If
 !! no element in the array matches CVal, the value -1 is returned.  The routine
 !! performs a binary search on the input array to determine if CVal is an
 !! element of the array; thus, CAry must be sorted and stored in increasing
@@ -3002,7 +3002,7 @@ END FUNCTION FindValidChannelIndx
 
    END FUNCTION IndexCharAry
 !=======================================================================
-!> This funtion returns a y-value that corresponds to an input x-value by interpolating into the arrays.
+!> This function returns a y-value that corresponds to an input x-value by interpolating into the arrays.
 !! It uses a binary interpolation scheme that takes about log(AryLen) / log(2) steps to converge.
 !! It returns the first or last YAry() value if XVal is outside the limits of XAry(). 
 !!
@@ -3131,7 +3131,7 @@ END FUNCTION FindValidChannelIndx
    RETURN
    END FUNCTION InterpBinReal ! ( XVal, XAry, YAry, ILo, AryLen )
 !=======================================================================
-!> This funtion returns a y-value that corresponds to an input x-value by interpolating into the arrays.
+!> This function returns a y-value that corresponds to an input x-value by interpolating into the arrays.
 !! It uses the passed index as the starting point and does a stepwise interpolation from there. This is
 !! especially useful when the calling routines save the value from the last time this routine was called
 !! for a given case where XVal does not change much from call to call. When there is no correlation
@@ -3505,7 +3505,7 @@ END FUNCTION FindValidChannelIndx
    END FUNCTION InterpStpReal8 
 
 !=======================================================================
-!> This funtion returns a y-value array that corresponds to an input x-value by interpolating into the arrays.
+!> This function returns a y-value array that corresponds to an input x-value by interpolating into the arrays.
 !! It uses the passed index as the starting point and does a stepwise interpolation from there. This is
 !! especially useful when the calling routines save the value from the last time this routine was called
 !! for a given case where XVal does not change much from call to call. 
@@ -3568,7 +3568,7 @@ END FUNCTION FindValidChannelIndx
    RETURN
    END SUBROUTINE InterpStpMat4
 !=======================================================================
-!> This funtion returns a y-value array that corresponds to an input x-value by interpolating into the arrays.
+!> This function returns a y-value array that corresponds to an input x-value by interpolating into the arrays.
 !! It uses the passed index as the starting point and does a stepwise interpolation from there. This is
 !! especially useful when the calling routines save the value from the last time this routine was called
 !! for a given case where XVal does not change much from call to call. 
@@ -3869,7 +3869,7 @@ END FUNCTION FindValidChannelIndx
 
    END SUBROUTINE InterpStpReal3D   
 !=======================================================================
-!> This funtion returns a y-value that corresponds to an input x-value which is wrapped back
+!> This function returns a y-value that corresponds to an input x-value which is wrapped back
 !! into the range [0-XAry(AryLen)] by interpolating into the arrays.  
 !! It is assumed that XAry is sorted in ascending order.
 !! It uses the passed index as the starting point and does a stepwise interpolation from there.  This is
@@ -4674,7 +4674,7 @@ end function Rad2M180to180Deg
 
            ELSE
 
-               NPr = NPrime(IPR)                      ! The small prime number we will try to find the the factorization of NTR
+               NPr = NPrime(IPR)                      ! The small prime number we will try to find the factorization of NTR
 
                DO
                    NT = NTR/NPr                       ! Doing some modular arithmetic to see if
@@ -5420,7 +5420,7 @@ end function Rad2M180to180Deg
       INTEGER   ,     INTENT(IN)          :: StrtTime (8)                              !< Start time of simulation (including initialization)
       INTEGER   ,     INTENT(IN)          :: SimStrtTime (8)                           !< Start time of simulation (after initialization)
       REAL(ReKi),     INTENT(IN)          :: UsrTime1                                  !< User CPU time for simulation initialization.
-      REAL(ReKi),     INTENT(IN)          :: UsrTime2                                  !< User CPU time for simulation (without intialization)
+      REAL(ReKi),     INTENT(IN)          :: UsrTime2                                  !< User CPU time for simulation (without initialization)
       REAL(DbKi),     INTENT(IN)          :: ZTime                                     !< The final simulation time (not necessarially TMax)
       INTEGER(IntKi), INTENT(IN), OPTIONAL:: UnSum                                     !< optional unit number of file. If present and > 0,
       REAL(ReKi),     INTENT(OUT),OPTIONAL:: UsrTime_out                               !< User CPU time for entire run - optional value returned to calling routine
@@ -5634,7 +5634,7 @@ end function Rad2M180to180Deg
       REAL(DbKi), INTENT(  OUT)    :: PrevSimTime                                     !< Previous time message was written to screen (s > 0)
       REAL(ReKi), INTENT(  OUT)    :: PrevClockTime                                   !< Previous clock time in seconds past midnight
       INTEGER,    INTENT(  OUT)    :: SimStrtTime (8)                                 !< An array containing the elements of the start time.
-      REAL(ReKi), INTENT(  OUT)    :: UsrTimeSim                                      !< User CPU time for simulation (without intialization)
+      REAL(ReKi), INTENT(  OUT)    :: UsrTimeSim                                      !< User CPU time for simulation (without initialization)
 
       CHARACTER(*), INTENT(IN), OPTIONAL :: DescStrIn                                 !< optional additional string to print for SimStatus
       
@@ -5697,6 +5697,7 @@ end function Rad2M180to180Deg
 
       REAL(ReKi), PARAMETER        :: SecPerDay = 24*60*60.0_ReKi          ! Number of seconds per day
 
+      REAL(SiKi)                   :: DaysRemain                           ! Days remaining (decimal)
       INTEGER(4)                   :: EndHour                              ! The hour when the simulations is expected to complete.
       INTEGER(4)                   :: EndMin                               ! The minute when the simulations is expected to complete.
       INTEGER(4)                   :: EndSec                               ! The second when the simulations is expected to complete.
@@ -5704,6 +5705,7 @@ end function Rad2M180to180Deg
 
       CHARACTER(MaxWrScrLen)       :: BlankLine
       CHARACTER( 8)                :: ETimeStr                             ! String containing the end time.
+      CHARACTER( 10)               :: DaysRemainStr                        !< decimal format of number of days left
       CHARACTER( 10)               :: DescStr                              !< optional additional string to print for SimStatus
       CHARACTER(200)               :: StatInfo                             !< optional additional string to print for SimStatus
 
@@ -5744,18 +5746,20 @@ end function Rad2M180to180Deg
          ! Estimate the end time in hours, minutes, and seconds
 
       SimTimeLeft = REAL( ( TMax - ZTime )*DeltTime/( ZTime - PrevSimTime ), ReKi )          ! DeltTime/( ZTime - PrevSimTime ) is the delta_ClockTime divided by the delta_SimulationTime
+      DaysRemain  = real((SimTimeLeft) / real(SecPerDay,ReKi),SiKi)
       EndTime  =  MOD( CurrClockTime+SimTimeLeft, SecPerDay )
       EndHour  =  INT(   EndTime*InSecHr )
       EndMin   =  INT( ( EndTime - REAL( 3600*EndHour ) )*InSecMn )
       EndSec   = NINT(   EndTime - REAL( 3600*EndHour + 60*EndMin ) ) !bjj: this NINT can make the seconds say "60"
 
       WRITE (ETimeStr,"(I2.2,2(':',I2.2))")  EndHour, EndMin, EndSec
+      WRITE (DaysRemainStr,"(f10.3)") DaysRemain
 
       BlankLine = ""
       CALL WrOver( BlankLine )  ! BlankLine contains MaxWrScrLen spaces
       CALL WrOver ( trim(DescStr)//' Time: '//TRIM( Num2LStr( NINT( ZTime ) ) )//' of '//TRIM( Num2LStr( TMax ) )// &
                     ' seconds. '//trim(StatInfo)// &
-                    ' Estimated final completion at '//ETimeStr//'.')
+                    ' Estimated final completion at '//ETimeStr//' (in '//trim(adjustl(DaysRemainStr))//' days).')
 
          ! Let's save this time as the previous time for the next call to the routine
       PrevClockTime = CurrClockTime
