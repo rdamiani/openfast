@@ -440,21 +440,28 @@ CHARACTER(1024), INTENT(IN ) :: DirRoot                                         
 YawPosCom  = 0.0
 YawRateCom = 0.0
 
-!JASON: IMPOSE YAW STEP FOR FAST.Farm CALIBRATION CASE - START
-IF (      ( ZTime >= 648.0_DbKi ) .AND. ( ZTime < 650.0_DbKi ) ) THEN
-   YawRateCom = ( 10.0_ReKi/2.0_ReKi )*D2R 
-   YawPosCom  =  0.0          + YawRateCom*( ZTime - 648.0_DbKi )
-ELSE IF ( ( ZTime >= 650.0_DbKi ) .AND. ( ZTime < 948.0_DbKi ) ) THEN    
-   YawRateCom =  0.0
-   YawPosCom  = 10.0_ReKi*D2R
-ELSE IF ( ( ZTime >= 948.0_DbKi ) .AND. ( ZTime < 950.0_DbKi ) ) THEN    
-   YawRateCom = ( 15.0_ReKi/2.0_ReKi )*D2R 
-   YawPosCom  = 10.0_ReKi*D2R + YawRateCom*( ZTime - 948.0_DbKi )
-ELSE IF ( ( ZTime >= 950.0_DbKi )                               ) THEN
-   YawRateCom =  0.0
-   YawPosCom  = 25.0_ReKi*D2R
-END IF
+!JASON: IMPOSE YAW STEP FOR FAST.Farm CALIBRATION CASE - START     #RRD: commented out this FAST.Farm stuff to create a yaw-seize capable openfast.exe
+!!IF (      ( ZTime >= 648.0_DbKi ) .AND. ( ZTime < 650.0_DbKi ) ) THEN
+!!   YawRateCom = ( 10.0_ReKi/2.0_ReKi )*D2R 
+!!   YawPosCom  =  0.0          + YawRateCom*( ZTime - 648.0_DbKi )
+!!ELSE IF ( ( ZTime >= 650.0_DbKi ) .AND. ( ZTime < 948.0_DbKi ) ) THEN    
+!!   YawRateCom =  0.0
+!!   YawPosCom  = 10.0_ReKi*D2R
+!!ELSE IF ( ( ZTime >= 948.0_DbKi ) .AND. ( ZTime < 950.0_DbKi ) ) THEN    
+!!   YawRateCom = ( 15.0_ReKi/2.0_ReKi )*D2R 
+!!   YawPosCom  = 10.0_ReKi*D2R + YawRateCom*( ZTime - 948.0_DbKi )
+!!ELSE IF ( ( ZTime >= 950.0_DbKi )                               ) THEN
+!!   YawRateCom =  0.0
+!!   YawPosCom  = 25.0_ReKi*D2R
+!!END IF
 !JASON: IMPOSE YAW STEP FOR FAST.Farm CALIBRATION CASE - END
+
+!RRD: This is to simulate yaw bearing failure in 2.x cases for small wind passive yaw: Comment Jason's Fast.FARM calibration case and make sure to have the 2 uncommented lines below
+!Note that IF  ( ZTime >= p%TYCOn ): !This check is done by servodyn, no need to do it here
+     YawRateCom =  0.0
+     YawPosCom  = YawPos
+!END IF
+  
 
 
 RETURN
