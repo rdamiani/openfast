@@ -62,7 +62,8 @@ MODULE ServoDyn
    INTEGER(IntKi), PARAMETER :: ControlMode_USER      = 3          !< The (ServoDyn-universal) control code for obtaining the control values from a user-defined routine
    INTEGER(IntKi), PARAMETER :: ControlMode_EXTERN    = 4          !< The (ServoDyn-universal) control code for obtaining the control values from Simulink or Labivew
    INTEGER(IntKi), PARAMETER :: ControlMode_DLL       = 5          !< The (ServoDyn-universal) control code for obtaining the control values from a Bladed-Style dynamic-link library
-
+   INTEGER(IntKi), PARAMETER :: ControlMode_USER2     = 6          !< The (ServoDyn-universal) control code that RRD added: as 3 for 2 VScontrol lookup tables for small wind and Yaw Seizure Cases as well
+   
    INTEGER(IntKi), PARAMETER, PUBLIC :: TrimCase_none   = 0
    INTEGER(IntKi), PARAMETER, PUBLIC :: TrimCase_yaw    = 1
    INTEGER(IntKi), PARAMETER, PUBLIC :: TrimCase_torque = 2
@@ -200,7 +201,17 @@ SUBROUTINE SrvD_Init( InitInp, u, p, x, xd, z, OtherState, y, m, Interval, InitO
    CALL SrvD_SetParameters( InputFileData, p, UnSum, ErrStat2, ErrMsg2 )
       if (Failed())  return;
    p%InterpOrder = InitInp%InterpOrder    ! Store this for setting StC input array sizes stored in MiscVars%u_xStC
-
+   
+   !RRD: adding YawSpr and YawDamp handling in case of ControlMode_USER2 before critical time
+   m%YawSpr     = p%YawSpr !RRD: initialize
+   m%YawDamp    = p%YawDamp    !initialize
+   m%YawNeut    = p%YawNeut !initialize to the neutral yaw position
+   
+   if (p%YCMode == ControlMode_USER2) then
+       m%YawSpr     = 0.0 !RRD: initialize to zero
+       m%YawDamp    = 0.0 !initialize to zero
+   endif
+   
       ! Set and verify BlPitchInit, which comes from InitInputData (not the inputfiledata)
    CALL AllocAry( p%BlPitchInit, p%NumBl, 'BlPitchInit', ErrStat2, ErrMsg2 )
       if (Failed())  return;
@@ -336,7 +347,7 @@ SUBROUTINE SrvD_Init( InitInp, u, p, x, xd, z, OtherState, y, m, Interval, InitO
    
    u%BlPitch = p%BlPitchInit(1:p%NumBl)
    
-   u%Yaw = p%YawNeut
+   u%Yaw = m%YawNeut   !RRD changed p%YawNeut to m%YawNeut to allow for yaw spring and damping control
    u%YawRate   = 0.0
 
    u%LSS_Spd   = 0.0
@@ -1842,7 +1853,7 @@ SUBROUTINE SrvD_UpdateStates( t, n, Inputs, InputTimes, p, x, xd, z, OtherState,
    INTEGER(IntKi),                  INTENT(IN   ) :: n               !< Current step of the simulation: t = n*Interval
    TYPE(SrvD_InputType),            INTENT(INOUT) :: Inputs(:)       !< Inputs at InputTimes (output only for mesh record-keeping in ExtrapInterp routine)
    REAL(DbKi),                      INTENT(IN   ) :: InputTimes(:)   !< Times in seconds associated with Inputs
-   TYPE(SrvD_ParameterType),        INTENT(IN   ) :: p               !< Parameters
+   TYPE(SrvD_ParameterType),        INTENT(INOUT   ) :: p               !< Parameters !RRD changed from INTENT(IN) to allow for a change midsim of p%yawneut
    TYPE(SrvD_ContinuousStateType),  INTENT(INOUT) :: x               !< Input: Continuous states at t;
                                                                      !!   Output: Continuous states at t + Interval
    TYPE(SrvD_DiscreteStateType),    INTENT(INOUT) :: xd              !< Input: Discrete states at t;
@@ -2136,7 +2147,7 @@ SUBROUTINE SrvD_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg
 
    REAL(DbKi),                     INTENT(IN   )  :: t           !< Current simulation time in seconds
    TYPE(SrvD_InputType),           INTENT(IN   )  :: u           !< Inputs at t
-   TYPE(SrvD_ParameterType),       INTENT(IN   )  :: p           !< Parameters
+   TYPE(SrvD_ParameterType),       INTENT(INOUT   )  :: p           !< Parameters  !RRD changed from INTENT(IN) to allow for a change midsim of p%yawneut
    TYPE(SrvD_ContinuousStateType), INTENT(IN   )  :: x           !< Continuous states at t
    TYPE(SrvD_DiscreteStateType),   INTENT(IN   )  :: xd          !< Discrete states at t
    TYPE(SrvD_ConstraintStateType), INTENT(IN   )  :: z           !< Constraint states at t
@@ -4591,9 +4602,9 @@ CONTAINS
    !...............................................................................................................................
 
             ! checks for yaw control mode:
-      IF ( InputFileData%YCMode /= ControlMode_NONE .and. InputFileData%YCMode /= ControlMode_USER   )  THEN
+      IF ( InputFileData%YCMode /= ControlMode_NONE .and. InputFileData%YCMode /= ControlMode_USER .and. InputFileData%YCMode /= ControlMode_USER2  )  THEN
          IF ( InputFileData%YCMode /= ControlMode_DLL .and. InputFileData%YCMode /= ControlMode_EXTERN )  &
-         CALL SetErrStat( ErrID_Fatal, 'YCMode must be 0, 3, 4 or 5.', ErrStat, ErrMsg, RoutineName )
+         CALL SetErrStat( ErrID_Fatal, 'YCMode must be 0, 3, 4, 5, or 6.', ErrStat, ErrMsg, RoutineName )  !RRD modified to have 6 as well
       ENDIF
 
 
@@ -4666,9 +4677,9 @@ CONTAINS
 
          ! checks for generator and torque control:
       IF ( InputFileData%VSContrl /= ControlMode_NONE .and. &
-              InputFileData%VSContrl /= ControlMode_SIMPLE .AND. InputFileData%VSContrl /= ControlMode_USER )  THEN
+              InputFileData%VSContrl /= ControlMode_SIMPLE .AND. InputFileData%VSContrl /= ControlMode_USER .AND. InputFileData%VSContrl /= ControlMode_USER2 )  THEN !RRD modified 
          IF ( InputFileData%VSContrl /= ControlMode_DLL .AND. InputFileData%VSContrl /=ControlMode_EXTERN )  &
-         CALL SetErrStat( ErrID_Fatal, 'VSContrl must be either 0, 1, 3, 4, or 5.', ErrStat, ErrMsg, RoutineName )
+         CALL SetErrStat( ErrID_Fatal, 'VSContrl must be either 0, 1, 3, 4, or 5 (or 6).', ErrStat, ErrMsg, RoutineName )
       ENDIF
 
       IF ( InputFileData%SpdGenOn < 0.0_ReKi ) CALL SetErrStat( ErrID_Fatal, 'SpdGenOn must not be negative.', ErrStat, ErrMsg, RoutineName )
@@ -4838,7 +4849,7 @@ SUBROUTINE SrvD_SetParameters( InputFileData, p, UnSum, ErrStat, ErrMsg )
    p%SpdGenOn  = InputFileData%SpdGenOn
    p%TimGenOn  = InputFileData%TimGenOn
    p%TimGenOf  = InputFileData%TimGenOf
-
+   
 
    p%THSSBrFl  = InputFileData%THSSBrDp + InputFileData%HSSBrDT   ! Time at which shaft brake is fully deployed
    
@@ -4992,7 +5003,7 @@ SUBROUTINE SrvD_SetParameters( InputFileData, p, UnSum, ErrStat, ErrMsg )
    if (UnSum >0) then
       write(UnSum, '(A)') ''
       write(UnSum, '(A)') SectionDivide
-      write(UnSum, '(A)')              ' Yaw control mode {0: none, 3: user-defined from routine UserYawCont, 4: user-defined from Simulink/Labview, 5: user-defined from Bladed-style DLL} (switch)'
+      write(UnSum, '(A)')              ' Yaw control mode {0: none, 3: user-defined from routine UserYawCont, 4: user-defined from Simulink/Labview, 5: user-defined from Bladed-style DLL, 6: as 3 with Yaw seizure} (switch)'
       write(UnSum, '(A32,I2)')         '    YCMode  -- yaw control mode ',p%YCMode
       if (p%YCMode > 0) &
       write(UnSum, '(A55,ES12.5e2)')   '    TYCOn   --  Time to enable active yaw control (s)  ',p%TYCOn
@@ -5096,7 +5107,7 @@ SUBROUTINE Yaw_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg 
 
    REAL(DbKi),                     INTENT(IN   )  :: t           !< Current simulation time in seconds
    TYPE(SrvD_InputType),           INTENT(IN   )  :: u           !< Inputs at t
-   TYPE(SrvD_ParameterType),       INTENT(IN   )  :: p           !< Parameters
+   TYPE(SrvD_ParameterType),       INTENT(IN   )  :: p           !< Parameters   
    TYPE(SrvD_ContinuousStateType), INTENT(IN   )  :: x           !< Continuous states at t
    TYPE(SrvD_DiscreteStateType),   INTENT(IN   )  :: xd          !< Discrete states at t
    TYPE(SrvD_ConstraintStateType), INTENT(IN   )  :: z           !< Constraint states at t
@@ -5159,10 +5170,11 @@ SUBROUTINE Yaw_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg 
    ! Calculate the yaw moment:
    !...................................................................
 
-   y%YawMom = - p%YawSpr *( u%Yaw     - YawPosCom  )     &          ! {-f(qd,q,t)}SpringYaw
-              - p%YawDamp*( u%YawRate - YawRateCom )                ! {-f(qd,q,t)}DampYaw;
+   y%YawMom = - m%YawSpr *( u%Yaw     - YawPosCom  )     &          ! {-f(qd,q,t)}SpringYaw  !RRD changed p%YawSpr to m%YawSpr and p%YawDamp to m%YawDamp 
+              - m%YawDamp*( u%YawRate - YawRateCom )                ! {-f(qd,q,t)}DampYaw;
 
-
+   !write(*,*) "From SrvD: t=",t, "u%Yaw=", u%Yaw, "m%YawSpr=",m%YawSpr,"m%YawDamp=",m%YawDamp, "m%YawNeut=",m%YawNeut !RRD debug
+   
    ! Return the commands directly from the controller (used by SED module)
    y%YawPosCom  = YawPosCom
    y%YawRateCom = YawRateCom
@@ -5172,7 +5184,7 @@ SUBROUTINE Yaw_CalcOutput( t, u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg 
    ! prescribed yaw will be wrong in this case.....
    !...................................................................
    if (p%TrimCase==TrimCase_yaw) then
-      y%YawMom = y%YawMom + xd%CtrlOffset * p%YawSpr
+      y%YawMom = y%YawMom + xd%CtrlOffset * m%YawSpr !RRD changed p%YawSpr to m%YawSpr 
    end if
 
 
@@ -5183,7 +5195,7 @@ SUBROUTINE CalculateStandardYaw(t, u, p, m, YawPosCom, YawRateCom, YawPosComInt,
 
    REAL(DbKi),                     INTENT(IN   )  :: t            !< Current simulation time in seconds
    TYPE(SrvD_InputType),           INTENT(IN   )  :: u            !< Inputs at t
-   TYPE(SrvD_ParameterType),       INTENT(IN   )  :: p            !< Parameters
+   TYPE(SrvD_ParameterType),       INTENT(IN   )  :: p            !< Parameters  
    TYPE(SrvD_MiscVarType),         INTENT(INOUT)  :: m            !< Misc (optimization) variables
    REAL(ReKi),                     INTENT(  OUT)  :: YawPosCom    !< Commanded yaw angle from user-defined routines, rad.
    REAL(ReKi),                     INTENT(  OUT)  :: YawRateCom   !< Commanded yaw rate  from user-defined routines, rad/s.
@@ -5199,6 +5211,7 @@ SUBROUTINE CalculateStandardYaw(t, u, p, m, YawPosCom, YawRateCom, YawPosComInt,
    !...................................................................
 
 
+   
    IF ( t >= p%TYCOn  .AND.  p%YCMode /= ControlMode_NONE )  THEN   ! Time now to enable active yaw control.
 
 
@@ -5207,10 +5220,17 @@ SUBROUTINE CalculateStandardYaw(t, u, p, m, YawPosCom, YawRateCom, YawPosComInt,
          CASE ( ControlMode_SIMPLE )            ! Simple ... BJJ: THIS will be NEW
 
 
-         CASE ( ControlMode_USER )              ! User-defined from routine UserYawCont().
+         CASE ( ControlMode_USER, ControlMode_USER2 )              ! User-defined from routine UserYawCont(). RRD modified to include USER2 mode
+            
+             if (p%YCMode == ControlMode_USER2) then !RRD: I do not like that this assignment is repeated at every time step but so is the full SELECT CASE
+                m%YawSpr  = p%YawSpr !RRD: restore the saved values
+                m%YawDamp = p%YawDamp !RRD: restore the saved values
+             endif
+         
+            CALL UserYawCont ( u%Yaw, u%YawRate, u%WindDir, u%YawErr, p%NumBl, t, p%DT, p%PriPath, m%YawNeut, YawPosCom, YawRateCom ) !RRD added yawneut
+            
 
-            CALL UserYawCont ( u%Yaw, u%YawRate, u%WindDir, u%YawErr, p%NumBl, t, p%DT, p%PriPath, YawPosCom, YawRateCom )
-
+            
          CASE ( ControlMode_EXTERN )              ! User-defined from Simulink or LabVIEW
 
             YawPosCom  = u%ExternalYawPosCom
@@ -5245,7 +5265,7 @@ SUBROUTINE Yaw_UpdateStates( t, u, p, x, xd, z, OtherState, m, ErrStat, ErrMsg )
 
    REAL(DbKi),                      INTENT(IN   ) :: t           !< t+dt
    TYPE(SrvD_InputType),            INTENT(IN   ) :: u           !< Inputs at t+dt
-   TYPE(SrvD_ParameterType),        INTENT(IN   ) :: p           !< Parameters
+   TYPE(SrvD_ParameterType),        INTENT(IN   ) :: p           !< Parameters 
    TYPE(SrvD_ContinuousStateType),  INTENT(INOUT) :: x           !< Input: Continuous states at t;
                                                                  !!   Output: Continuous states at t + dt
    TYPE(SrvD_DiscreteStateType),    INTENT(INOUT) :: xd          !< Input: Discrete states at t;
@@ -5776,7 +5796,7 @@ SUBROUTINE Torque_UpdateStates( t, u, p, x, xd, z, OtherState, m, ErrStat, ErrMs
 
       IF ( OtherState%GenOnLine )  THEN   ! The generator is on-line.
 
-         IF ( ( p%GenTiStp ) .AND. ( t > p%TimGenOf .OR. EqualRealNos(t,p%TimGenOf) ) )  THEN   ! Shut-down of generator determined by time, TimGenOf
+         IF ( ( p%GenTiStp ) .AND. ( t > p%TimGenOf .OR. EqualRealNos(t,p%TimGenOf) ) .AND. (p%VSContrl .NE. 6) )  THEN   ! Shut-down of generator determined by time, TimGenOf !RRD do not turn off if VSctrl=6
             OtherState%Off4Good = .true.
          ENDIF
 
@@ -5846,7 +5866,8 @@ SUBROUTINE CalculateTorque( t, u, p, m, GenTrq, ElecPwr, ErrStat, ErrMsg )
    REAL(ReKi)                                     :: S2          ! SlipRat**2
 
    character(*), parameter                        :: RoutineName = 'CalculateTorque'
-
+  
+   
       ! Initialize variables
    ErrStat = ErrID_None
    ErrMsg  = ''
@@ -5906,7 +5927,7 @@ SUBROUTINE CalculateTorque( t, u, p, m, GenTrq, ElecPwr, ErrStat, ErrMsg )
                   CASE ( ControlMode_USER )                          ! User-defined generator model.
 
 
-                     CALL UserGen ( u%HSS_Spd, u%LSS_Spd, p%NumBl, t, p%DT, p%GenEff, 0.0_ReKi, p%PriPath, GenTrq, ElecPwr )
+                     CALL UserGen ( u%HSS_Spd, u%LSS_Spd, p%NumBl, t, p%DT, p%GenEff, 0.0_ReKi, p%PriPath,  p%VSContrl,p%TimGenOf, GenTrq, ElecPwr )
 
 
                END SELECT
@@ -5939,10 +5960,9 @@ SUBROUTINE CalculateTorque( t, u, p, m, GenTrq, ElecPwr, ErrStat, ErrMsg )
                ElecPwr = GenTrq*u%HSS_Spd*p%GenEff
                !y%ElecPwr = CalculateElecPwr( y%GenTrq, u, p )
 
-            CASE ( ControlMode_USER )                              ! User-defined variable-speed control for routine UserVSCont().
+            CASE ( ControlMode_USER, ControlMode_USER2 )                              ! User-defined variable-speed control for routine UserVSCont(). !RRD added ControlMode_USER2
 
-
-               CALL UserVSCont ( u%HSS_Spd, u%LSS_Spd, p%NumBl, t, p%DT, p%GenEff, 0.0_ReKi, p%PriPath, GenTrq, ElecPwr )
+               CALL UserVSCont ( u%HSS_Spd, u%LSS_Spd, p%NumBl, t, p%DT, p%GenEff, 0.0_ReKi, p%PriPath, p%VSContrl,p%TimGenOf, GenTrq, ElecPwr )
 
             CASE ( ControlMode_DLL )                                ! User-defined variable-speed control from Bladed-style DLL
 
@@ -6209,7 +6229,7 @@ SUBROUTINE CalculateTorqueJacobian( t, u, p, m, GenTrq_du, ElecPwr_du, ErrStat, 
             ElecPwr_du = (GenTrq_du * u%HSS_Spd + GenTrq) * p%GenEff
 
 
-         CASE ( ControlMode_USER , &                             ! User-defined variable-speed control for routine UserVSCont().
+         CASE ( ControlMode_USER , ControlMode_USER2 , &                             ! User-defined variable-speed control for routine UserVSCont(). !RRD added ControlMode_USER2
                 ControlMode_DLL  , &                             ! User-defined variable-speed control from Bladed-style DLL
                 ControlMode_EXTERN )                             ! User-defined variable-speed control from Simulink or LabVIEW.
 

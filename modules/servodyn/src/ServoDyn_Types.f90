@@ -358,6 +358,9 @@ IMPLICIT NONE
     TYPE(StC_OutputType) , DIMENSION(:), ALLOCATABLE  :: y_SStC      !< StC module outputs - substructure [-]
     TYPE(SrvD_ModuleMapType)  :: SrvD_MeshMap      !< Mesh mapping from inputs/output meshes to StC input/output meshes [-]
     INTEGER(IntKi)  :: PrevTstepNcall = -1      !< Previous timestep N for tracking when in predictor/corrector loop for setting StC u values [-]
+    REAL(ReKi)  :: YawSpr = 0.0_ReKi      !< Nacelle-yaw spring constant effectively used to calculate yaw moment: RRD added to handle Yaw seizure cases [N-m/rad]
+    REAL(ReKi)  :: YawDamp = 0.0_ReKi      !< Nacelle-yaw damping constant effectively used to calculate yaw moment: RRD added to handle Yaw seizure cases [N-m/(rad/s)]
+    REAL(ReKi)  :: YawNeut = 0.0_ReKi      !< Neutral yaw position--yaw spring force is zero at this yaw: RRD added to handle Yaw seizure cases [radians]
   END TYPE SrvD_MiscVarType
 ! =======================
 ! =========  SrvD_ParameterType  =======
@@ -3867,6 +3870,9 @@ subroutine SrvD_CopyMisc(SrcMiscData, DstMiscData, CtrlCode, ErrStat, ErrMsg)
    call SetErrStat(ErrStat2, ErrMsg2, ErrStat, ErrMsg, RoutineName)
    if (ErrStat >= AbortErrLev) return
    DstMiscData%PrevTstepNcall = SrcMiscData%PrevTstepNcall
+   DstMiscData%YawSpr = SrcMiscData%YawSpr
+   DstMiscData%YawDamp = SrcMiscData%YawDamp
+   DstMiscData%YawNeut = SrcMiscData%YawNeut
 end subroutine
 
 subroutine SrvD_DestroyMisc(MiscData, ErrStat, ErrMsg)
@@ -4135,6 +4141,9 @@ subroutine SrvD_PackMisc(RF, Indata)
    end if
    call SrvD_PackModuleMapType(RF, InData%SrvD_MeshMap) 
    call RegPack(RF, InData%PrevTstepNcall)
+   call RegPack(RF, InData%YawSpr)
+   call RegPack(RF, InData%YawDamp)
+   call RegPack(RF, InData%YawNeut)
    if (RegCheckErr(RF, RoutineName)) return
 end subroutine
 
@@ -4318,6 +4327,9 @@ subroutine SrvD_UnPackMisc(RF, OutData)
    end if
    call SrvD_UnpackModuleMapType(RF, OutData%SrvD_MeshMap) ! SrvD_MeshMap 
    call RegUnpack(RF, OutData%PrevTstepNcall); if (RegCheckErr(RF, RoutineName)) return
+   call RegUnpack(RF, OutData%YawSpr); if (RegCheckErr(RF, RoutineName)) return
+   call RegUnpack(RF, OutData%YawDamp); if (RegCheckErr(RF, RoutineName)) return
+   call RegUnpack(RF, OutData%YawNeut); if (RegCheckErr(RF, RoutineName)) return
 end subroutine
 
 subroutine SrvD_CopyParam(SrcParamData, DstParamData, CtrlCode, ErrStat, ErrMsg)

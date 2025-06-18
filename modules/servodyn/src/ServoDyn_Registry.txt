@@ -346,6 +346,9 @@ typedef	^	MiscVarType	StC_OutputType	y_TStC	{:}	-	-	"StC module outputs - tower"
 typedef	^	MiscVarType	StC_OutputType	y_SStC	{:}	-	-	"StC module outputs - substructure"	-
 typedef	^	MiscVarType	SrvD_ModuleMapType	SrvD_MeshMap	-	-	-	"Mesh mapping from inputs/output meshes to StC input/output meshes"	-
 typedef	^	MiscVarType	IntKi	PrevTstepNcall	-	-1	-	"Previous timestep N for tracking when in predictor/corrector loop for setting StC u values"	-
+typedef	^	MiscVarType	ReKi	YawSpr	        -	-	-	"Nacelle-yaw spring constant effectively used to calculate yaw moment: RRD added to handle Yaw seizure cases"	N-m/rad
+typedef	^	MiscVarType	ReKi	YawDamp	        -	-	-	"Nacelle-yaw damping constant effectively used to calculate yaw moment: RRD added to handle Yaw seizure cases"	N-m/(rad/s)
+typedef	^	MiscVarType	ReKi	YawNeut	       -	-	-	"Neutral yaw position--yaw spring force is zero at this yaw: RRD added to handle Yaw seizure cases"	radians
 
 # ..... Parameters ................................................................................................................
 # Define parameters here:
