@@ -1157,7 +1157,7 @@ subroutine StC_Nacelle_Setup(SrvD_InitInp,SrvD_p,InputFileData,SrvD_u,SrvD_y,Srv
 
       do j=1,SrvD_p%NumNStC
          StC_InitInp%InputFile      =  InputFileData%NStCfiles(j)
-         StC_InitInp%RootName       =  TRIM(SrvD_p%RootName)//'.NStC'
+         StC_InitInp%RootName       =  TRIM(SrvD_p%RootName)//'.NStC'//trim(Num2LStr(j))
          StC_InitInp%Gravity        =  SrvD_InitInp%gravity
          StC_InitInp%NumMeshPts     =  1_IntKi        ! single point mesh for Nacelle
          Interval                   =  SrvD_p%DT      ! Pass the ServoDyn DT
@@ -1285,7 +1285,7 @@ subroutine StC_Tower_Setup(SrvD_InitInp,SrvD_p,InputFileData,SrvD_u,SrvD_y,SrvD_
 
       do j=1,SrvD_p%NumTStC
          StC_InitInp%InputFile      =  InputFileData%TStCfiles(j)
-         StC_InitInp%RootName       =  TRIM(SrvD_p%RootName)//'.TStC'
+         StC_InitInp%RootName       =  TRIM(SrvD_p%RootName)//'.TStC'//trim(Num2LStr(j))
          StC_InitInp%Gravity        =  SrvD_InitInp%gravity
          StC_InitInp%NumMeshPts     =  1_IntKi        ! single point mesh for Tower
          Interval                   =  SrvD_p%DT      ! Pass the ServoDyn DT
@@ -1411,7 +1411,7 @@ subroutine StC_Blade_Setup(SrvD_InitInp,SrvD_p,InputFileData,SrvD_u,SrvD_y,SrvD_
 
       do j=1,SrvD_p%NumBStC
          StC_InitInp%InputFile      =  InputFileData%BStCfiles(j)
-         StC_InitInp%RootName       =  TRIM(SrvD_p%RootName)//'.BStC'
+         StC_InitInp%RootName       =  TRIM(SrvD_p%RootName)//'.BStC'//trim(Num2LStr(j))
          StC_InitInp%Gravity        =  SrvD_InitInp%gravity
          StC_InitInp%NumMeshPts     =  SrvD_p%NumBl        ! p%NumBl points for blades
          Interval                   =  SrvD_p%DT      ! Pass the ServoDyn DT
@@ -1544,7 +1544,7 @@ subroutine StC_Substruc_Setup(SrvD_InitInp,SrvD_p,InputFileData,SrvD_u,SrvD_y,Sr
 
       do j=1,SrvD_p%NumSStC
          StC_InitInp%InputFile      =  InputFileData%SStCfiles(j)
-         StC_InitInp%RootName       =  TRIM(SrvD_p%RootName)//'.SStC'
+         StC_InitInp%RootName       =  TRIM(SrvD_p%RootName)//'.SStC'//trim(Num2LStr(j))
          StC_InitInp%Gravity        =  SrvD_InitInp%gravity
          StC_InitInp%NumMeshPts     =  1_IntKi        ! single point mesh for Platform
          Interval                   =  SrvD_p%DT      ! Pass the ServoDyn DT
@@ -3753,7 +3753,7 @@ contains
       call SrvD_Perturb_x( p, n, sgn, x_perturb, delta )
       ! call Calc
       call StC_CopyOutput(m%y_BStC(  j), y_StC, MESH_NEWCOPY, ErrStat3, ErrMsg3); if (ErrStat3 > AbortErrLev) return
-      CALL StC_CalcOutput( t, m%u_BStC(1,j), p%BStC(j), x%BStC(j), xd%BStC(j), z%BStC(j), OtherState%BStC(j), y_StC, m%BStC(j), ErrStat3, ErrMsg3 ); if (ErrStat3 > AbortErrLev) return
+      CALL StC_CalcOutput( t, m%u_BStC(1,j), p%BStC(j), x_perturb%BStC(j), xd%BStC(j), z%BStC(j), OtherState%BStC(j), y_StC, m%BStC(j), ErrStat3, ErrMsg3 ); if (ErrStat3 > AbortErrLev) return
       CALL Transfer_Point_to_Point( y_StC%Mesh(k), y_perturb%BStCLoadMesh(k,j), m%SrvD_MeshMap%BStC_Frc2_y_BStC(k,j), ErrStat3, ErrMsg3, u%BStCMotionMesh(k,j), u%BStCMotionMesh(k,j) ); if (ErrStat3 > AbortErrLev) return
       ! collect relevant outputs
       AllOuts = 0.0_ReKi
@@ -3789,7 +3789,7 @@ contains
       call SrvD_Perturb_x( p, n, sgn, x_perturb, delta )
       ! call Calc
       call StC_CopyOutput(m%y_NStC(  j), y_StC, MESH_NEWCOPY, ErrStat3, ErrMsg3); if (ErrStat3 > AbortErrLev) return
-      CALL StC_CalcOutput( t, m%u_NStC(1,j), p%NStC(j), x%NStC(j), xd%NStC(j), z%NStC(j), OtherState%NStC(j), y_StC, m%NStC(j), ErrStat3, ErrMsg3 ); if (ErrStat3 > AbortErrLev) return
+      CALL StC_CalcOutput( t, m%u_NStC(1,j), p%NStC(j), x_perturb%NStC(j), xd%NStC(j), z%NStC(j), OtherState%NStC(j), y_StC, m%NStC(j), ErrStat3, ErrMsg3 ); if (ErrStat3 > AbortErrLev) return
       CALL Transfer_Point_to_Point( y_StC%Mesh(1), y_perturb%NStCLoadMesh(j), m%SrvD_MeshMap%NStC_Frc2_y_NStC(j), ErrStat3, ErrMsg3, u%NStCMotionMesh(j), u%NStCMotionMesh(j) ); if (ErrStat3 > AbortErrLev) return
       ! collect relevant outputs
       AllOuts = 0.0_ReKi
@@ -3825,7 +3825,7 @@ contains
       call SrvD_Perturb_x( p, n, sgn, x_perturb, delta )
       ! call Calc
       call StC_CopyOutput(m%y_TStC(  j), y_StC, MESH_NEWCOPY, ErrStat3, ErrMsg3); if (ErrStat3 > AbortErrLev) return
-      CALL StC_CalcOutput( t, m%u_TStC(1,j), p%TStC(j), x%TStC(j), xd%TStC(j), z%TStC(j), OtherState%TStC(j), y_StC, m%TStC(j), ErrStat3, ErrMsg3 ); if (ErrStat3 > AbortErrLev) return
+      CALL StC_CalcOutput( t, m%u_TStC(1,j), p%TStC(j), x_perturb%TStC(j), xd%TStC(j), z%TStC(j), OtherState%TStC(j), y_StC, m%TStC(j), ErrStat3, ErrMsg3 ); if (ErrStat3 > AbortErrLev) return
       CALL Transfer_Point_to_Point( y_StC%Mesh(1), y_perturb%TStCLoadMesh(j), m%SrvD_MeshMap%TStC_Frc2_y_TStC(j), ErrStat3, ErrMsg3, u%TStCMotionMesh(j), u%TStCMotionMesh(j) ); if (ErrStat3 > AbortErrLev) return
       ! collect relevant outputs
       AllOuts = 0.0_ReKi
@@ -3861,7 +3861,7 @@ contains
       call SrvD_Perturb_x( p, n, sgn, x_perturb, delta )
       ! call Calc
       call StC_CopyOutput(m%y_SStC(  j), y_StC, MESH_NEWCOPY, ErrStat3, ErrMsg3); if (ErrStat3 > AbortErrLev) return
-      CALL StC_CalcOutput( t, m%u_SStC(1,j), p%SStC(j), x%SStC(j), xd%SStC(j), z%SStC(j), OtherState%SStC(j), y_StC, m%SStC(j), ErrStat3, ErrMsg3 ); if (ErrStat3 > AbortErrLev) return
+      CALL StC_CalcOutput( t, m%u_SStC(1,j), p%SStC(j), x_perturb%SStC(j), xd%SStC(j), z%SStC(j), OtherState%SStC(j), y_StC, m%SStC(j), ErrStat3, ErrMsg3 ); if (ErrStat3 > AbortErrLev) return
       CALL Transfer_Point_to_Point( y_StC%Mesh(1), y_perturb%SStCLoadMesh(j), m%SrvD_MeshMap%SStC_Frc2_y_SStC(j), ErrStat3, ErrMsg3, u%SStCMotionMesh(j), u%SStCMotionMesh(j) ); if (ErrStat3 > AbortErrLev) return
       ! collect relevant outputs
       AllOuts = 0.0_ReKi
