@@ -44,7 +44,7 @@ MODULE FASTWrapper
 
    PUBLIC :: FWrap_t0                             !  call to compute outputs at t0 [and initialize some more variables]
    PUBLIC :: FWrap_Increment                      !  call to update states to n+1 and compute outputs at n+1
-   PUBLIC :: FWrap_SetInputs  
+   PUBLIC :: FWrap_SetWindTStart
    PUBLIC :: FWrap_CalcOutput  
    
 
@@ -76,6 +76,8 @@ SUBROUTINE FWrap_Init( InitInp, u, p, x, xd, z, OtherState, y, m, Interval, Init
 
    TYPE(FAST_ExternInitType)                       :: ExternInitData 
    INTEGER(IntKi)                                  :: j,k,nb      
+   REAL(ReKi)                                      :: p0(3)       ! hub location (in FAST with 0,0,0 as turbine reference)
+   REAL(R8Ki)                                      :: orientation(3,3)  ! temp orientation array
    
    INTEGER(IntKi)                                  :: ErrStat2    ! local error status
    CHARACTER(ErrMsgLen)                            :: ErrMsg2     ! local error message
@@ -117,7 +119,7 @@ SUBROUTINE FWrap_Init( InitInp, u, p, x, xd, z, OtherState, y, m, Interval, Init
    ExternInitData%windGrid_n(1) = InitInp%nX_high
    ExternInitData%windGrid_n(2) = InitInp%nY_high
    ExternInitData%windGrid_n(3) = InitInp%nZ_high
-   ExternInitData%windGrid_n(4) = InitInp%n_high_low
+   ExternInitData%windGrid_n(4) = InitInp%n_high_low+1      ! include a step at t-dt_high
    
    ExternInitData%windGrid_delta(1) = InitInp%dX_high
    ExternInitData%windGrid_delta(2) = InitInp%dY_high
@@ -196,12 +198,19 @@ SUBROUTINE FWrap_Init( InitInp, u, p, x, xd, z, OtherState, y, m, Interval, Init
                          )
             if (Failed()) return;
             
-            ! set node initial position/orientation
-         ! shortcut for 
-         ! call MeshPositionNode(m%ADRotorDisk(k), j, [0,0,r(j)], errStat2, errMsg2)
-         m%ADRotorDisk(k)%Position(3,:) = p%r ! this will get overwritten later, but we check that we have no zero-length elements in MeshCommit()
+         ! set node initial position/orientation
+         ! NOTE:  the mesh data for ADRotorDisk gets overwritten before use so it isn't actually important
+         !        that this match the method used later in the code.  We can't use the method from later
+         !        in the code since the `hub_theta_x_root` is not known at this point.  So instead, we
+         !        will use the input blade root orientation to set the direction.  This does not result
+         !        in a flat disk, but should allow the mesh mapping to work.
+         p0 = m%Turbine%AD%Input(1)%rotors(1)%HubMotion%Position(:,1) + m%Turbine%AD%Input(1)%rotors(1)%HubMotion%TranslationDisp(:,1) 
+         m%ADRotorDisk(k)%RefOrientation(:,:,1) = m%Turbine%AD%Input(1)%rotors(1)%BladeRootMotion(k)%Orientation(:,:,1)
+         do j=1,p%nr
+            m%ADRotorDisk(k)%Position(:,j) = p0 + p%r(j)*m%ADRotorDisk(k)%RefOrientation(3,:,1)
+         end do
          m%ADRotorDisk(k)%TranslationDisp = 0.0_R8Ki ! this happens by default, anyway....
-         
+
             ! create line2 elements
          do j=1,p%nr-1
             call MeshConstructElement( m%ADRotorDisk(k), ELEMENT_LINE2, errStat2, errMsg2, p1=j, p2=j+1 );   if (Failed()) return;
@@ -383,7 +392,7 @@ SUBROUTINE FWrap_Increment( t, n, u, p, x, xd, z, OtherState, y, m, ErrStat, Err
    !ELSE
    !   
          ! set the inputs needed for FAST
-      !call FWrap_SetInputs(u, m, t)   <<< moved up into FAST.Farm FARM_UpdateStates
+      !call FWrap_SetWindTStart(u, m, t)   <<< moved up into FAST.Farm FARM_UpdateStates
       
       ! call FAST p%n_FAST_low times   (p%n_FAST_low is simply the number of steps to make per wrapper call. It is affected by MooringMod)
       do n_ss = 1, p%n_FAST_low 
@@ -425,7 +434,7 @@ SUBROUTINE FWrap_t0( u, p, x, xd, z, OtherState, y, m, ErrStat, ErrMsg )
    ErrMsg  = ''
 
       ! set the inputs needed for FAST:
-   call FWrap_SetInputs(u, m, 0.0_DbKi)
+   call FWrap_SetWindTStart(u, m, 0.0_DbKi)
       
       ! compute the FAST t0 solution:
    call FAST_Solution0_T(m%Turbine, ErrStat2, ErrMsg2 )
@@ -676,16 +685,18 @@ SUBROUTINE FWrap_CalcOutput(p, u, y, m, ErrStat, ErrMsg)
 END SUBROUTINE FWrap_CalcOutput
 !----------------------------------------------------------------------------------------------------------------------------------
 !> This subroutine sets the inputs needed before calling an instance of FAST
-SUBROUTINE FWrap_SetInputs(u, m, t)
+SUBROUTINE FWrap_SetWindTStart(u, m, t)
 
    TYPE(FWrap_InputType),           INTENT(INOUT)  :: u           !< Inputs at t
    TYPE(FWrap_MiscVarType),         INTENT(INOUT)  :: m           !< Misc variables for optimization (not copied in glue code)
    REAL(DbKi),                      INTENT(IN   )  :: t           !< current simulation time
 
    ! set the 4d-wind-inflow input array (a bit of a hack [simplification] so that we don't have large amounts of data copied in multiple data structures):
-      m%Turbine%IfW%p%FlowField%Grid4D%TimeStart = t
+   ! NOTE: the wind data starts at `t - DT_high` as one extra slice of wind data is added at start.  If AeroDyn is updated to not require the `t-DT_high`
+   !        timestep, this can be changed
+   m%Turbine%IfW%p%FlowField%Grid4D%TimeStart = t - m%Turbine%IfW%p%FlowField%Grid4D%delta(4)
       
-END SUBROUTINE FWrap_SetInputs
+END SUBROUTINE FWrap_SetWindTStart
 !----------------------------------------------------------------------------------------------------------------------------------
 END MODULE FASTWrapper
 !**********************************************************************************************************************************
