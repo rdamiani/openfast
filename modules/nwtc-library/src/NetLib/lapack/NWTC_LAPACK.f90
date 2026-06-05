@@ -389,9 +389,6 @@ MODULE NWTC_LAPACK
       INTEGER(IntKi)                 :: ErrStat2          !< Error level
       CHARACTER(ErrMsgLen)           :: ErrMsg2           !< Message describing error
       CHARACTER(*), PARAMETER        :: RoutineName = 'LAPACK_SGELS'
-        #ifdef DEBUG
-         call ieee_set_halting_mode(ieee_divide_by_zero, .false.)
-        #endif
       
       ErrStat = ErrID_None
       ErrMsg  = ""
